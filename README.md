@@ -50,9 +50,9 @@ cd Ukshati
 ```
 
 ### 2. Set Up Environment Variables
-- Copy `.env.example` to `.env`:
+- Copy `1st snippet` to `.env.local`:
   ```bash
-  cp .env.example .env
+  cp .env.local 
   ```
 - Update the `.env` file with your credentials.
 
