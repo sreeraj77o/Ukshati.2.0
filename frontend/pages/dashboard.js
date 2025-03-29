@@ -118,7 +118,6 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
             >
               <option value="">Select Role</option>
               <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
               <option value="employee">Employee</option>
             </select>
           </div>
