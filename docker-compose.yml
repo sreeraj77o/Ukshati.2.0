@@ -1,0 +1,55 @@
+services:
+  nextjs:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_USER=company
+      - DB_PASSWORD=Ukshati@123
+      - DB_NAME=company_db
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true 
+      - WATCHPACK_POLLING=true 
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: mysql:8.0
+    command: [
+      "--default-authentication-plugin=mysql_native_password",
+      "--bind-address=0.0.0.0",
+      "--init-file=/docker-entrypoint-initdb.d/init.sql",
+      "--skip-ssl",
+      "--require-secure-transport=OFF"
+    ]
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: company_db
+      MYSQL_USER: company
+      MYSQL_PASSWORD: Ukshati@123
+    volumes:
+      - mysql-data:/var/lib/mysql 
+      - ./db/company_db.sql:/docker-entrypoint-initdb.d/init.sql  
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -u company --password=$$MYSQL_PASSWORD"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  mysql-data:  # Volume to persist MySQL database data
+
+networks:
+  app-network:
+    driver: bridge
