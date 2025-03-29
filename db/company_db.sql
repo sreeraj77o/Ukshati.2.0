@@ -77,12 +77,6 @@ CREATE TABLE `customer` (
 
 LOCK TABLES `customer` WRITE;
 /*!40000 ALTER TABLE `customer` DISABLE KEYS */;
-INSERT INTO `customer` VALUES 
-(1,'John Doe','9876543210',NULL,'lead',NULL,CURRENT_TIMESTAMP,NULL),
-(2,'Jane Smith','9123456789',NULL,'customer',NULL,CURRENT_TIMESTAMP,NULL),
-(3,'Michael Green','9456723421',NULL,'lead',NULL,CURRENT_TIMESTAMP,NULL),
-(4,'Sarah Miller','9781234567',NULL,'customer',NULL,CURRENT_TIMESTAMP,NULL),
-(5,'Daniel Scott','9345678901',NULL,'lead',NULL,CURRENT_TIMESTAMP,NULL);
 /*!40000 ALTER TABLE `customer` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -111,11 +105,7 @@ CREATE TABLE `employee` (
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
 INSERT INTO `employee` (`name`, `email`, `phone`, `password`, `role`) VALUES
-('Alice Johnson', 'admin@example.com', '9876543210', '$2b$10$paEhzm4yqGvqSgGpm4vGAeuhAQGcIMvQm8dtEgrbS0K6U6fGg52jS', 'Admin'),
-('Bob Smith', 'bob@example.com', '9123456789', '$2b$10$G8vHZuRKnA.jR6fzELaWyOo3XpRDFogSvK0nEWq0gVk2eEz2TyZDG', 'Employee'),
-('Charlie Brown', 'employee@example.com', '9456723421', '$2b$10$8xY5DPDdxD8oGWAEL3xAL..VjDG0rvZevr7bNOoLEzaO7E4fV/EZq', 'Employee'),
-('David Lee', 'david@example.com', '9781234567', '$2b$10$EPwbVb6bnIT7M0xZLb0UneVrScwlbjVnFQwTO0p093xs0Iev/falK', 'Employee'),
-('Eva White', 'eva@example.com', '9345678901', '$2b$10$2HIxE4dJc/bhoCBURewwHeyvz6dCesqAaQicQDFI/SogbZhIgDZ3i', 'Admin');
+('Ukshati', 'ukshati365@gmail.com', '7259439998', '$2b$10$VFW3dVy6O91qYShoi6vEDemc8TMb7DP4SBplGWNm9snPtffVGGu5u', 'Admin');
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -144,25 +134,6 @@ CREATE TABLE `stock` (
 
 LOCK TABLES `stock` WRITE;
 /*!40000 ALTER TABLE `stock` DISABLE KEYS */;
-INSERT INTO `stock` VALUES 
-(1, 'Hammer', 1, 20, 500.00),
-(2, 'Screwdriver Set', 1, 15, 750.00),
-(3, 'LED Monitor', 2, 12, 15000.00),
-(4, 'Laptop', 2, 2, 60000.00),
-(5, 'Water Pump', 3, 5, 25000.00),
-(6, 'Submersible Pump', 3, 3, 30000.00),
-(7, 'Drip Irrigation Kit', 4, 8, 10000.00),
-(8, 'Smart Irrigation Controller', 4, 6, 12000.00),
-(9, 'PVC Pipes', 5, 25, 2000.00),
-(10, 'Pipe Fittings Set', 5, 30, 1500.00),
-(11, 'Electric Valve', 6, 10, 5000.00),
-(12, 'Automation Controller', 6, 5, 25000.00),
-(13, 'Solar Panel', 6, 7, 40000.00),
-(14, 'Wiring Kit', 6, 20, 3000.00),
-(15, 'Skilled Labour ', 7, 50, 500.00),
-(16, 'Unskilled Labour ', 7, 70, 300.00),
-(17, 'Plumbing Labour ', 7, 40, 400.00),
-(18, 'Masonry Labour ', 7, 30, 450.00);
 /*!40000 ALTER TABLE `stock` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -223,11 +194,6 @@ CREATE TABLE `project` (
 
 LOCK TABLES `project` WRITE;
 /*!40000 ALTER TABLE `project` DISABLE KEYS */;
-INSERT INTO `project` VALUES (2,'Website Development',2,'2024-01-01','2024-06-01','Ongoing','Jane Smith'),(4,'Mobile App',4,'2024-03-15','2024-09-15','Completed','Sarah Miller'),
-(1, 'Irrigation System', 1, '2024-01-10', '2024-06-15', 'Ongoing', 'John Doe'), 
-(3, 'Greenhouse Automation', 3, '2024-03-20', '2024-09-25', 'Completed', 'Robert Brown'), 
-(5, 'Drone Surveillance Program', 5, '2025-02-10', '2025-09-10', 'On Hold', 'Sarah Johnson'), 
-(6, 'Automated Harvesting Beta', 4, '2025-02-21', '2025-07-21', 'Ongoing', 'Michael Green');
 /*!40000 ALTER TABLE `project` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -291,27 +257,6 @@ CREATE TABLE `rates` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 
-INSERT INTO `rates` (`rate_id`, `item_id`, `rate_type`, `item_name`, `quantity`, `price_pu`, `category_id`) VALUES
-(1, 1, 'Tools', 'Hammer', 20, 500.00, 1),
-(2, 2, 'Tools', 'Screwdriver Set', 15, 750.00, 1),
-(3, 3, 'Electronics', 'LED Monitor', 12, 15000.00, 2),
-(4, 4, 'Electronics', 'Laptop', 10, 60000.00, 2),
-(5, 5, 'Pumping', 'Water Pump', 5, 25000.00, 3),
-(6, 6, 'Pumping', 'Submersible Pump', 3, 30000.00, 3),
-(7, 7, 'Drip', 'Drip Irrigation Kit', 8, 10000.00, 4),
-(8, 8, 'Drip', 'Smart Irrigation Controller', 6, 12000.00, 4),
-(9, 9, 'Plumbing', 'PVC Pipes', 25, 2000.00, 5),
-(10, 10, 'Plumbing', 'Pipe Fittings Set', 30, 1500.00, 5),
-(11, 11, 'Automation', 'Electric Valve', 10, 5000.00, 6),
-(12, 12, 'Automation', 'Automation Controller', 5, 25000.00, 6),
-(13, 13, 'Automation', 'Solar Panel', 7, 40000.00, 6),
-(14, 14, 'Automation', 'Wiring Kit', 20, 3000.00, 6),
-(15, 15, 'Labour', 'Skilled Labour ', 50, 500.00, 7),
-(16, 16, 'Labour', 'Unskilled Labour ', 70, 300.00, 7),
-(17, 17, 'Labour', 'Plumbing Labour ', 40, 400.00, 7),
-(18, 18, 'Labour', 'Masonry Labour ', 30, 450.00, 7);
-/*!40101 ALTER TABLE `rates` ENABLE KEYS */;
-UNLOCK TABLES;
 --
 -- Table structure for table `stock`
 --
@@ -339,7 +284,6 @@ CREATE TABLE `works_on` (
 
 LOCK TABLES `works_on` WRITE;
 /*!40000 ALTER TABLE `works_on` DISABLE KEYS */;
-INSERT INTO `works_on` VALUES (1,2),(3,2),(2,4),(4,4);
 /*!40000 ALTER TABLE `works_on` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -372,13 +316,6 @@ CREATE TABLE `add_expenses` (
 
 LOCK TABLES `add_expenses` WRITE;
 /*!40000 ALTER TABLE `add_expenses` DISABLE KEYS */;
-INSERT INTO `add_expenses` (`Exp_ID`, `Date`, `id`, `pid`, `Amount`, `Comments`) VALUES
-(1, '2024-03-01', 12, 1, 5000.00, 'Project material purchase'), 
-(2, '2024-03-02', 13, 2, 3000.50, 'Sensor installation cost'), 
-(3, '2024-03-05', 14, 3, 4200.75, 'Automation setup expense'), 
-(4, '2024-03-07', 15, 4, 2500.00, 'Consultation charges'), 
-(5, '2024-03-10', 16, 5, 10000.00, 'Drone surveillance setup'), 
-(6, '2024-03-12', 14, 6, 3200.25, 'Beta testing expenses');
 /*!40000 ALTER TABLE `add_expenses` ENABLE KEYS */;
 UNLOCK TABLES;
 
