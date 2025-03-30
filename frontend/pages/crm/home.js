@@ -1,16 +1,27 @@
+"use client";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import dynamic from "next/dynamic"; // Import dynamic to handle client-side rendering
+import dynamic from "next/dynamic";
 import { FiUsers, FiBell, FiPackage } from "react-icons/fi";
 import { motion } from "framer-motion";
 import BackButton from "@/components/BackButton";
 import Footer from "@/components/Footer";
 
-// Dynamically import StarryBackground to prevent hydration errors
-const StarryBackground = dynamic(() => import("@/components/StarryBackground"), { ssr: false });
-
+// Dynamically import StarryBackground with SSR disabled
+const StarryBackground = dynamic(
+  () => import("@/components/StarryBackground"), 
+  { 
+    ssr: false,
+    loading: () => <div className="fixed inset-0 bg-gray-900 z-0" />
+  }
+);
 const HomePage = () => {
   const [notification, setNotification] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (notification) {
@@ -24,6 +35,14 @@ const HomePage = () => {
   const handleButtonClick = (section) => {
     setNotification(`Navigating to ${section}...`);
   };
+
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -101,7 +120,7 @@ const HomePage = () => {
       </div>
       <Footer />
 
-      {/* Global Styles */}
+      {/* Global Styles - Kept exactly as you had them */}
       <style jsx global>{`
         body {
           background: linear-gradient(to bottom right, #0f172a, #1e293b);
@@ -174,5 +193,4 @@ const HomePage = () => {
   );
 };
 
-// Disable SSR for this component to prevent hydration mismatch
 export default dynamic(() => Promise.resolve(HomePage), { ssr: false });

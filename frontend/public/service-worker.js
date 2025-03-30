@@ -1,65 +1,58 @@
-const CACHE_NAME = 'reminder-v1';
-const API_ENDPOINT = '/api/reminders?check';
-const NOTIFICATION_ICON = '/notification-icon.png';
-
-// Install and activate immediately
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME));
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-  startBackgroundSync();
-});
-
-// Background sync setup
-function startBackgroundSync() {
-  // Initial check
-  checkReminders();
-  // Check every minute
-  setInterval(checkReminders, 60000);
-}
-
-async function checkReminders() {
-  try {
-    const response = await fetch(API_ENDPOINT);
-    const reminders = await response.json();
+// service-worker.js
+self.addEventListener('install', event => {
+    self.skipWaiting();
+    console.log('Service Worker installed');
+  });
+  
+  self.addEventListener('activate', event => {
+    console.log('Service Worker activated');
+  });
+  
+  // Listen for messages from the client
+  self.addEventListener('message', event => {
+    if (event.data === 'startBackgroundChecks') {
+      console.log('Starting background reminder checks');
+      startPeriodicChecks();
+    }
+  });
+  
+  // Check for reminders every minute
+  function startPeriodicChecks() {
+    // Initial check
+    checkForDueReminders();
     
-    reminders.forEach(reminder => {
-      showNotification(reminder);
-      notifyClients(reminder);
-    });
-  } catch (error) {
-    console.error('Background sync failed:', error);
+    // Set up interval for future checks (every minute)
+    setInterval(checkForDueReminders, 60000);
   }
-}
-
-function showNotification(reminder) {
-  self.registration.showNotification('🔔 Reminder Alert', {
-    body: `Customer: ${reminder.cname}\nMessage: ${reminder.message}`,
-    icon: NOTIFICATION_ICON,
-    badge: NOTIFICATION_ICON,
-    vibrate: [200, 100, 200],
-    data: { url: self.location.origin + '/crm/reminder' }
-  });
-}
-
-function notifyClients(reminder) {
-  self.clients.matchAll().then(clients => {
-    clients.forEach(client => {
-      client.postMessage({
-        type: 'REMINDER_TRIGGERED',
-        reminder,
-        sound: '/notification.mp3'
+  
+  async function checkForDueReminders() {
+    try {
+      // Make API call to check for due reminders
+      const response = await fetch('/api/reminders?check=true', {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       });
-    });
-  });
-}
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  event.waitUntil(
-    self.clients.openWindow(event.notification.data.url)
-  );
-});
+      
+      if (!response.ok) throw new Error('Failed to check reminders');
+      
+      const reminders = await response.json();
+      
+      // If we have due reminders, notify all clients
+      if (reminders && reminders.length > 0) {
+        const clients = await self.clients.matchAll();
+        
+        reminders.forEach(reminder => {
+          // Send message to all clients
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'REMINDER_DUE',
+              reminder
+            });
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error checking reminders:', error);
+    }
+  }

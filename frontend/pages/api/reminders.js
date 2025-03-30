@@ -5,25 +5,39 @@ export default async function handler(req, res) {
   try {
     connection = await connectToDB();
 
-    // Required headers
+    // Set necessary headers for service worker
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Service-Worker-Allowed", "/");
+    
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      return res.status(200).end();
+    }
 
     // **CHECK FOR DUE REMINDERS**
-    if (req.method === "GET" && req.query.check) {
+    if (req.method === "GET" && req.query.check === "true") {
       const [reminders] = await connection.query(`
-        SELECT r.*, c.cname 
+        SELECT r.rid, r.cid, r.message, r.reminder_date, r.reminder_time, c.cname,
+          CONCAT(r.reminder_date, 'T', r.reminder_time) AS datetime
         FROM reminders r
         LEFT JOIN customer c ON r.cid = c.cid 
-        WHERE STR_TO_DATE(CONCAT(r.reminder_date, ' ', r.reminder_time), '%Y-%m-%d %H:%i') <= UTC_TIMESTAMP()
+        WHERE STR_TO_DATE(CONCAT(r.reminder_date, ' ', r.reminder_time), '%Y-%m-%d %H:%i') <= NOW()
       `);
 
+      // Only delete reminders after sending them (since we'll notify)
       if (reminders.length > 0) {
-        const [deleteResult] = await connection.query(`
-          DELETE FROM reminders 
-          WHERE STR_TO_DATE(CONCAT(reminder_date, ' ', reminder_time), '%Y-%m-%d %H:%i') <= UTC_TIMESTAMP()
-        `);
-        console.log(`Deleted ${deleteResult.affectedRows} reminders.`);
+        // Get all RIDs to delete
+        const reminderIds = reminders.map(r => r.rid);
+        
+        // Delete in a separate query to ensure we have the data first
+        const [deleteResult] = await connection.query(
+          `DELETE FROM reminders WHERE rid IN (?)`,
+          [reminderIds]
+        );
+        
+        console.log(`Deleted ${deleteResult.affectedRows} due reminders.`);
       }
 
       return res.status(200).json(reminders);
@@ -55,7 +69,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "All fields are required" });
       }
 
-      // First check if customer exists
+      // Check if customer exists
       const [customer] = await connection.query(
         "SELECT cid FROM customer WHERE cid = ?", 
         [cid]
@@ -73,7 +87,8 @@ export default async function handler(req, res) {
         );
 
         const [newReminder] = await connection.query(
-          `SELECT r.*, c.cname 
+          `SELECT r.*, c.cname,
+            CONCAT(r.reminder_date, 'T', r.reminder_time) AS datetime
            FROM reminders r
            LEFT JOIN customer c ON r.cid = c.cid
            WHERE r.rid = ?`,
