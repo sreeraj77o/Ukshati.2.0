@@ -66,10 +66,9 @@ export default async function generatePDF(expenseData) {
       doc.text("Main Expenses", 14, finalY);
       autoTable(doc, {
         startY: finalY + 5,
-        head: [["Date", "Category", "Description", "Amount"]],
+        head: [["Date", "Description", "Amount"]],
         body: expenseData.expenses.map(exp => [
           new Date(exp.date).toLocaleDateString('en-GB'), // DD/MM/YYYY format
-          exp.category,
           exp.comments,
           formatCurrency(exp.amount)
         ]),

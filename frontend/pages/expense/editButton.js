@@ -30,37 +30,13 @@ export default function EditButton({ project, fetchProjects }) {
         clientName: project?.cname || "",
         startDate: formatDateForInput(project?.start_date),
         endDate: formatDateForInput(project?.end_date),
-        amount: project?.total_amount || "",
-        comments: project?.comments || "",
+        amount: project?.Amount || "",
+        comments: project?.Comments || "",
       });
     }
   }, [project]);
 
-  useEffect(() => {
-    const storedRole = localStorage.getItem("userRole"); //changed
 
-    console.log("Fetching stored email:", localStorage.getItem("userEmail"));
-    setUserRole(localStorage.getItem("userRole") || "");
-
-    setUserRole(storedRole);
-
-    if (project) {
-      const formatDateForInput = (date) => {
-        if (!date) return "";
-        const parts = date.split("-");
-        return `${parts[2]}-${parts[1]}-${parts[0]}`; // YYYY-MM-DD //changes
-      };
-
-      setEditedProject({
-        projectName: project.pname || "",
-        clientName: project.cname || "",
-        startDate: formatDateForInput(project.start_date),
-        endDate: formatDateForInput(project.end_date),
-        amount: project.total_amount || "",
-        comments: project.comments || "",
-      });
-    }
-  }, [project]);
 
   const handleEditClick = () => {
     if (localStorage.getItem("userRole").toLowerCase() !== "admin") {

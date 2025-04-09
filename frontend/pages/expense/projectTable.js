@@ -35,10 +35,9 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
   }, [searchQuery, projects]);
 
   const totalSum = filteredProjects.reduce(
-    (acc, proj) => acc + (parseFloat(proj.total_amount) || 0),
+    (acc, proj) => acc + (parseFloat(proj.Amount) || 0),
     0
   );
-
   const downloadCSV = () => {
     const csvContent = [
       ["Project", "Client", "Start Date", "End Date", "Amount", "Comments"],
@@ -47,10 +46,11 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
         proj.cname,
         proj.start_date,
         proj.end_date,
-        proj.total_amount,
-        proj.comments || "N/A",
+        proj.Amount || "0",
+
+        proj.Comments || "N/A",
       ]),
-      ["", "", "", "Total", totalSum.toFixed(2), ""],
+      ["", "", "", "Total", totalSum.toFixed(2), "", ""],
     ]
       .map((e) => e.join(","))
       .join("\n");
@@ -90,16 +90,17 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
           <td>${proj.cname || "N/A"}</td>
           <td>${proj.start_date || "N/A"}</td>
           <td>${proj.end_date || "N/A"}</td>
-          <td>₹${proj.total_amount || "0"}</td>
-          <td>${proj.comments || "N/A"}</td>
+          <td>₹${proj.Amount || "0"}</td>
+       
+          <td>${proj.Comments || "N/A"}</td>
         </tr>
       `);
     });
 
     printWindow.document.write(
-      `<tr><td colspan='5' style='text-align:right; font-weight:bold;'>Total:</td><td>₹${totalSum.toFixed(
+      `<tr><td colspan='4' style='text-align:right; font-weight:bold;'>Total:</td><td>₹${totalSum.toFixed(
         2
-      )}</td><td></td></tr>`
+      )}</td><td></td><td></td></tr>`
     );
 
     printWindow.document.write("</table></body></html>");
@@ -108,93 +109,97 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
   };
 
   return (
-    <div><BackButton route="/expense"/>
-    <div className="min-h-screen flex justify-center items-center relative bg-cover bg-center">
-      <StarryBackground />
-      <ScrollToTopButton/>
-      {/* Card Container */}
-      <div className="glass-card w-full max-w-5xl p-10 rounded-3xl text-center space-y-10">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-extrabold text-white">
-            Project Details
-          </h1>
+    <div>
+      <BackButton route="/expense" />
+      <div className="min-h-screen flex justify-center items-center relative bg-cover bg-center">
+        <StarryBackground />
+        <ScrollToTopButton />
+        {/* Card Container */}
+        <div className="glass-card w-[98vw] max-w-none p-10 rounded-3xl text-center space-y-10">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-4xl font-extrabold text-white">
+              Project Details
+            </h1>
 
-          {/* Search Input */}
-          <input
-            type="text"
-            placeholder="Search by Project Name"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-white/20 text-white p-2 rounded-lg focus:outline-none"
-          />
-        </div>
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search by Project Name"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white/20 text-white p-2 rounded-lg focus:outline-none"
+            />
+          </div>
 
-        {/* Table */}
-        <div>
-          <table className="w-full max-w-6xl text-white text-sm bg-white/10 backdrop-blur-lg rounded-3xl shadow-md overflow-hidden">
-            <thead>
-              <tr className="bg-black/40">
-                <th className="p-4">Project</th>
-                <th>Client</th>
-                {showStatus && <th>Status</th>}
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Amount</th>
-                <th>Comments</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProjects.length > 0 ? (
-                filteredProjects.map((proj, index) => (
-                  <tr key={index} className="hover:bg-white/10 transition-all">
-                    <td className="py-3">{proj.pname || "N/A"}</td>
-                    <td>{proj.cname || "N/A"}</td>
-                    {showStatus && <td>{proj.status || "N/A"}</td>}
-                    <td>{proj.start_date || "N/A"}</td>
-                    <td>{proj.end_date || "N/A"}</td>
-                    <td>₹{(parseFloat(proj.total_amount) || 0).toFixed(2)}</td>
-                    <td>{proj.comments || "N/A"}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="text-gray-400 py-5">
-                    No Projects Found!
-                  </td>
+          {/* Table */}
+          <div>
+            <table className="w-[95vw] max-w-none text-white text-sm bg-white/10 backdrop-blur-lg rounded-3xl shadow-md overflow-hidden">
+              <thead>
+                <tr className="bg-black/40">
+                  <th className="p-4">Project</th>
+                  <th>Client</th>
+                  {showStatus && <th>Status</th>}
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Amount</th>
+                  <th>Comments</th>
                 </tr>
-              )}
-            </tbody>
-            <tfoot>
-              <tr className="bg-black/40 font-semibold">
-                <td
-                  colSpan={showStatus ? 6 : 5}
-                  className="text-right font-semibold py-3"
-                >
-                  Total:
-                </td>
-                <td>₹{totalSum.toFixed(2)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredProjects.length > 0 ? (
+                  filteredProjects.map((proj, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-white/10 transition-all"
+                    >
+                      <td className="py-3">{proj.pname || "N/A"}</td>
+                      <td>{proj.cname || "N/A"}</td>
+                      {showStatus && <td>{proj.status || "N/A"}</td>}
+                      <td>{proj.start_date || "N/A"}</td>
+                      <td>{proj.end_date || "N/A"}</td>
+                      <td className="text-center">₹{proj.Amount || "0"}</td>
+                      <td className="text-center">{proj.Comments || "N/A"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-gray-400 py-5">
+                      No Projects Found!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="bg-black/40 font-semibold">
+                  <td
+                    colSpan={showStatus ? 6 : 5}
+                    className="text-right font-semibold py-3"
+                  >
+                    Total:
+                  </td>
+                  <td>₹{totalSum.toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
-        {/* Buttons for CSV and PDF */}
-        <div className="mt-8 flex justify-end gap-6">
-          <button
-            onClick={downloadCSV}
-            className="bg-gradient-to-r from-blue-500 to-blue-400 text-white py-2 px-6 rounded-lg"
-          >
-            Download CSV
-          </button>
-          <button
-            onClick={downloadPDF}
-            className="bg-gradient-to-r from-green-400 to-green-300 text-white py-2 px-6 rounded-lg"
-          >
-            Download PDF
-          </button>
+          {/* Buttons for CSV and PDF */}
+          <div className="mt-8 flex justify-end gap-6">
+            <button
+              onClick={downloadCSV}
+              className="bg-gradient-to-r from-blue-500 to-blue-400 text-white py-2 px-6 rounded-lg"
+            >
+              Download CSV
+            </button>
+            <button
+              onClick={downloadPDF}
+              className="bg-gradient-to-r from-green-400 to-green-300 text-white py-2 px-6 rounded-lg"
+            >
+              Download PDF
+            </button>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }

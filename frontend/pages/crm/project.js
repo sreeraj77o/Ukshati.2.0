@@ -9,7 +9,7 @@ export default function Projects() {
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("ongoing");
+  const [status, setStatus] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,6 +49,7 @@ export default function Projects() {
   };
    
   const statusOptions = [
+    { value: "", label: "Select Status" },
     { value: 'ongoing', label: 'Ongoing' },
     { value: 'on hold', label: 'On Hold' },
     { value: 'completed', label: 'Completed' }
@@ -96,7 +97,7 @@ export default function Projects() {
     setName("");
     setStartDate("");
     setEndDate("");
-    setStatus("ongoing");
+    setStatus("");
     setCustomerId("");
     setEditId(null);
   };
@@ -195,7 +196,7 @@ export default function Projects() {
               <option value="">Select Customer</option>
               {customers.map((customer) => (
                 <option key={customer.cid} value={customer.cid}>
-                  {customer.cname}
+                  {customer.cid} - {customer.cname}
                 </option>
               ))}
             </select>

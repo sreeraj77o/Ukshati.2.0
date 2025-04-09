@@ -1,7 +1,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import StarryBackground from "@/components/StarryBackground";
-import { FiArrowUp, FiCalendar, FiUser, FiDollarSign, FiFileText, FiCheckCircle } from "react-icons/fi";
+import {
+  FiArrowUp,
+  FiCalendar,
+  FiUser,
+  FiDollarSign,
+  FiFileText,
+  FiCheckCircle,
+} from "react-icons/fi";
 import BackButton from "@/components/BackButton";
 import { Scroll } from "lucide-react";
 import ScrollToTopButton from "@/components/scrollup";
@@ -34,7 +41,13 @@ export default function AddExpense() {
           if (!res.ok) throw new Error("Network response was not ok");
           return res.json();
         })
-        .then((data) => setProjects(data))
+        .then((data) => {
+          // Ensure only projects matching the selected status are displayed
+          const filteredProjects = data.filter(
+            (project) => project.status === projectStatus
+          );
+          setProjects(filteredProjects);
+        })
         .catch((err) => {
           console.error("Error fetching projects:", err);
           setProjects([]);
@@ -52,11 +65,18 @@ export default function AddExpense() {
       body: JSON.stringify({ date, employeeId, projectId, amount, comments }),
     });
     const data = await response.json();
-    setMessage(
-      response.status === 201
-        ? `Expense added successfully with ID: ${data.expenseId}`
-        : data.message || "Failed to add expense"
-    );
+    if (response.status === 201) {
+      setMessage(`Expense added successfully with ID: ${data.expenseId}`);
+      // Reset form fields
+      setDate("");
+      setProjectStatus("");
+      setProjectId("");
+      setAmount("");
+      setComments("");
+      setProjects([]);
+    } else {
+      setMessage(data.message || "Failed to add expense");
+    }
   };
 
   return (
@@ -74,7 +94,9 @@ export default function AddExpense() {
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                 Add New Expense
               </h1>
-              <p className="text-gray-300 text-lg">Track your project expenditures seamlessly</p>
+              <p className="text-gray-300 text-lg">
+                Track your project expenditures seamlessly
+              </p>
             </div>
 
             {/* Form Section */}
@@ -123,9 +145,15 @@ export default function AddExpense() {
                     required
                     className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white appearance-none"
                   >
-                    <option value="" className="bg-gray-800">Select Status</option>
-                    <option value="Ongoing" className="bg-gray-800">Ongoing</option>
-                    <option value="On Hold" className="bg-gray-800">On Hold</option>
+                    <option value="" className="bg-gray-800">
+                      Select Status
+                    </option>
+                    <option value="Ongoing" className="bg-gray-800">
+                      Ongoing
+                    </option>
+                    <option value="On Hold" className="bg-gray-800">
+                      On Hold
+                    </option>
                   </select>
                 </div>
 
@@ -142,9 +170,15 @@ export default function AddExpense() {
                     disabled={!projectStatus}
                     className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="" className="bg-gray-800">Select Project</option>
+                    <option value="" className="bg-gray-800">
+                      Select Project
+                    </option>
                     {projects.map((project) => (
-                      <option key={project.pid} value={project.pid} className="bg-gray-800">
+                      <option
+                        key={project.pid}
+                        value={project.pid}
+                        className="bg-gray-800"
+                      >
                         {project.pname} (ID: {project.pid})
                       </option>
                     ))}
@@ -204,8 +238,14 @@ export default function AddExpense() {
       <style jsx global>{`
         /* Custom animations */
         @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .animate-fade-in {
@@ -227,7 +267,7 @@ export default function AddExpense() {
           margin: 0;
         }
 
-        input[type=number] {
+        input[type="number"] {
           -moz-appearance: textfield;
         }
       `}</style>

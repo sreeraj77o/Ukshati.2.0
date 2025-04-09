@@ -360,7 +360,7 @@ const bankXOffset = 45;  // Change this value to shift more to the right
   
         {customer && (
           <p className="text-white">
-            <strong>Customer:</strong> {customer.customer_name}, <strong>Address:</strong> {customer.address}
+            <strong>Customer:</strong> {customer.customer_name}
           </p>
         )}
   
