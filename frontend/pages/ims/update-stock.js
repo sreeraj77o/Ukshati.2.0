@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import StarryBackground from "@/components/StarryBackground";
-import { FiArrowLeft, FiSearch, FiEdit, FiX, FiActivity, FiFilter } from "react-icons/fi";
+import { FiArrowLeft, FiSearch, FiEdit, FiX, FiActivity, FiFilter, FiPlus, FiMinus } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
 // Custom Pagination Component
@@ -41,6 +41,221 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
         >
           {'>'}
         </button>
+      </div>
+    </div>
+  );
+};
+
+// Custom Modal Component
+const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
+  const [formData, setFormData] = useState({
+    quantity: "",
+    price: ""
+  });
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (stock) {
+      setFormData({
+        quantity: "",
+        price: stock.price_pu || ""
+      });
+    }
+  }, [stock]);
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.quantity || isNaN(formData.quantity) || parseFloat(formData.quantity) <= 0) {
+      newErrors.quantity = "Please enter a valid quantity";
+    }
+    
+    if (!formData.price || isNaN(formData.price) || parseFloat(formData.price) <= 0) {
+      newErrors.price = "Please enter a valid price";
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    if (userRole?.toLowerCase() !== "admin") {
+      alert("Admin access required to update stock");
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      onUpdate({
+        stockId: stock.stock_id,
+        quantity: Number(formData.quantity),
+        price: parseFloat(formData.price)
+      });
+    } catch (err) {
+      console.error("Update error:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleIncrement = (field) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: ((parseFloat(prev[field]) || 0) + 1).toString()
+    }));
+  };
+
+  const handleDecrement = (field) => {
+    const currentValue = parseFloat(formData[field]) || 0;
+    if (currentValue > 0) {
+      setFormData(prev => ({
+        ...prev,
+        [field]: (currentValue - 1).toString()
+      }));
+    }
+  };
+
+  if (!stock) return null;
+
+  return (
+    <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-70 z-50 p-4">
+      <div className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-md overflow-hidden shadow-2xl">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-blue-400">Add Stock</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <FiX size={24} />
+            </button>
+          </div>
+
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300 font-medium">Product:</span>
+              <span className="text-white">{stock.item_name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300 font-medium">Category:</span>
+              <span className="text-white">{stock.category_name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300 font-medium">Current Quantity:</span>
+              <span className="text-white">{stock.quantity}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-300 font-medium">Current Price:</span>
+              <span className="text-white">₹{stock.price_pu || "0.00"}</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="quantity" className="block text-gray-300 mb-2">
+                Quantity to Add
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDecrement("quantity")}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <FiMinus />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleIncrement("quantity")}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <FiPlus />
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  id="quantity"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleChange}
+                  className="w-full pl-24 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                  min="1"
+                  step="1"
+                />
+              </div>
+              {errors.quantity && (
+                <p className="mt-1 text-sm text-red-400">{errors.quantity}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="price" className="block text-gray-300 mb-2">
+                New Price per Unit (₹)
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDecrement("price")}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <FiMinus />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleIncrement("price")}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <FiPlus />
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full pl-24 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                  min="0.01"
+                  step="0.01"
+                />
+              </div>
+              {errors.price && (
+                <p className="mt-1 text-sm text-red-400">{errors.price}</p>
+              )}
+            </div>
+
+            <div className="pt-4 flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? "Updating..." : "Add Stock"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -112,21 +327,8 @@ export default function StockUpdate() {
     setCurrentPage(1); // Reset to first page when filters change
   }, [stocks, searchTerm, selectedCategory]);
 
-  const handleUpdateStock = async () => {
-    if (userRole?.toLowerCase() !== "admin") { 
-      alert("Admin access required to update stock");
-      return;
-    }
-
+  const handleUpdateStock = async (updateData) => {
     try {
-      const quantity = prompt("Enter quantity to add:");
-      if (!quantity || isNaN(quantity)) 
-        throw new Error("Invalid quantity");
-
-      const price = prompt("Enter price to add:");
-      if (!price || isNaN(price)) 
-        throw new Error("Invalid price");
-
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
 
@@ -136,11 +338,7 @@ export default function StockUpdate() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          stockId: currentStock.stock_id,
-          quantity: Number(quantity),
-          price: parseFloat(price)
-        }),
+        body: JSON.stringify(updateData),
       });
 
       const data = await response.json();
@@ -167,6 +365,10 @@ export default function StockUpdate() {
   };
 
   const openModal = (stock) => {
+    if (userRole?.toLowerCase() !== "admin") { 
+      alert("Admin access required to update stock");
+      return;
+    }
     setCurrentStock(stock);
     setIsModalOpen(true);
   };
@@ -280,13 +482,13 @@ export default function StockUpdate() {
                     </td>
                     <td className="p-3 text-center">{stock.quantity}</td>
                     <td className="p-3 text-center">₹{stock.price_pu || "0.00"}</td>
-                    <td className="p-3 text-center">₹{stock.price_pu * stock.quantity || "0.00"}</td>
+                    <td className="p-3 text-center">₹{(stock.price_pu * stock.quantity).toFixed(2) || "0.00"}</td>
                     <td className="p-3 text-center">
                       <button
                         onClick={() => openModal(stock)}
-                        className={`px-4 py-2 rounded ${
+                        className={`px-4 py-2 rounded-lg transition-all ${
                           userRole?.toLowerCase() === "admin"
-                            ? "bg-blue-600 text-white hover:bg-blue-700"
+                            ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg"
                             : "bg-gray-300 cursor-not-allowed"
                         }`}
                         disabled={userRole?.toLowerCase() !== "admin"}
@@ -329,31 +531,13 @@ export default function StockUpdate() {
       </main>
 
       {/* Update Stock Modal */}
-      {isModalOpen && currentStock && (
-        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50">
-          <div className="bg-gray-800 p-6 rounded-lg w-80">
-            <h2 className="text-xl font-bold mb-4 text-blue-400">Update Stock</h2>
-            <p className="text-gray-300"><strong>Product:</strong> {currentStock.item_name}</p>
-            <p className="text-gray-300"><strong>Category:</strong> {currentStock.category_name}</p>
-            <p className="text-gray-300"><strong>Current Quantity:</strong> {currentStock.quantity}</p>
-            <p className="text-gray-300"><strong>Current Price:</strong> ₹{currentStock.price_pu || "0.00"}</p>
-            
-            <div className="mt-4">
-              <button
-                onClick={handleUpdateStock}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Update
-              </button>
-            </div>
-            <button
-              onClick={closeModal}
-              className="w-full mt-2 px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+      {isModalOpen && (
+        <UpdateStockModal
+          stock={currentStock}
+          onClose={closeModal}
+          onUpdate={handleUpdateStock}
+          userRole={userRole}
+        />
       )}
     </div>
   );

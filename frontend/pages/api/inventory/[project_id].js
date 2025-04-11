@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       SELECT 
         s.item_name AS productName,
         ispent.quantity_used AS quantity,
-        ROUND(ispent.quantity_used * (s.price_pu / s.quantity), 2) AS price,
+        ROUND(ispent.quantity_used * s.price_pu) AS price,
         ispent.remark
       FROM inventory_spent ispent
       JOIN stock s ON ispent.stock_id = s.stock_id

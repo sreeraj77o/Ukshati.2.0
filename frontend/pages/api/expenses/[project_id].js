@@ -37,8 +37,7 @@ export default async function handler(req, res) {
           e.Date AS date, 
           e.Amount AS amount, 
           e.Status AS status, 
-          e.Comments AS comments, 
-          COALESCE(c.category_name, 'Uncategorized') AS category
+          e.Comments AS comments
        FROM add_expenses e
        LEFT JOIN rates r ON e.id = r.item_id
        LEFT JOIN category c ON r.category_id = c.category_id

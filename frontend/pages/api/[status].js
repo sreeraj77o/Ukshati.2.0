@@ -15,21 +15,23 @@ export default async function handler(req, res) {
 
     // SQL Query with amount and comments, fetching cname from customer table
     const query = `
-      SELECT 
-        p.pid, p.pname, c.cname AS cname, 
-        DATE_FORMAT(p.start_date, '%d-%m-%Y') AS start_date,
-        DATE_FORMAT(p.end_date, '%d-%m-%Y') AS end_date,
-        COALESCE(SUM(e.Amount), 0) AS total_amount,
-        GROUP_CONCAT(e.Comments SEPARATOR '; ') AS comments
-      FROM project p
-      LEFT JOIN add_expenses e ON p.pid = e.pid
-      LEFT JOIN customer c ON p.cid = c.cid
-      WHERE p.status = ?
-      GROUP BY p.pid, p.pname, c.cname, p.start_date, p.end_date
-      ORDER BY p.start_date, p.end_date;
-    `;
+  SELECT 
+    p.pid, p.pname, c.cname AS cname, 
+    DATE_FORMAT(p.start_date, '%d-%m-%Y') AS start_date,
+    DATE_FORMAT(p.end_date, '%d-%m-%Y') AS end_date,
+    e.Exp_ID, 
+    DATE_FORMAT(e.Date, '%d-%m-%Y') AS expense_date,
+    e.Amount,
+    e.Comments
+  FROM project p
+  LEFT JOIN add_expenses e ON p.pid = e.pid
+  LEFT JOIN customer c ON p.cid = c.cid
+  WHERE p.status = ?
+  ORDER BY p.start_date, p.end_date, e.Date;
+`;
 
     const [results] = await db.execute(query, [status]);
+
     console.log(`Projects fetched for status "${status}":`, results);
 
     db.end();

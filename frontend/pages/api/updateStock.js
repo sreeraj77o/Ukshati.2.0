@@ -28,7 +28,9 @@ export default async function handler(req, res) {
     // Update stock
     await connection.execute(
       `UPDATE stock 
-       SET quantity = quantity + ?, price_pu = ?
+       SET quantity = quantity + ?, 
+           price_pu = ?,
+           last_updated = NOW()
        WHERE stock_id = ?`,
       [Number(quantity), parseFloat(price), stockId]
     );

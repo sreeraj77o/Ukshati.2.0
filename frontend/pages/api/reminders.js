@@ -108,29 +108,25 @@ export default async function handler(req, res) {
     }
 
     // **DELETE A REMINDER**
-    if (req.method === "DELETE") {
-      const { rid } = req.query;
-      if (!rid || isNaN(rid)) return res.status(400).json({ error: "Valid ID required" });
+    if (req.method === 'DELETE') {
+      const { rids } = req.body || {};
 
       try {
-        const [deleteResult] = await connection.query(
-          "DELETE FROM reminders WHERE rid = ?", 
-          [rid]
-        );
-
-        if (deleteResult.affectedRows === 0) {
-          return res.status(404).json({ error: "Reminder not found or already deleted" });
+        if (rids && rids.length > 0) {
+          // Delete selected reminders
+          const [result] = await connection.query(
+            'DELETE FROM reminders WHERE rid IN (?)',
+            [rids]
+          );
+          return res.status(200).json({ message: `${result.affectedRows} reminders deleted.` });
+        } else {
+          // Delete all reminders
+          const [result] = await connection.query('DELETE FROM reminders');
+          return res.status(200).json({ message: `${result.affectedRows} reminders deleted.` });
         }
-
-        return res.status(204).end();
       } catch (error) {
-        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-          return res.status(400).json({ 
-            error: "Cannot delete reminder",
-            details: "This reminder is referenced by other records"
-          });
-        }
-        throw error;
+        console.error('Error deleting reminders:', error);
+        return res.status(500).json({ error: 'Failed to delete reminders.' });
       }
     }
 
