@@ -4,7 +4,6 @@ import BillHeading from '../../components/BillHeading';
 import ProjectDropdown from '../../components/ProjectDropdown';
 import ExpenseDetails from '../../components/ExpenseDetails';
 import generatePDF from '../../components/pdfGenerator';
-import StarryBackground from '@/components/StarryBackground';
 import BackButton from '@/components/BackButton';
 import ScrollToTopButton from '@/components/scrollup';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -36,21 +35,18 @@ export default function Home() {
   }, [expenseData]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen bg-black overflow-hidden">
       <BackButton route='/dashboard' />
       <ScrollToTopButton/>
-      
-      <StarryBackground />
-      
       <div className="relative z-10 flex items-center justify-center min-h-screen p-2 sm:p-4 md:p-6">
-        <div className="w-full max-w-4xl mb-16 sm:mb-20 md:mb-28 space-y-6 md:space-y-8 backdrop-blur-lg bg-black/30 rounded-xl sm:rounded-2xl border border-white/10 shadow-lg sm:shadow-2xl p-4 sm:p-6 md:p-8 transition-all duration-300">
+        <div className="w-full max-w-4xl mb-16 sm:mb-20 md:mb-28 space-y-6 md:space-y-8 backdrop-blur-lg bg-black/30 rounded-xl sm:rounded-2xl border border-gray-600 shadow-lg sm:shadow-2xl p-4 sm:p-6 md:p-8 transition-all duration-300">
           <div className="space-y-4 md:space-y-6">
             <BillHeading />
             
             <div className="space-y-1 md:space-y-2">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text flex items-center justify-center gap-2">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-transparent bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text flex items-center justify-center gap-2">
                 <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400"
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -85,7 +81,7 @@ export default function Home() {
                 >
                   <button
                     onClick={() => generatePDF(expenseData)}
-                    className="relative overflow-hidden h-10 sm:h-12 w-32 sm:w-40 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transition-all duration-300"
+                    className="relative overflow-hidden h-10 sm:h-12 w-32 sm:w-40 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transition-all duration-300"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-white text-xs sm:text-sm transition-all duration-300 group-hover:-translate-y-4 group-hover:opacity-0">

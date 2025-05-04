@@ -20,7 +20,7 @@ export default function ProjectDropdown({ onSelect }) {
               <GlobeAltIcon className="w-5 h-5 text-purple-500" />
               <span>
                 <span className="font-semibold">{project.pname}</span>
-                <span className="text-gray-500 ml-2">(ID: {project.pid})</span>
+                <span className="text-gray-800 ml-2">(ID: {project.pid})</span>
               </span>
             </div>
           ),
@@ -48,7 +48,7 @@ export default function ProjectDropdown({ onSelect }) {
       borderRadius: "0.75rem",
       padding: "0.5rem",
       boxShadow: "none",
-      "&:hover": { borderColor: "#9333EA" }
+      "&:hover": { borderColor: "#00FFFF" }
     }),
     singleValue: (base) => ({
       ...base,
@@ -56,15 +56,15 @@ export default function ProjectDropdown({ onSelect }) {
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: "#1F2937",
+      backgroundColor: "#00BBBB",
       borderRadius: "0.75rem",
-      border: "1px solid #4B5563",
+      border: "1px solid #00BBBB",
     }),
     option: (base, { isFocused }) => ({
       ...base,
-      backgroundColor: isFocused ? "#9333EA" : "transparent",
-      color: isFocused ? "white" : "#E5E7EB",
-      "&:active": { backgroundColor: "#6B21A8" }
+      backgroundColor: isFocused ? "#00BBBB" : "transparent",
+      color: isFocused ? "black" : "#E5E7EB",
+      "&:active": { backgroundColor: "#00FFFF" }
     }),
     input: (base) => ({
       ...base,
@@ -72,14 +72,14 @@ export default function ProjectDropdown({ onSelect }) {
     }),
     placeholder: (base) => ({
       ...base,
-      color: "#9CA3AF",
+      color: "#00FFFF",
     }),
   };
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <div className="text-center space-y-1">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
           Select Project
         </h2>
         <p className="text-gray-400 text-sm">
@@ -88,7 +88,7 @@ export default function ProjectDropdown({ onSelect }) {
       </div>
 
       {error && (
-        <div className="flex items-center bg-red-500/20 p-3 rounded-lg border border-red-500/30">
+        <div className="flex items-center bg-cyan-500/20 p-3 rounded-lg border border-blue-500/30">
           <span className="text-red-400 text-sm">{error}</span>
         </div>
       )}

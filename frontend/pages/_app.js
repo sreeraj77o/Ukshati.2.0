@@ -1,5 +1,3 @@
-// pages/_app.js
-
 import { useEffect } from 'react';
 import { initializeNotifications } from '@/utils/notification-system';
 import '../app/globals.css';

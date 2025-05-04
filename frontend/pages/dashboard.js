@@ -517,7 +517,7 @@ useEffect(() => {
         const storedRole = localStorage.getItem("userRole");
         
         if (!storedUser || !storedRole) {
-          router.push("/login");
+          router.push("/");
           return;
         }
 
@@ -530,7 +530,7 @@ useEffect(() => {
         setUserRole(storedRole.toLowerCase());
       } catch (error) {
         console.error("Session load error:", error);
-        router.push("/login");
+        router.push("/");
       }
     };
     loadUserData();
@@ -570,13 +570,13 @@ useEffect(() => {
     localStorage.removeItem("user");
     localStorage.removeItem("userRole");
     localStorage.removeItem("token");
-    router.push("/login");
+    router.push("/");
   };
 
-  const openAboutUs = () => triggerBubbleTransition(() => setIsAboutUsOpen(true));
-  const closeAboutUs = () => triggerBubbleTransition(() => setIsAboutUsOpen(false));
-  const openContactUs = () => triggerBubbleTransition(() => setIsContactUsOpen(true));
-  const closeContactUs = () => triggerBubbleTransition(() => setIsContactUsOpen(false));
+  const openAboutUs = ()  => setIsAboutUsOpen(true);
+  const closeAboutUs = () => setIsAboutUsOpen(false);
+  const openContactUs = () => setIsContactUsOpen(true);
+  const closeContactUs = () => setIsContactUsOpen(false);
 
   if (loading) {
     return (

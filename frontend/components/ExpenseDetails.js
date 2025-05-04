@@ -141,7 +141,7 @@ export default function ExpenseDetails({ projectId, setExpenseData }) {
       <div className="space-y-4">
         <button
           onClick={() => setExtraExpenses([...extraExpenses, { item: "", quantity: 1, unitPrice: 0 }])}
-          className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-[1.02]"
+          className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-semibold py-3 px-6 rounded-lg transition-all transform hover:scale-[1.02]"
         >
           ➕ Add New Expense Item
         </button>

@@ -17,13 +17,24 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState("100vh");
 
   useEffect(() => {
     setIsClient(true);
-    // Clear previous session on component mount
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userRole");
+
+    // Handle mobile viewport height
+    const setHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      setViewportHeight(`${window.innerHeight}px`);
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setHeight();
+    window.addEventListener('resize', setHeight);
+    return () => window.removeEventListener('resize', setHeight);
   }, []);
 
   const handleLogin = async (e) => {
@@ -44,9 +55,7 @@ export default function Login() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed. Please try again.");
-      }
+      if (!response.ok) throw new Error(data.message || "Login failed. Please try again.");
 
       // Store authentication data
       localStorage.setItem("token", data.token);
@@ -54,6 +63,8 @@ export default function Login() {
       localStorage.setItem("userRole", data.user.role);
       localStorage.setItem("userEmail", data.user.email);
       
+      // Replace history to prevent back navigation
+      window.history.replaceState(null, null, window.location.href);
       router.push("/dashboard");
 
     } catch (err) {
@@ -72,7 +83,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ height: viewportHeight }}>
+      {/* Prevent zoom on mobile */}
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      
       {/* Background */}
       <motion.div
         className="absolute inset-0 z-0"
@@ -82,9 +96,9 @@ export default function Login() {
           background: `linear-gradient(-45deg, 
             #0a192f 0%, 
             #172a45 25%, 
-rgb(0, 0, 0) 50%, 
-rgb(0, 0, 0) 75%, 
-rgb(0, 0, 0) 100%)`,
+            rgb(0, 0, 0) 50%, 
+            rgb(0, 0, 0) 75%, 
+            rgb(0, 0, 0) 100%)`,
           backgroundSize: "400% 400%"
         }}
       />
@@ -104,39 +118,38 @@ rgb(0, 0, 0) 100%)`,
               />
             </Link>
           </NavbarBrand>
-          <NavbarContent justify="end"></NavbarContent>
         </Navbar>
       </div>
 
       {/* Main Content */}
       <main className="flex-grow flex items-center justify-center p-4 pt-24 pb-16">
-        <div className="bg-white bg-opacity-10 p-6 md:p-8 rounded-lg shadow-xl w-full max-w-md transform transition duration-300 hover:scale-[1.01] hover:shadow-[0px_4px_20px_rgba(0,255,255,0.3)] hover:backdrop-blur-lg">
-          <div className="text-center mb-6 md:mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+        <div className="bg-white bg-opacity-10 p-4 md:p-8 rounded-xl shadow-xl w-full max-w-xs md:max-w-md transform transition duration-300 hover:scale-[1.01] hover:shadow-[0px_4px_20px_rgba(0,255,255,0.3)]">
+          <div className="text-center mb-6">
+            <h2 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Welcome Back
             </h2>
-            <p className="text-gray-300 mt-1 md:mt-2 text-sm md:text-base">
+            <p className="text-gray-300 mt-2 text-xs md:text-sm">
               Please login to continue
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 md:mb-6 p-2 md:p-3 bg-red-900/50 rounded-lg border border-red-700">
-              <p className="text-red-300 text-xs md:text-sm text-center">{error}</p>
+            <div className="mb-4 p-2 bg-red-900/50 rounded-lg border border-red-700">
+              <p className="text-red-300 text-xs text-center">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4 md:space-y-6">
-            <div className="space-y-3 md:space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-3">
               {/* Role Selection */}
-              <div className="group relative">
-                <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
+              <div className="relative">
+                <label className="block text-xs font-medium text-gray-300 mb-1">
                   Role
                 </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full px-3 py-2 md:px-4 md:py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all text-sm md:text-base"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white text-sm"
                 >
                   <option value="employee">Employee</option>
                   <option value="admin">Administrator</option>
@@ -144,14 +157,14 @@ rgb(0, 0, 0) 100%)`,
               </div>
 
               {/* Email Input */}
-              <div className="group relative">
-                <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
+              <div className="relative">
+                <label className="block text-xs font-medium text-gray-300 mb-1">
                   Email
                 </label>
                 <input
                   type="email"
-                  className="w-full px-3 py-2 md:px-4 md:py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 transition-all text-sm md:text-base"
-                  placeholder="Enter your email"
+                  className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 text-sm"
+                  placeholder="Enter email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -159,27 +172,29 @@ rgb(0, 0, 0) 100%)`,
               </div>
 
               {/* Password Input */}
-              <div className="group relative">
-                <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
+              <div className="relative">
+                <label className="block text-xs font-medium text-gray-300 mb-1">
                   Password
                 </label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="w-full px-3 py-2 md:px-4 md:py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 transition-all text-sm md:text-base"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <div className="mt-2 md:mt-3 flex items-center">
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 text-sm pr-10"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="mt-2 flex items-center">
                   <input
                     type="checkbox"
                     id="showPassword"
                     checked={showPassword}
                     onChange={() => setShowPassword(!showPassword)}
-                    className="h-3 w-3 md:h-4 md:w-4 border-gray-300 rounded focus:ring-blue-500 text-blue-600"
+                    className="h-3 w-3 border-gray-300 rounded focus:ring-blue-500 text-blue-600"
                   />
-                  <label htmlFor="showPassword" className="ml-2 text-xs md:text-sm text-gray-300">
+                  <label htmlFor="showPassword" className="ml-2 text-xs text-gray-300">
                     Show Password
                   </label>
                 </div>
@@ -190,20 +205,22 @@ rgb(0, 0, 0) 100%)`,
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2 md:py-3 px-4 md:px-6 rounded-lg font-medium md:font-semibold transition-all text-sm md:text-base ${
+              className={`w-full py-2 px-4 rounded-lg font-medium transition-all text-sm ${
                 loading 
                   ? "bg-gray-600 cursor-not-allowed" 
-                  : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 hover:shadow-lg"
+                  : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
               } text-white`}
             >
-              {loading ? "Authenticating..." : "Login to System"}
+              {loading ? "Authenticating..." : "Login"}
             </button>
           </form>
         </div>
       </main>
 
-      {/* Footer */}
-      <Footer />
+      {/* Fixed Footer */}
+      <div className="fixed inset-x-0 bottom-0 z-50">
+        <Footer />
+      </div>
     </div>
   );
 }
