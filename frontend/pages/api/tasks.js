@@ -24,19 +24,24 @@ export default async function handler(req, res) {
           LEFT JOIN customer c ON p.cid = c.cid
           ORDER BY p.start_date DESC
         `);
-        res.status(200).json(results);
+
+        // Replace null end_date with 'TBD' in response
+        const formatted = results.map((row) => ({
+          ...row,
+          end_date: row.end_date ? row.end_date : "TBD",
+        }));
+
+        res.status(200).json(formatted);
       });
 
     case "POST":
       return handleDBOperation(async (db) => {
         const { pname, start_date, end_date, status, cid } = req.body;
-        
-        // Validate input
-        if (!pname || !start_date || !end_date || !status || !cid) {
-          return res.status(400).json({ error: "All fields are required" });
+
+        if (!pname || !start_date || !status || !cid) {
+          return res.status(400).json({ error: "Required fields are missing" });
         }
 
-        // Verify customer exists
         const [customer] = await db.query(
           "SELECT cid FROM customer WHERE cid = ?",
           [cid]
@@ -45,63 +50,64 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: "Invalid customer ID" });
         }
 
-        // Insert project
+        const cleanEndDate = !end_date || end_date === "TBD" ? null : end_date;
+
         const [result] = await db.query(
           `INSERT INTO project 
-          (pname, start_date, end_date, status, cid) 
-          VALUES (?, ?, ?, ?, ?)`,
-          [pname, start_date, end_date, status, cid]
+           (pname, start_date, end_date, status, cid) 
+           VALUES (?, ?, ?, ?, ?)`,
+          [pname, start_date, cleanEndDate, status, cid]
         );
 
-        // Return complete project data
         const [[newProject]] = await db.query(
           `SELECT p.*, c.cname 
-          FROM project p 
-          LEFT JOIN customer c ON p.cid = c.cid 
-          WHERE p.pid = ?`,
+           FROM project p 
+           LEFT JOIN customer c ON p.cid = c.cid 
+           WHERE p.pid = ?`,
           [result.insertId]
         );
-        
+
+        newProject.end_date = newProject.end_date ? newProject.end_date : "TBD";
+
         res.status(201).json(newProject);
       });
 
     case "PUT":
       return handleDBOperation(async (db) => {
-        const { pid, ...updateData } = req.body;
-        
-        if (!pid || !updateData.pname || !updateData.start_date || 
-            !updateData.end_date || !updateData.status || !updateData.cid) {
-          return res.status(400).json({ error: "All fields are required" });
+        const { pid, pname, start_date, end_date, status, cid } = req.body;
+
+        if (!pid || !pname || !start_date || !status || !cid) {
+          return res.status(400).json({ error: "Required fields are missing" });
         }
 
-        // Verify customer exists
         const [customer] = await db.query(
           "SELECT cid FROM customer WHERE cid = ?",
-          [updateData.cid]
+          [cid]
         );
         if (customer.length === 0) {
           return res.status(400).json({ error: "Invalid customer ID" });
         }
 
-        // Update project
+        const cleanEndDate = !end_date || end_date === "TBD" ? null : end_date;
+
         await db.query(
           `UPDATE project 
-          SET pname = ?, start_date = ?, end_date = ?, 
-              status = ?, cid = ? 
-          WHERE pid = ?`,
-          [updateData.pname, updateData.start_date, updateData.end_date,
-           updateData.status, updateData.cid, pid]
+           SET pname = ?, start_date = ?, end_date = ?, 
+               status = ?, cid = ? 
+           WHERE pid = ?`,
+          [pname, start_date, cleanEndDate, status, cid, pid]
         );
 
-        // Return updated project
         const [[updatedProject]] = await db.query(
           `SELECT p.*, c.cname 
-          FROM project p 
-          LEFT JOIN customer c ON p.cid = c.cid 
-          WHERE p.pid = ?`,
+           FROM project p 
+           LEFT JOIN customer c ON p.cid = c.cid 
+           WHERE p.pid = ?`,
           [pid]
         );
-        
+
+        updatedProject.end_date = updatedProject.end_date ? updatedProject.end_date : "TBD";
+
         res.status(200).json(updatedProject);
       });
 

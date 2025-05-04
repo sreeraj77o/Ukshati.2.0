@@ -12,7 +12,6 @@ services:
       - DB_USER=company
       - DB_PASSWORD=Ukshati@123
       - DB_NAME=company_db
-      - NODE_ENV=development
       - CHOKIDAR_USEPOLLING=true 
       - WATCHPACK_POLLING=true 
     depends_on:
@@ -22,14 +21,10 @@ services:
       - app-network
 
   db:
-    image: mysql:8.0
-    command: [
-      "--default-authentication-plugin=mysql_native_password",
-      "--bind-address=0.0.0.0",
-      "--init-file=/docker-entrypoint-initdb.d/init.sql",
-      "--skip-ssl",
-      "--require-secure-transport=OFF"
-    ]
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    image: custom-mysql:8.0
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
@@ -37,8 +32,8 @@ services:
       MYSQL_USER: company
       MYSQL_PASSWORD: Ukshati@123
     volumes:
-      - mysql-data:/var/lib/mysql 
-      - ./db/company_db.sql:/docker-entrypoint-initdb.d/init.sql  
+      - mysql-data:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
     networks:
       - app-network
     healthcheck:
@@ -48,7 +43,7 @@ services:
       retries: 10
 
 volumes:
-  mysql-data:  # Volume to persist MySQL database data
+  mysql-data:
 
 networks:
   app-network:

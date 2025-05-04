@@ -1,18 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import dynamic from "next/dynamic";
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Navbar, NavbarBrand, NavbarContent, NavbarItem } from "@heroui/react";
 import Link from "next/link";
 import Image from "next/image";
 import Footer from "@/components/Footer";
-
-// Dynamically import StarryBackground with no SSR to prevent hydration issues
-const StarryBackground = dynamic(
-  () => import("@/components/StarryBackground"),
-  { ssr: false }
-);
+import { motion } from "framer-motion";
 
 export default function Login() {
   const router = useRouter();
@@ -80,7 +74,20 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Background */}
-      {isClient && <StarryBackground />}
+      <motion.div
+        className="absolute inset-0 z-0"
+        initial="initial"
+        animate="animate"
+        style={{
+          background: `linear-gradient(-45deg, 
+            #0a192f 0%, 
+            #172a45 25%, 
+rgb(0, 0, 0) 50%, 
+rgb(0, 0, 0) 75%, 
+rgb(0, 0, 0) 100%)`,
+          backgroundSize: "400% 400%"
+        }}
+      />
       
       {/* Navbar */}
       <div className="fixed top-0 left-0 w-full z-50">

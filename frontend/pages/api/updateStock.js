@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       `UPDATE stock 
        SET quantity = quantity + ?, 
            price_pu = ?,
-           last_updated = NOW()
+           updated_at = NOW()
        WHERE stock_id = ?`,
       [Number(quantity), parseFloat(price), stockId]
     );

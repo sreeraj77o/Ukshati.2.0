@@ -257,393 +257,241 @@ const handleCsvImport = async () => {
       )
     : [];
 
-  return (
-    <div>
-    <BackButton route="/crm/home"/>
-    <div className="container">
-      <StarryBackground />
-      <ScrollToTopButton/>
-      <div className="content-wrapper">
-        <header className="header">
-          <h1 className="title">Customer Management</h1>
-          <div className="header-actions">
-            <div className="csv-upload">
-              <label className="csv-upload-label">
-                <input type="file" accept=".csv" onChange={handleCsvUpload} />
-                <span className="upload-button">
-                  📁 Import CSV
-                </span>
+    return (
+      <div className="relative min-h-screen">
+        <StarryBackground />
+        <BackButton route="/crm/home" />
+        <ScrollToTopButton />
+  
+        <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl">
+          {/* Header Section */}
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
+                Customer Management
+              </h1>
+              <p className="text-gray-400 mt-2">Manage all your customer interactions</p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <label className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer">
+                <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
+                <span className="text-blue-400">📁</span>
+                <span className="text-white">Import CSV</span>
               </label>
-              <button onClick={handleCsvImport} className="import-button">
-                 Process Import
+              <button 
+                onClick={handleCsvImport} 
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
+                disabled={!csvFile}
+              >
+                Process Import
               </button>
             </div>
-          </div>
-        </header>
-
-        <div className="form-card">
-          <h2 className="form-title">{editId ? "Edit Customer" : "Add New Customer"}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <div className="input-group">
-                <label className="floating-label">Customer Name</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="glass-input"
-                />
+          </header>
+  
+          {/* Customer Form Card */}
+          <div className="backdrop-blur-sm rounded-xl border border-gray-700 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-white mb-6">
+              {editId ? "Edit Customer" : "Add New Customer"}
+            </h2>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Customer Name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Phone Number</label>
+                  <input
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                    required
+                  />
+                </div>
+  
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Alternate Phone</label>
+                  <input
+                    type="text"
+                    value={altPhone}
+                    onChange={(e) => setAltPhone(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                  />
+                </div>
+  
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-300">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                  >
+                    <option value="lead">Lead</option>
+                    <option value="customer">Customer</option>
+                  </select>
+                </div>
               </div>
-              
-              <div className="input-group">
-                <label className="floating-label">Phone Number</label>
-                <input
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="glass-input"
-                />
-              </div>
-
-              <div className="input-group">
-                <label className="floating-label">Alternate Phone</label>
-                <input
-                  type="text"
-                  value={altPhone}
-                  onChange={(e) => setAltPhone(e.target.value)}
-                  className="glass-input"
-                />
-              </div>
-
-              <div className="input-group">
-  <label className="floating-label">Status</label>
-  <select
-    value={status}
-    onChange={(e) => setStatus(e.target.value)}
-    className="glass-select text-black"
-  >
-    <option value="lead" style={{ color: 'black' }}>Lead</option>
-    <option value="customer" style={{ color: 'black' }}>Customer</option>
-  </select>
-</div>
-
-
-              <div className="input-group full-width">
-                <label className="floating-label">Remarks</label>
+  
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-300">Remarks</label>
                 <input
                   type="text"
                   value={remark}
                   onChange={(e) => setRemark(e.target.value)}
-                  className="glass-input"
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                />
+              </div>
+  
+              <button
+                type="submit"
+                className="mt-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg text-white font-medium hover:from-blue-700 hover:to-blue-600 transition-all"
+              >
+                {editId ? "Update Customer" : "Add Customer"}
+              </button>
+            </form>
+          </div>
+  
+          {/* Search and Table Section */}
+          <div className="backdrop-blur-sm rounded-xl border border-gray-700 p-6">
+            <div className="mb-6">
+              <div className="relative max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search customers..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
-
-            <button type="submit" className="submit-button">
-              {editId ? "🔄 Update Customer" : "Add Customer"}
-            </button>
-          </form>
+  
+            <div className="overflow-x-auto rounded-lg border border-gray-700">
+              <table className="min-w-full divide-y divide-gray-700">
+                <thead className="bg-gray-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">ID</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Phone</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider hidden sm:table-cell">Alt. Phone</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Remarks</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-gray-800/50 divide-y divide-gray-700">
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 text-center text-gray-400">
+                        Loading customers...
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 text-center text-red-400">
+                        Error: {error}
+                      </td>
+                    </tr>
+                  ) : filteredCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="px-6 py-4 text-center text-gray-400">
+                        No customers found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredCustomers.map((customer) => (
+                      <tr key={customer.cid} className="hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-300">{customer.cid}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{customer.cname}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{customer.cphone}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 hidden sm:table-cell">
+                          {customer.alternate_phone || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            customer.status === 'customer' 
+                              ? 'bg-green-900 text-green-300' 
+                              : 'bg-blue-900 text-blue-300'
+                          }`}>
+                            {customer.status === 'customer' ? 'Customer' : 'Lead'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-300 max-w-xs truncate">
+                          {editingRemarks[customer.cid] !== undefined ? (
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editingRemarks[customer.cid]}
+                                onChange={(e) =>
+                                  setEditingRemarks((prev) => ({
+                                    ...prev,
+                                    [customer.cid]: e.target.value,
+                                  }))
+                                }
+                                className="px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm w-full"
+                              />
+                              <button
+                                onClick={() =>
+                                  handleRemarkChange(customer.cid, editingRemarks[customer.cid])
+                                }
+                                className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          ) : (
+                            <span 
+                              onClick={() =>
+                                setEditingRemarks((prev) => ({
+                                  ...prev,
+                                  [customer.cid]: customer.remark || "",
+                                }))
+                              }
+                              className="cursor-pointer hover:text-white transition-colors"
+                            >
+                              {customer.remark || "-"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleEdit(customer)}
+                              className="text-blue-400 hover:text-blue-300 transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(customer.cid)}
+                              className="text-red-400 hover:text-red-300 transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="🔍 Search customers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        <div className="table-card">
-  <div className="table-scroll">
-    <table className="modern-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Alt. Phone</th>
-          <th>Status</th>
-          <th>Remarks</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredCustomers.map((customer) => (
-          <tr key={customer.cid}>
-            <td>#{customer.cid}</td>
-            <td>{customer.cname}</td>
-            <td>{customer.cphone}</td>
-            <td>{customer.alternate_phone || "-"}</td>
-            <td>
-              <span className="status-badge">
-                {customer.status === 'customer' ? 'Customer' : 'Lead'}
-              </span>
-            </td>
-            <td>
-              {editingRemarks[customer.cid] !== undefined ? (
-                <div className="remark-edit">
-                  <input
-                    type="text"
-                    value={editingRemarks[customer.cid]}
-                    onChange={(e) =>
-                      setEditingRemarks((prev) => ({
-                        ...prev,
-                        [customer.cid]: e.target.value,
-                      }))
-                    }
-                    className="remark-input"
-                  />
-                  <button
-                    onClick={() =>
-                      handleRemarkChange(customer.cid, editingRemarks[customer.cid])
-                    }
-                    className="save-button"
-                  >
-                    Save
-                  </button>
-                </div>
-              ) : (
-                <div
-                  className="remark-cell"
-                  onClick={() =>
-                    setEditingRemarks((prev) => ({
-                      ...prev,
-                      [customer.cid]: customer.remark || "",
-                    }))
-                  }
-                >
-                  {customer.remark || "-"}
-                </div>
-              )}
-            </td>
-            <td>
-              <div className="action-buttons">
-                <button
-                  onClick={() => handleEdit(customer)}
-                  className="action-button edit-button"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(customer.cid)}
-                  className="action-button delete-button"
-                >
-                  Delete
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
       </div>
-      </div>
-      <style jsx>{`
-        .container {
-          position: relative;
-          min-height: 100vh;
-          padding: 2rem;
-          margin-left: 200px;
-          margin-top: 50px;
-        }
-
-        .content-wrapper {
-          position: relative;
-          max-width: 1400px;
-          margin: 0 auto;
-          backdrop-filter: blur(16px) saturate(180%);
-          -webkit-backdrop-filter: blur(16px) saturate(180%);
-          background-color: rgba(17, 25, 40, 0.75);
-          border-radius: 20px;
-          border: 1px solid rgba(255, 255, 255, 0.125);
-          padding: 2rem;
-        }
-        .import-button {
-  padding: 10px 20px 10px 10px;
-  background-color: #007bff; 
-  color: white; 
-  border: none; 
-  border-radius: 5px; 
-  font-size: 16px; 
-  cursor: pointer; 
-  transition: background-color 0.3s ease; 
-  margin-top: 10px;
-  margin-left: 350px
-}
-
-.import-button:hover {
-  background-color: #0056b3; 
-}
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 2rem;
-        }
-
-        .title {
-          font-size: 2.5rem;
-          background: linear-gradient(45deg, #6ee7b7, #3b82f6);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          margin: 0;
-        }
-
-        .form-card {
-          background: rgba(31, 41, 55, 0.7);
-          border-radius: 15px;
-          padding: 2rem;
-          margin-bottom: 2rem;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .form-title {
-          color: #fff;
-          margin-bottom: 1.5rem;
-          font-size: 1.5rem;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 1.5rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .glass-input {
-          width: 100%;
-          padding: 0.8rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: white;
-          transition: all 0.3s ease;
-        }
-
-        .glass-input:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        }
-
-        .glass-select {
-          width: 100%;
-          padding: 0.8rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: white;
-          appearance: none;
-        }
-
-        .submit-button {
-          background: linear-gradient(45deg, #3b82f6, #6366f1);
-          color: white;
-          padding: 0.8rem 1.5rem;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: transform 0.2s ease;
-        }
-
-        .submit-button:hover {
-          transform: translateY(-2px);
-        }
-
-        .modern-table {
-          width: 100%;
-          border-collapse: collapse;
-          background: rgba(31, 41, 55, 0.7);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .modern-table th {
-          background: linear-gradient(45deg, #3b82f6, #6366f1);
-          color: white;
-          padding: 1rem;
-          text-align: left;
-        }
-
-        .modern-table td {
-          padding: 1rem;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          color: #e5e7eb;
-        }
-
-        .modern-table tr:hover {
-          background: rgba(255, 255, 255, 0.03);
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .action-button {
-          padding: 0.4rem 0.8rem;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .edit-button {
-          background: rgba(59, 130, 246, 0.1);
-          color: #3b82f6;
-        }
-
-        .delete-button {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.8rem;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          color: white;
-          margin-bottom: 1.5rem;
-        }
-
-        .csv-upload-label {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          cursor: pointer;
-          padding: 0.5rem 1rem;
-          border: 2px dashed rgba(59, 130, 246, 0.3);
-          border-radius: 8px;
-          transition: all 0.3s ease;
-        }
-
-        .csv-upload-label:hover {
-          border-color: #3b82f6;
-          background: rgba(59, 130, 246, 0.05);
-        }
-
-        @media (max-width: 768px) {
-          .content-wrapper {
-            padding: 1rem;
-          }
-          
-          .header {
-            flex-direction: column;
-            gap: 1rem;
-          }
-          
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
+    );
+  }
+  

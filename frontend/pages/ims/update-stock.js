@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import StarryBackground from "@/components/StarryBackground";
-import { FiArrowLeft, FiSearch, FiEdit, FiX, FiActivity, FiFilter, FiPlus, FiMinus } from "react-icons/fi";
+import { FiArrowLeft, FiSearch, FiEdit, FiX, FiActivity, FiFilter, FiPlus, FiMinus, FiPackage, FiBox, FiDollarSign, FiCalendar } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import BackButton from "@/components/BackButton";
 
 // Custom Pagination Component
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
@@ -24,7 +25,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
             <button
               key={num}
               className={`w-10 h-10 flex items-center justify-center rounded-full text-lg ${
-                currentPage === num ? 'bg-purple-600 text-white' : 'text-gray-300'
+                currentPage === num ? 'bg-cyan-600 text-white' : 'text-gray-300'
               }`}
               onClick={() => onPageChange(num)}
             >
@@ -274,6 +275,8 @@ export default function StockUpdate() {
   const [currentStock, setCurrentStock] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
     const role = localStorage.getItem("userRole") || "";
@@ -321,7 +324,11 @@ export default function StockUpdate() {
       const searchMatch = stock.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         stock.category_name.toLowerCase().includes(searchTerm.toLowerCase());
       
-      return categoryMatch && searchMatch;
+                        const createdAt = new Date(stock.created_at);
+                        const startDateMatch = startDate ? createdAt >= new Date(startDate) : true;
+                        const endDateMatch = endDate ? createdAt <= new Date(endDate) : true;
+                    
+                        return categoryMatch && searchMatch && startDateMatch && endDateMatch;
     });
     setFilteredStocks(filtered);
     setCurrentPage(1); // Reset to first page when filters change
@@ -376,6 +383,11 @@ export default function StockUpdate() {
   const closeModal = () => {
     setIsModalOpen(false);
   };
+  
+  const formatDateTime = (dateTime) => {
+    const date = new Date(dateTime);
+    return date.toLocaleString(); 
+  };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -383,33 +395,43 @@ export default function StockUpdate() {
   const totalPages = Math.ceil(filteredStocks.length / itemsPerPage);
 
   return (
-    <div className="min-h-screen text-gray-100">
-      <StarryBackground />
-      
+    <div className="min-h-screen bg-black text-gray-100">
       {/* Header */}
-      <header className="ml-6 p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button
-            onClick={() => router.push("/ims/home")}
-            className="flex items-center gap-2 hover:text-blue-400 transition-colors"
-          >
-            <FiArrowLeft className="text-xl" />
-            <span className="font-semibold">Back</span>
-          </button>
+<header className="p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
+  <div className="max-w-7xl mx-auto flex items-center justify-between">
+    {/* Left Section - Back Button */}
+    <div className="flex-1 flex justify-start">
+      <BackButton route="/ims/home" />
+    </div>
 
-          <div className="flex-1 text-center">
-            <h1 className="text-2xl font-bold text-blue-400">Stock Management</h1>
-          </div>
+    {/* Center Section - Title */}
+    <div className="flex-1 text-center">
+      <h1 className="text-xl sm:text-2xl font-bold text-blue-400">
+        Stock Management
+      </h1>
+    </div>
 
-          <button
-            onClick={() => router.push("/ims/view-stock")}
-            className="flex mr-8 items-center gap-2 hover:text-blue-400 transition-colors"
-          >
-            <FiActivity className="text-xl" />
-            <span className="font-semibold">View Inventory</span>
-          </button>
-        </div>
-      </header>
+    {/* Right Section - View Inventory */}
+    <div className="flex-1 flex justify-end items-center gap-4">
+      {/* Desktop Button */}
+      <button
+        onClick={() => router.push("/ims/view-stock")}
+        className="hidden sm:flex items-center gap-2 hover:text-blue-400 transition-colors"
+      >
+        <FiActivity className="text-xl" />
+        <span className="font-semibold">View Inventory</span>
+      </button>
+
+      {/* Mobile Icon */}
+      <button
+        onClick={() => router.push("/ims/view-stock")}
+        className="flex items-center hover:text-blue-400 transition-colors"
+      >
+        <FiActivity className="text-xl" label="View Stocks" />
+      </button>
+    </div>
+  </div>
+</header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 space-y-8">
@@ -443,7 +465,7 @@ export default function StockUpdate() {
         </div>
 
         {/* Stock List */}
-        <section className="rounded-xl bg-gray-800/50 backdrop-blur-sm border-2 border-gray-700">
+        <section className="rounded-xl bg-black backdrop-blur-sm border-2 border-gray-700">
           <div className="p-4 border-b border-gray-700">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <FiEdit className="text-blue-400" />
@@ -451,56 +473,87 @@ export default function StockUpdate() {
             </h2>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  {["Product", "Category", "Quantity", "Price per Unit", "Total Price", "Actions"].map((header, i) => (
-                    <th
-                      key={i}
-                      className={`p-3 text-sm font-semibold ${
-                        header === "Product" ? "text-left" : "text-center"
-                      }`}
-                    >
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              
-              <tbody>
-                {paginatedStocks.map((stock) => (
-                  <tr
-                    key={stock.stock_id}
-                    className="border-t border-gray-700 hover:bg-gray-700/50 transition-colors"
-                  >
-                    <td className="p-3 text-left">{stock.item_name}</td>
-                    <td className="p-3 text-center">
-                      <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
-                        {stock.category_name}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center">{stock.quantity}</td>
-                    <td className="p-3 text-center">₹{stock.price_pu || "0.00"}</td>
-                    <td className="p-3 text-center">₹{(stock.price_pu * stock.quantity).toFixed(2) || "0.00"}</td>
-                    <td className="p-3 text-center">
-                      <button
-                        onClick={() => openModal(stock)}
-                        className={`px-4 py-2 rounded-lg transition-all ${
-                          userRole?.toLowerCase() === "admin"
-                            ? "bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg"
-                            : "bg-gray-300 cursor-not-allowed"
-                        }`}
-                        disabled={userRole?.toLowerCase() !== "admin"}
-                      >
-                        Update
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-850 shadow-xl">
+  <table className="w-full">
+    <thead className="bg-gray-800">
+      <tr>
+        {["Product", "Category", "Quantity", "Price per Unit", "Total Price", "Transaction Date", "Actions"].map((header, i) => (
+          <th
+            key={i}
+            className={`px-6 py-4 text-sm font-semibold text-indigo-400 border-b border-gray-700 ${
+              header === "Product" ? "text-left" : "text-center"
+            }`}
+          >
+            <div className="inline-flex items-center gap-2">
+              {header === "Product" && <FiPackage className="w-4 h-4" />}
+              {header === "Category" && <FiBox className="w-4 h-4" />}
+              {header === "Price per Unit" && <FiDollarSign className="w-4 h-4" />}
+              {header === "Transaction Date" && <FiCalendar className="w-4 h-4" />}
+              {header}
+            </div>
+          </th>
+        ))}
+      </tr>
+    </thead>
+    
+    <tbody className="divide-y divide-gray-700">
+      {paginatedStocks.map((stock) => (
+        <tr
+          key={stock.stock_id}
+          className="hover:bg-gray-800/30 transition-colors duration-200"
+        >
+          <td className="px-6 py-4 text-sm font-medium text-white text-left">
+            <div className="flex items-center gap-3">
+              <FiPackage className="text-gray-400 flex-shrink-0" />
+              {stock.item_name}
+            </div>
+          </td>
+          
+          <td className="px-6 py-4 text-center">
+            <span className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 rounded-full text-xs font-medium border border-indigo-400/20">
+              {stock.category_name}
+            </span>
+          </td>
+          
+          <td className="px-6 py-4 text-center">
+            <span className={`px-3 py-1 rounded-md text-sm font-medium ${
+              stock.quantity < 5 ? 'bg-amber-900/30 text-amber-400' : 'bg-green-900/30 text-green-400'
+            }`}>
+              {stock.quantity}
+            </span>
+          </td>
+          
+          <td className="px-6 py-4 text-sm text-gray-300 text-center">
+            ₹{stock.price_pu || "0.00"}
+          </td>
+          
+          <td className="px-6 py-4 text-sm font-medium text-white text-center">
+            ₹{(stock.price_pu * stock.quantity).toFixed(2) || "0.00"}
+          </td>
+          
+          <td className="px-6 py-4 text-sm text-gray-400 text-center">
+            {formatDateTime(stock.updated_at)}
+          </td>
+          
+          <td className="px-6 py-4 text-center">
+            <button
+              onClick={() => openModal(stock)}
+              className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+                userRole?.toLowerCase() === "admin"
+                  ? "bg-cyan-600 text-white hover:bg-indigo-500 hover:shadow-lg"
+                  : "bg-gray-700 text-gray-400 cursor-not-allowed"
+              }`}
+              disabled={userRole?.toLowerCase() !== "admin"}
+            >
+              <FiEdit className="w-4 h-4" />
+              <span>Update</span>
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
           {/* Show empty state if no results */}
           {filteredStocks.length === 0 && !error && (

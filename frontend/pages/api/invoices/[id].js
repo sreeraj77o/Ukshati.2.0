@@ -1,4 +1,4 @@
-import db from '../../../db';
+import db from '../../../lib/db'; // Adjust the path to your database connection file
 
 export default async function handler(req, res) {
   const { id } = req.query; // Get invoice ID from the request URL

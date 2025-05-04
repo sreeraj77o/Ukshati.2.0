@@ -1,0 +1,15 @@
+FROM mysql:8.0
+
+# Install required packages using microdnf
+RUN microdnf update -y && \
+    microdnf install -y cronie shadow-utils && \
+    microdnf clean all
+
+# Copy backup script and entrypoint
+COPY backup.sh /backup.sh
+RUN chmod +x /backup.sh
+COPY docker-entrypoint.sh /custom-entrypoint.sh
+RUN chmod +x /custom-entrypoint.sh
+
+ENTRYPOINT ["/custom-entrypoint.sh"]
+CMD ["mysqld"]

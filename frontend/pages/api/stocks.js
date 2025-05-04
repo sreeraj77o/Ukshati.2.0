@@ -85,7 +85,7 @@ export default async function handler(req, res) {
       // Fetch stocks with category names (latest 100 entries)
       const [stocks] = await db.execute(`
         SELECT stock.stock_id, stock.item_name, stock.quantity, stock.price_pu, 
-               category.category_name 
+               category.category_name, stock.created_at, stock.updated_at
         FROM stock 
         JOIN category ON stock.category_id = category.category_id
         ORDER BY stock.stock_id DESC

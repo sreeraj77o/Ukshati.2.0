@@ -1,4 +1,5 @@
-// pages/_app.js (no changes needed)
+// pages/_app.js
+
 import { useEffect } from 'react';
 import { initializeNotifications } from '@/utils/notification-system';
 import '../app/globals.css';
@@ -7,10 +8,15 @@ function MyApp({ Component, pageProps }) {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const notificationController = initializeNotifications();
-      return () => notificationController.stopSync();
+      return () => {
+        // Only call if the method exists
+        if (notificationController?.stopSync) {
+          notificationController.stopSync();
+        }
+      };
     }
   }, []);
-  
+
   return <Component {...pageProps} />;
 }
 

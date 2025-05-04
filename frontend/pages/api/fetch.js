@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         // Get the database connection
         connection = await connectToDB();
 
-        // Build the SQL query with optional filters
+        // Base query
         let query = `
             SELECT 
                 q.quote_id, 
@@ -35,6 +35,7 @@ export default async function handler(req, res) {
 
         let values = [];
 
+        // Add filters only if they are provided
         if (quote_id) {
             query += " AND q.quote_id = ?";
             values.push(quote_id);
@@ -50,7 +51,7 @@ export default async function handler(req, res) {
             values.push(`%${customer_name}%`);
         }
 
-        // Execute the query
+        // Execute the query (with or without filters)
         const [results] = await connection.execute(query, values);
 
         res.status(200).json(results);

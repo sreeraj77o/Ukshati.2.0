@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import AllProjects from "./expense/allProjects";
+import AllProjects from "../pages/expense/allProjects";
 
 export default function AllProjectsPage() {
   const [projects, setProjects] = useState([]);

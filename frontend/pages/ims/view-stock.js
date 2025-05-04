@@ -6,10 +6,11 @@ import dynamic from "next/dynamic";
 import ScrollToTopButton from "@/components/scrollup";
 import { 
   FiShoppingCart, FiActivity, FiSearch, FiX, 
-  FiUser, FiMapPin, FiAlertTriangle, FiArrowLeft, 
-  FiFilter, FiUpload, FiDownload 
+  FiUser, FiMapPin, FiAlertTriangle, FiAlertCircle, FiPackage, FiBox, FiCheckCircle, FiTag, FiDollarSign,
+  FiFilter, FiUpload, FiDownload, FiMenu
 } from "react-icons/fi";
 import Papa from "papaparse";
+import BackButton from "@/components/BackButton";
 
 export default function StockDetails() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function StockDetails() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -378,223 +380,293 @@ export default function StockDetails() {
   }, []);
 
   return (
-    <div className="min-h-screen text-gray-100">
-      <StarryBackground />
-      <ScrollToTopButton />
-
-      {/* Notifications Container */}
-      <div className="fixed z-50">
-        {/* Success Notifications - Top Right */}
-        <div className="fixed top-4 right-4 w-80 space-y-2">
-          <AnimatePresence>
-            {notifications.filter(n => n.type === 'success').map(notification => (
-              <motion.div
-                key={notification.id}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                className="p-3 rounded-lg flex items-start transition duration-300 ease-in-out cursor-pointer shadow-lg
-                          bg-green-100 dark:bg-green-900 border-l-4 border-green-500 dark:border-green-700 
-                          text-green-900 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-800"
-                onClick={() => {
-                  clearTimeout(notification.timeoutId);
-                  setNotifications(prev => prev.filter(n => n.id !== notification.id));
-                }}
-              >
-                <svg className="h-5 w-5 flex-shrink-0 text-green-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <div className="ml-3">
-                  <p className="text-sm font-medium">{notification.message}</p>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+      <div className="min-h-screen bg-black text-gray-100">
+        <ScrollToTopButton />
+  
+        {/* Notifications Container */}
+        <div className="fixed z-50">
+          <div className="fixed top-4 right-4 w-80 space-y-2">
+            <AnimatePresence>
+              {notifications.filter(n => n.type === 'success').map(notification => (
+                <motion.div
+                  key={notification.id}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: 100 }}
+                  className="p-4 rounded-xl flex items-start transition duration-300 ease-in-out cursor-pointer shadow-xl
+                            bg-emerald-600/90 backdrop-blur-sm border border-emerald-400/20 
+                            text-emerald-50 hover:bg-emerald-600"
+                  onClick={() => {
+                    clearTimeout(notification.timeoutId);
+                    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+                  }}
+                >
+                  <FiCheckCircle className="h-6 w-6 flex-shrink-0 text-emerald-200 mt-0.5" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium">{notification.message}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+  
+          <div className="fixed bottom-4 right-4 w-80 space-y-2">
+            <AnimatePresence>
+              {notifications.filter(n => n.type !== 'success').map(notification => (
+                <motion.div
+                  key={notification.id}
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 100 }}
+                  className={`p-4 rounded-xl flex items-start transition duration-300 ease-in-out cursor-pointer shadow-xl
+                    backdrop-blur-sm border ${
+                      notification.type === 'error' 
+                      ? 'bg-red-600/90 border-red-400/20 text-red-50 hover:bg-red-600'
+                      : 'bg-amber-600/90 border-amber-400/20 text-amber-50 hover:bg-amber-600'
+                    }`}
+                  onClick={() => {
+                    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+                  }}
+                >
+                  <FiAlertCircle className={`h-6 w-6 flex-shrink-0 mt-0.5 ${
+                    notification.type === 'error' ? 'text-red-200' : 'text-amber-200'
+                  }`} />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium">{notification.message}</p>
+                    {notification.quantity !== undefined && (
+                      <p className="text-xs mt-1 opacity-80">Current quantity: {notification.quantity}</p>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
         </div>
+  
+        <header className="p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
+  <div className="max-w-7xl mx-auto flex justify-between items-center">
+    {/* Left Section - Back Button */}
+    <div className="flex-1">
+      <BackButton route="/ims/home" />
+    </div>
 
-        {/* Error/Warning Notifications - Bottom Right */}
-        <div className="fixed bottom-4 right-4 w-80 space-y-2">
-          <AnimatePresence>
-            {notifications.filter(n => n.type !== 'success').map(notification => (
-              <motion.div
-                key={notification.id}
-                initial={{ opacity: 0, x: 100 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 100 }}
-                className={`p-3 rounded-lg flex items-start transition duration-300 ease-in-out cursor-pointer shadow-lg
-                  ${notification.type === 'error' 
-                    ? 'bg-red-100 dark:bg-red-900 border-l-4 border-red-500 dark:border-red-700 text-red-900 dark:text-red-100 hover:bg-red-200 dark:hover:bg-red-800'
-                    : 'bg-yellow-100 dark:bg-yellow-900 border-l-4 border-yellow-500 dark:border-yellow-700 text-yellow-900 dark:text-yellow-100 hover:bg-yellow-200 dark:hover:bg-yellow-800'}`}
-                onClick={() => {
-                  setNotifications(prev => prev.filter(n => n.id !== notification.id));
-                }}
-              >
-                <FiAlertTriangle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
-                  notification.type === 'error' ? 'text-red-600' : 'text-yellow-600'
-                }`} />
-                <div className="ml-3">
-                  <p className="text-sm font-medium">{notification.message}</p>
-                  {notification.quantity !== undefined && (
-                    <p className="text-xs mt-1">Current quantity: {notification.quantity}</p>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+    {/* Center Section - Heading */}
+    <div className="flex-1 flex justify-center">
+      <h1 className="text-2xl font-bold text-blue-400 text-center">
+        Spend Inventory
+      </h1>
+    </div>
+
+    {/* Right Section - Desktop Buttons & Mobile Menu */}
+    <div className="flex-1 flex justify-end items-center gap-4 mr-8">
+      {/* Desktop Buttons */}
+      <div className="hidden sm:flex items-center gap-4">
+        <button
+          onClick={() => setIsBulkModalOpen(true)}
+          className="flex items-center gap-2 hover:text-blue-400 transition-colors"
+        >
+          <FiUpload className="text-xl" />
+          <span className="font-semibold">Bulk Upload</span>
+        </button>
+        <button
+          onClick={() => router.push("/ims/inventory-spent")}
+          className="flex items-center gap-2 hover:text-blue-400 transition-colors"
+        >
+          <FiActivity className="text-xl" />
+          <span className="font-semibold">View Inventory Spent</span>
+        </button>
       </div>
 
-      <header className="p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between relative px-6">
-          <div className="absolute left-6">
-            <button
-              onClick={() => router.push("/ims/home")}
-              className="flex items-center gap-2 hover:text-blue-400 transition-colors"
-            >
-              <FiArrowLeft className="text-xl" />
-              <span className="font-semibold">Back</span>
-            </button>
-          </div>
-          
-          <h1 className="text-2xl pr-10 font-bold text-blue-400 mx-auto">
-            Spent Inventory
-          </h1>
-          
-          <div className="absolute right-6 flex gap-4">
-            <button
-              onClick={() => setIsBulkModalOpen(true)}
-              className="flex items-center gap-2 hover:text-blue-400 transition-colors"
-            >
-              <FiUpload className="text-xl" />
-              <span className="font-semibold">Bulk Upload</span>
-            </button>
-            <button
-              onClick={() => router.push("/ims/inventory-spent")}
-              className="flex items-center gap-2 hover:text-blue-400 transition-colors"
-            >
-              <FiActivity className="text-xl" />
-              <span className="font-semibold">View Inventory Spent</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* Mobile Menu */}
+      <div className="sm:hidden relative">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="flex items-center hover:text-blue-400 transition-colors"
+        >
+          <FiMenu className="text-xl" />
+        </button>
 
-      <main className="max-w-7xl mx-auto p-4 space-y-8">
-        <section className="rounded-xl bg-gray-800/50 backdrop-blur-sm border-2 border-gray-700">
-          <div className="p-4 border-b border-gray-700 flex flex-col md:flex-row items-center justify-between gap-4">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <FiShoppingCart className="text-blue-400" />
-              Current Stock List
-            </h2>
-            <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-              <div className="relative flex items-center w-full md:w-64">
-                <FiSearch className="absolute left-3 text-blue-400" />
-                <input
-                  type="text"
-                  placeholder="Search products or categories..."
-                  className="pl-10 pr-4 py-2 bg-gray-700 rounded-lg w-full"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <div className="relative flex items-center w-full md:w-64">
-                <FiFilter className="absolute left-3 text-blue-400" />
-                <select
-                  className="pl-10 pr-4 py-2 bg-gray-700 rounded-lg w-full appearance-none"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-50 overflow-hidden"
+            >
+              <div className="p-2">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsBulkModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-white hover:bg-gray-700 rounded-lg transition-all"
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map((category) => (
-                    <option key={category.category_id} value={category.category_name}>
-                      {category.category_name}
-                    </option>
-                  ))}
-                </select>
+                  <FiUpload className="text-lg" />
+                  <span>Bulk Upload</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    router.push("/ims/inventory-spent");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-white hover:bg-gray-700 rounded-lg transition-all mt-2"
+                >
+                  <FiActivity className="text-lg" />
+                  <span>View Inventory Spent</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  </div>
+</header>
+  
+        <main className="max-w-7xl mx-auto p-4 space-y-8">
+          <section className="rounded-xl bg-black backdrop-blur-sm border border-gray-700">
+            <div className="p-4 border-b border-gray-700 flex flex-col md:flex-row items-center justify-between gap-4">
+              <h2 className="text-xl font-semibold flex items-center gap-3">
+                <FiPackage className="text-blue-400" />
+                <span>Current Stock List</span>
+              </h2>
+              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                <div className="relative flex items-center w-full md:w-72">
+                  <FiSearch className="absolute left-3 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search products or categories..."
+                    className="pl-10 pr-4 py-2.5 bg-gray-700 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="relative flex items-center w-full md:w-60">
+                  <FiFilter className="absolute left-3 text-gray-400" />
+                  <select
+                    className="pl-10 pr-4 py-2.5 bg-gray-700 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:outline-none appearance-none"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category.category_id} value={category.category_name}>
+                        {category.category_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-700">
-                <tr>
-                  {["Product", "Category", "Quantity", "Unit Price", "Total Price", "Actions"].map((header, i) => (
-                    <th key={i} className="p-3 text-left text-sm font-semibold">
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td colSpan="6" className="p-8 text-center text-gray-400">Loading stock data...</td></tr>
-                ) : filteredStocks.length === 0 ? (
-                  <tr><td colSpan="6" className="p-8 text-center text-gray-400">No matching stock items found</td></tr>
-                ) : (
-                  filteredStocks.map((stock) => (
-                    <tr 
-                      key={stock.stock_id} 
-                      className={`
-                        border-t border-gray-700 
-                        ${stock.quantity === 0 
-                          ? "bg-red-900/20 hover:bg-red-900/30" 
-                          : stock.quantity <= 2
-                            ? "bg-yellow-900/20 hover:bg-yellow-900/30"
-                            : "hover:bg-gray-700/50"
-                        }
-                      `}
-                    >
-                      <td className="p-3">
-                        <div className="flex items-center">
-                          {stock.item_name}
-                          {stock.quantity === 0 ? (
-                            <span className="ml-2 px-2 py-0.5 bg-red-500/20 text-red-400 text-xs rounded-full animate-pulse">
-                              Out of Stock
-                            </span>
-                          ) : stock.quantity <= 2 ? (
-                            <span className="ml-2 px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full animate-pulse">
-                              Low Stock
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <span className="bg-gray-700 px-3 py-1 rounded-full text-sm">
-                          {stock.category_name}
-                        </span>
-                      </td>
-                      <td className="p-3 font-mono">{stock.quantity}</td>
-                      <td className="p-3 font-mono">₹{stock.price_pu}</td>
-                      <td className="p-3 font-mono">₹{(stock.quantity * stock.price_pu).toFixed(2)}</td>
-                      <td className="p-3">
-                        <button 
-                          onClick={() => openModal(stock)} 
-                          className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                            stock.quantity === 0
-                              ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                              : "bg-blue-600 hover:bg-blue-700 text-white"
-                          }`}
-                          disabled={stock.quantity === 0}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="w-5 h-5"
-                            fill="currentColor"
-                            viewBox="0 0 16 16"
-                          >
-                            <path d="M0 2.5A.5.5 0 0 1 .5 2H2a.5.5 0 0 1 .485.379L2.89 4H14.5a.5.5 0 0 1 .485.621l-1.5 6A.5.5 0 0 1 13 11H4a.5.5 0 0 1-.485-.379L1.61 3H.5a.5.5 0 0 1-.5-.5zM3.14 5l1.25 5h8.22l1.25-5H3.14zM5 13a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0zm9-1a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm-2 1a2 2 0 1 1 4 0 2 2 0 0 1-4 0z"/>
-                          </svg>
-                          <span>Spend</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+  
+            <div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-850">
+  <table className="w-full">
+    <thead className="bg-gray-850">
+      <tr>
+        {["Product", "Category", "Quantity", "Unit Price", "Total Value", "Actions"].map((header, i) => (
+          <th 
+            key={i} 
+            className="px-6 py-4 text-left text-sm font-semibold text-indigo-400 border-b border-gray-700"
+          >
+            {{
+              'Product': <><FiTag className="inline-block mr-2 -mt-1" /> {header}</>,
+              'Category': <><FiBox className="inline-block mr-2 -mt-1 "/> {header}</>,
+              'Unit Price': <><FiDollarSign className="inline-block mr-2 -mt-1" /> {header}</>,
+              'Actions': <><FiShoppingCart className="inline-block mr-2 -mt-1 "/> {header}</>
+            }[header] || header}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    
+    <tbody className="divide-y divide-gray-700">
+      {loading ? (
+        <tr>
+          <td colSpan="6" className="px-6 py-6 text-center">
+            <div className="flex items-center justify-center space-x-2 text-gray-500">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+          </td>
+        </tr>
+      ) : filteredStocks.length === 0 ? (
+        <tr>
+          <td colSpan="6" className="px-6 py-6 text-center text-gray-500">
+            No matching stock items found
+          </td>
+        </tr>
+      ) : (
+        filteredStocks.map((stock) => (
+          <tr 
+            key={stock.stock_id} 
+            className={`hover:bg-gray-800/30 transition-colors duration-200 ${
+              stock.quantity === 0 
+                ? "bg-red-900/20" 
+                : stock.quantity <= 2 && "bg-amber-900/20"
+            }`}
+          >
+            <td className="px-6 py-4 text-sm font-medium text-white">
+              <div className="flex items-center gap-3">
+                <FiPackage className="text-gray-400" />
+                <div>
+                  {stock.item_name}
+                  {stock.quantity === 0 && (
+                    <span className="text-xs text-red-400 mt-1 flex items-center gap-1">
+                      <FiAlertCircle /> Out of Stock
+                    </span>
+                  )}
+                  {stock.quantity > 0 && stock.quantity <= 2 && (
+                    <span className="text-xs text-amber-400 mt-1 flex items-center gap-1">
+                      <FiAlertTriangle /> Low Stock
+                    </span>
+                  )}
+                </div>
+              </div>
+            </td>
+            
+            <td className="px-6 py-4">
+              <span className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 rounded-full text-xs font-medium border border-indigo-400/20">
+                {stock.category_name}
+              </span>
+            </td>
+            
+            <td className="px-6 py-4">
+              <span className={`px-2 py-1 rounded-md text-sm font-medium ${
+                stock.quantity < 10 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'
+              }`}>
+                {stock.quantity}
+              </span>
+            </td>
+            
+            <td className="px-6 py-4 text-sm text-gray-300">
+              ₹{stock.price_pu}
+            </td>
+            
+            <td className="px-6 py-4 text-sm font-medium text-white">
+              ₹{(stock.quantity * stock.price_pu).toFixed(2)}
+            </td>
+            
+            <td className="px-6 py-4">
+              <button 
+                onClick={() => openModal(stock)} 
+                className={`px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all ${
+                  stock.quantity === 0
+                    ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                }`}
+                disabled={stock.quantity === 0}
+              >
+                <FiShoppingCart className="text-lg" />
+                <span>Spend</span>
+              </button>
+            </td>
+          </tr>
+        ))
+      )}
+    </tbody>
+  </table>
+</div>
+            </section>
 
         {/* Bulk Upload Modal */}
         <AnimatePresence>

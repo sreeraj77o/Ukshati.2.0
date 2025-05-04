@@ -15,16 +15,19 @@ export default async function handler(req, res) {
       SELECT 
         ispent.*,
         s.item_name,
+        c.category_name AS category_name,
         p.pname AS project_name,
         e.name AS employee_name,
         s.price_pu AS unit_price,
         ROUND(ispent.quantity_used * s.price_pu, 2) AS total_price
       FROM inventory_spent ispent
       JOIN stock s ON ispent.stock_id = s.stock_id
+      JOIN category c ON s.category_id = c.category_id
       LEFT JOIN project p ON ispent.used_for = p.pid
       LEFT JOIN employee e ON ispent.recorded_by = e.id
       ORDER BY ispent.spent_id DESC
     `);
+    
 
     await connection.end();
 

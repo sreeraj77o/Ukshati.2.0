@@ -5,11 +5,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Extract all fields, including comments
   const { email, projectName, clientName, startDate, endDate, amount, comments } = req.body;
 
   // Basic validation
-  if (!email || !projectName || !clientName || !startDate || !endDate || amount === undefined) {
+  if (!email || !projectName || !clientName || !startDate || amount === undefined) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -24,16 +23,15 @@ export default async function handler(req, res) {
       database: process.env.DB_NAME,
     });
 
-    console.log("Connected to database.");
+    console.log("✅ Connected to database.");
 
-    // Verify user role
+    // 🔒 Verify user role
     const [adminCheck] = await db.execute(
       `SELECT role FROM employee WHERE email = ? LIMIT 1`,
       [email]
     );
 
     if (adminCheck.length === 0) {
-      console.log("User not found in employee table.");
       return res.status(404).json({ error: "User not found" });
     }
 
@@ -42,16 +40,19 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: "Access denied. Only admins can update projects." });
     }
 
-    // Update project details
+    // 🛠️ Prepare endDate
+    const parsedEndDate = (!endDate || endDate.trim().toUpperCase() === "TBD") ? null : endDate;
+
+    // 📦 Update project
     const updateProjectQuery = `
       UPDATE project
       SET cname = ?, start_date = ?, end_date = ?
       WHERE pname = ?
     `;
 
-    await db.execute(updateProjectQuery, [clientName, startDate, endDate, projectName]);
+    await db.execute(updateProjectQuery, [clientName, startDate, parsedEndDate, projectName]);
 
-    // ✅ DYNAMICALLY UPDATE EXPENSE COLUMNS
+    // 💰 Update expense fields dynamically
     let updateFields = [];
     let updateValues = [];
 
@@ -80,13 +81,14 @@ export default async function handler(req, res) {
       success: true,
       message: "Project and expense updated successfully.",
     });
+
   } catch (error) {
-    console.error("Database Error:", error);
+    console.error("❌ Database Error:", error);
     res.status(500).json({ error: error.message });
   } finally {
     if (db) {
       await db.end();
-      console.log("Database connection closed.");
+      console.log("🔌 Database connection closed.");
     }
   }
 }
