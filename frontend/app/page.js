@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Footer from "@/components/Footer";
 import { motion } from "framer-motion";
+import InitialLoader from "@/components/InitialLoader";
 
 export default function Login() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [viewportHeight, setViewportHeight] = useState("100vh");
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
@@ -41,6 +43,12 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    setProgress(0);
+  
+    // Simulate progress (remove this in production)
+    const interval = setInterval(() => {
+      setProgress(prev => Math.min(prev + Math.random() * 10, 90));
+    }, 200);
 
     try {
       const response = await fetch("/api/login", {
@@ -52,7 +60,11 @@ export default function Login() {
           role: role.toLowerCase().trim(),
         }),
       });
+      
+      clearInterval(interval);
+      setProgress(100);
 
+      await new Promise(resolve => setTimeout(resolve, 500));
       const data = await response.json();
 
       if (!response.ok) throw new Error(data.message || "Login failed. Please try again.");
@@ -68,6 +80,7 @@ export default function Login() {
       router.push("/dashboard");
 
     } catch (err) {
+      clearInterval(interval);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -82,8 +95,39 @@ export default function Login() {
     );
   }
 
+  const LoadingOverlay = ({ progress }) => (
+    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center space-y-4">
+      <div className="relative w-48 h-1 bg-gray-800 rounded-full overflow-hidden">
+        <div 
+          className="absolute left-0 h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      
+      {/* Cyber-style terminal animation */}
+      <div className="font-mono text-sm text-cyan-400 flex items-center">
+        <span className="mr-2">⠋</span>
+        <span className="animate-pulse">Authenticating</span>
+        <span className="typing-dots">
+          <span className="animate-blink">.</span>
+          <span className="animate-blink delay-75">.</span>
+          <span className="animate-blink delay-150">.</span>
+        </span>
+      </div>
+  
+      {/* ASCII Art Progress */}
+      <div className="text-gray-400 text-xs text-center mt-4">
+        <pre className="text-cyan-300">
+          {`[${'■'.repeat(Math.floor(progress/10))}${'□'.repeat(10 - Math.floor(progress/10))}]`}
+        </pre>
+        <span className="text-cyan-400">{progress}%</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen flex flex-col" style={{ height: viewportHeight }}>
+      <InitialLoader progress={progress} />
       {/* Prevent zoom on mobile */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
       
@@ -221,6 +265,7 @@ export default function Login() {
       <div className="fixed inset-x-0 bottom-0 z-50">
         <Footer />
       </div>
+      {loading && <LoadingOverlay progress={progress} />}
     </div>
   );
 }

@@ -112,3 +112,33 @@ body {
 .swal2-close {
   @apply !text-gray-400 hover:!text-red-500 !transition-colors;
 }
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink 1s infinite;
+}
+
+.delay-75 {
+  animation-delay: 100ms;
+}
+
+.delay-150 {
+  animation-delay: 500ms;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch-effect {
+  animation: glitch 1s infinite;
+  text-shadow: 2px 2px #ff0000, -2px -2px #00ffff;
+}
