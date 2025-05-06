@@ -1,3 +1,4 @@
+DROP USER IF EXISTS 'company'@'%';
 CREATE USER 'company'@'%' IDENTIFIED BY 'Ukshati@123';
 GRANT ALL PRIVILEGES ON company_db.* TO 'company'@'%';
 FLUSH PRIVILEGES;
