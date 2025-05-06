@@ -355,7 +355,7 @@ useEffect(() => {
       name: "CRM", 
       path: "/crm/home", 
       icon: <FaUsers className="text-white" />, 
-      gradient: "bg-gradient-to-r from-blue-500 to-indigo-600", 
+      gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40", 
       description: "Manage customer relationships",
       imageDescription: "Customer Relationship Overview",
       stats: { 
@@ -372,10 +372,10 @@ useEffect(() => {
       name: "Inventory", 
       path: "/ims/home", 
       icon: <FaBoxOpen className="text-white" />, 
-      gradient: "bg-gradient-to-r from-emerald-500 to-teal-500", 
+      gradient: "bg-gradient-to-r from-emerald-400/30 to-teal-400/40", 
       description: "Track stock and supplies",
       imageDescription: "Inventory Management System",
-      stats: { main: dashboardData.stocks}, // TODO: Add daily stock changes
+      stats: { main: dashboardData.stocks },
       filedBy: "Inventory Management Team",
       accordion: [
         { title: "Stock Levels", content: "Monitor real-time stock availability." },
@@ -387,7 +387,7 @@ useEffect(() => {
       name: "Expense", 
       path: "/expense/home", 
       icon: <FaMoneyBillWave className="text-white" />, 
-      gradient: "bg-gradient-to-r from-pink-500 to-rose-500", 
+      gradient: "bg-gradient-to-r from-pink-400/30 to-rose-400/40", 
       description: "Monitor business expenses",
       imageDescription: "Expense Tracking Dashboard",
       stats: { 
@@ -404,10 +404,10 @@ useEffect(() => {
       name: "Billing", 
       path: "billing/billing", 
       icon: <FaFileInvoiceDollar className="text-white" />, 
-      gradient: "bg-gradient-to-r from-violet-500 to-purple-500", 
+      gradient: "bg-gradient-to-r from-violet-400/30 to-purple-500/40", 
       description: "Generate and manage invoices",
       imageDescription: "Billing Management System",
-      stats: { main: dashboardData.invoices}, // TODO: Add daily invoices
+      stats: { main: dashboardData.invoices },
       filedBy: "billing.team__ and others",
       accordion: [
         { title: "Invoice Creation", content: "Create and customize invoices." },
@@ -419,25 +419,25 @@ useEffect(() => {
       name: "Quotation", 
       path: "/quotation/home", 
       icon: <FaFileContract className="text-white" />, 
-      gradient: "bg-gradient-to-r from-amber-500 to-yellow-500", 
+      gradient: "bg-gradient-to-r from-yellow-400/30 to-amber-500/40", 
       description: "Create and send quotations",
       imageDescription: "Quotation Management System",
       stats: { 
         main: `₹${dashboardData.stats.quotesCount}` || 0
       },
       filedBy: "sales.team__ and others",
-      accordion: [], // Empty if no additional info needed
+      accordion: [],
       image: "https://png.pngtree.com/thumb_back/fh260/background/20221006/pngtree-money-concept-quotation-on-chalkboard-background-learn-investment-market-photo-image_22951928.jpg" 
     }
-  ];
+  ];  
 
   // Stats data with dynamic values
   const statsData = [
-    { title: "Total Customers", value: dashboardData.customers, change: 12, isPositive: true, icon: <FaUsers className="text-white" />, bgColor: "bg-gradient-to-r from-blue-600 to-blue-700" },
-    { title: "Inventory Items", value: dashboardData.stocks, change: 5, isPositive: true, icon: <FaBoxOpen className="text-white" />, bgColor: "bg-gradient-to-r from-emerald-600 to-teal-700" },
-    { title: "Total Quotations", value: dashboardData.lastQuoteId, change: 16, isPositive: true, icon: <FaFileContract className="text-white" />, bgColor: "bg-gradient-to-r from-violet-600 to-purple-700" },
-    { title: "Revenue", value: `₹${dashboardData.stats.revenue?.toLocaleString() || '0'}`, change: 23, isPositive: true, icon: <FaMoneyBillWave className="text-white" />, bgColor: "bg-gradient-to-r from-green-600 to-green-700" },
-    { title: "Expenses", value: `₹${dashboardData.stats.expenses?.toLocaleString() || '0'}`, change: 5, isPositive: false, icon: <FaFileInvoiceDollar className="text-white" />, bgColor: "bg-gradient-to-r from-red-600 to-rose-700" }
+    { title: "Total Customers", value: dashboardData.customers, change: 12, isPositive: true, icon: <FaUsers className="text-white" />, bgColor: "bg-gradient-to-r from-blue-600 via-blue-800 to-blue-950" },
+    { title: "Inventory Items", value: dashboardData.stocks, change: 5, isPositive: true, icon: <FaBoxOpen className="text-white" />, bgColor: "bg-gradient-to-r from-emerald-600 via-emerald-800 to-teal-950" },
+    { title: "Total Quotations", value: dashboardData.lastQuoteId, change: 16, isPositive: true, icon: <FaFileContract className="text-white" />, bgColor: "bg-gradient-to-r from-violet-600 via-indigo-800 to-purple-950" },
+    { title: "Revenue", value: `₹${dashboardData.stats.revenue?.toLocaleString() || '0'}`, change: 23, isPositive: true, icon: <FaMoneyBillWave className="text-white" />, bgColor: "bg-gradient-to-r from-green-600 via-green-800 to-green-950" },
+    { title: "Expenses", value: `₹${dashboardData.stats.expenses?.toLocaleString() || '0'}`, change: 5, isPositive: false, icon: <FaFileInvoiceDollar className="text-white" />, bgColor: "bg-gradient-to-r from-purple-600 via-indigo-700 to-rose-1000" }
   ];
 
   const [flipped, setFlipped] = useState(Array(features.length).fill(false));
