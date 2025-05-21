@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from "react";
 import Papa from "papaparse";
-import StarryBackground from "@/components/StarryBackground";
 import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
+import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -39,20 +39,20 @@ export default function Customers() {
   const fetchCustomers = async () => {
     try {
       const res = await fetch("/api/customers");
-      
+
       // Handle HTTP errors first
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Request failed: ${res.status} - ${errorText}`);
       }
-  
+
       const data = await res.json();
-      
+
       // Ensure data is in correct format
       if (!Array.isArray(data.customers)) {
         throw new Error("Invalid data format from API");
       }
-  
+
       setCustomers(data.customers);
       setError(null);
     } catch (error) {
@@ -121,20 +121,28 @@ export default function Customers() {
 
   // Handle deleting a customer
   const handleDelete = async (cid) => {
-    if (!window.confirm("Are you sure you want to delete this customer?")) return;
-  
+    if (!window.confirm("Are you sure you want to delete this customer and all related invoices?")) return;
+
     try {
-      const res = await fetch(`/api/customers?cid=${cid}`, { 
-        method: "DELETE" 
+      const res = await fetch(`/api/customers?cid=${cid}`, {
+        method: "DELETE"
       });
-  
+
+      // Parse the response data
+      const data = await res.json();
+
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to delete customer");
+        throw new Error(data.error || "Failed to delete customer");
       }
-  
+
       await fetchCustomers();
-      alert("Customer deleted successfully");
+
+      // Show more detailed success message if invoices were also deleted
+      if (data.deletedInvoices > 0) {
+        alert(`Customer deleted successfully. ${data.deletedInvoices} related invoice(s) were also deleted.`);
+      } else {
+        alert("Customer deleted successfully.");
+      }
     } catch (error) {
       console.error("Delete Error:", error);
       alert(error.message);
@@ -155,7 +163,7 @@ export default function Customers() {
         throw new Error(errorData.error || 'Status update failed');
       }
 
-      setCustomers(prev => prev.map(customer => 
+      setCustomers(prev => prev.map(customer =>
         customer.cid === cid ? { ...customer, status: newStatus } : customer
       ));
     } catch (error) {
@@ -172,23 +180,23 @@ export default function Customers() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ remark: newRemark }),
       });
-  
+
       const responseData = await res.json();
       if (!res.ok) throw new Error(responseData.error || "Failed to update remark");
-  
-      setCustomers(prev => 
-        prev.map(customer => 
+
+      setCustomers(prev =>
+        prev.map(customer =>
           customer.cid === cid ? { ...customer, ...responseData } : customer
         )
       );
-  
+
       setEditingRemarks(prev => ({ ...prev, [cid]: false }));
     } catch (error) {
       console.error("Remark error:", error);
       alert(error.message);
     }
   };
-  
+
   // Handle CSV upload
   const handleCsvUpload = (e) => {
     setCsvFile(e.target.files[0]);
@@ -258,29 +266,30 @@ const handleCsvImport = async () => {
     : [];
 
     return (
-      <div className="relative min-h-screen">
-        <StarryBackground />
-        <BackButton route="/crm/home" />
+      <div className="relative min-h-screen bg-black">
+        <div className="absolute top-4 left-4 z-10">
+          <BackButton route="/crm/home" />
+        </div>
         <ScrollToTopButton />
-  
+
         <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-7xl">
           {/* Header Section */}
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 mt-16">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-emerald-400 to-blue-500 bg-clip-text text-transparent">
                 Customer Management
               </h1>
               <p className="text-gray-400 mt-2">Manage all your customer interactions</p>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
               <label className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer">
                 <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
                 <span className="text-blue-400">📁</span>
                 <span className="text-white">Import CSV</span>
               </label>
-              <button 
-                onClick={handleCsvImport} 
+              <button
+                onClick={handleCsvImport}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
                 disabled={!csvFile}
               >
@@ -288,79 +297,83 @@ const handleCsvImport = async () => {
               </button>
             </div>
           </header>
-  
+
           {/* Customer Form Card */}
           <div className="backdrop-blur-sm rounded-xl border border-gray-700 p-6 mb-8">
             <h2 className="text-xl font-semibold text-white mb-6">
               {editId ? "Edit Customer" : "Add New Customer"}
             </h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            {loading ? (
+              <FormSkeleton fields={5} />
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-300">Customer Name</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-300">Phone Number</label>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-300">Alternate Phone</label>
+                    <input
+                      type="text"
+                      value={altPhone}
+                      onChange={(e) => setAltPhone(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-300">Status</label>
+                    <select
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                    >
+                      <option value="lead">Lead</option>
+                      <option value="customer">Customer</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">Customer Name</label>
+                  <label className="block text-sm font-medium text-gray-300">Remarks</label>
                   <input
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">Phone Number</label>
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
-                    required
-                  />
-                </div>
-  
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">Alternate Phone</label>
-                  <input
-                    type="text"
-                    value={altPhone}
-                    onChange={(e) => setAltPhone(e.target.value)}
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
                   />
                 </div>
-  
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
-                  >
-                    <option value="lead">Lead</option>
-                    <option value="customer">Customer</option>
-                  </select>
-                </div>
-              </div>
-  
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">Remarks</label>
-                <input
-                  type="text"
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
-                />
-              </div>
-  
-              <button
-                type="submit"
-                className="mt-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg text-white font-medium hover:from-blue-700 hover:to-blue-600 transition-all"
-              >
-                {editId ? "Update Customer" : "Add Customer"}
-              </button>
-            </form>
+
+                <button
+                  type="submit"
+                  className="mt-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg text-white font-medium hover:from-blue-700 hover:to-blue-600 transition-all"
+                >
+                  {editId ? "Update Customer" : "Add Customer"}
+                </button>
+              </form>
+            )}
           </div>
-  
+
           {/* Search and Table Section */}
           <div className="backdrop-blur-sm rounded-xl border border-gray-700 p-6">
             <div className="mb-6">
@@ -379,7 +392,7 @@ const handleCsvImport = async () => {
                 />
               </div>
             </div>
-  
+
             <div className="overflow-x-auto rounded-lg border border-gray-700">
               <table className="min-w-full divide-y divide-gray-700">
                 <thead className="bg-gray-700">
@@ -396,8 +409,8 @@ const handleCsvImport = async () => {
                 <tbody className="bg-gray-800/50 divide-y divide-gray-700">
                   {loading ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-4 text-center text-gray-400">
-                        Loading customers...
+                      <td colSpan="7" className="px-0 py-0">
+                        <TableSkeleton rows={5} columns={7} />
                       </td>
                     </tr>
                   ) : error ? (
@@ -423,8 +436,8 @@ const handleCsvImport = async () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded-full ${
-                            customer.status === 'customer' 
-                              ? 'bg-green-900 text-green-300' 
+                            customer.status === 'customer'
+                              ? 'bg-green-900 text-green-300'
                               : 'bg-blue-900 text-blue-300'
                           }`}>
                             {customer.status === 'customer' ? 'Customer' : 'Lead'}
@@ -454,7 +467,7 @@ const handleCsvImport = async () => {
                               </button>
                             </div>
                           ) : (
-                            <span 
+                            <span
                               onClick={() =>
                                 setEditingRemarks((prev) => ({
                                   ...prev,
@@ -494,4 +507,3 @@ const handleCsvImport = async () => {
       </div>
     );
   }
-  

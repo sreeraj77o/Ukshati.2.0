@@ -3,8 +3,8 @@ import { useRouter } from 'next/router';
 import ScrollToTopButton from '@/components/scrollup';
 import { motion } from 'framer-motion';
 import BackButton from '@/components/BackButton';
-import StarryBackground from "@/components/StarryBackground";
 import { FiSearch, FiPlus, FiRefreshCw, FiX, FiEdit } from 'react-icons/fi';
+import { CardSkeleton, TableSkeleton } from '@/components/skeleton';
 
 // Price formatting utility
 const formatPrice = (price) => {
@@ -108,7 +108,7 @@ const RatesManagement = () => {
     debounce((searchValue) => {
       if (searchValue.length < 3) {
         // Client-side filter for short queries
-        const filtered = allRates.filter(rate => 
+        const filtered = allRates.filter(rate =>
           rate.item_name.toLowerCase().includes(searchValue.toLowerCase())
         );
         setRates(filtered);
@@ -167,8 +167,8 @@ const RatesManagement = () => {
       const res = await fetch('/api/rates/addRate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          item_id: itemId, 
+        body: JSON.stringify({
+          item_id: itemId,
           price_pu: parseFloat(rateData.price) || 0
         })
       });
@@ -200,7 +200,7 @@ const RatesManagement = () => {
       const res = await fetch('/api/rates/updateRate', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           rate_id: rateId,
           quantity: parseInt(rateData.quantity) || 1,
           price_pu: parseFloat(rateData.price) || 0
@@ -228,24 +228,24 @@ const RatesManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
-      <StarryBackground />
+    <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center">
       <ScrollToTopButton />
 
-      <div className="relative z-10">
+      <div className="absolute top-4 left-4 z-10">
         <BackButton
           label="Back"
-          onClick={() => router.back()}
+          route="/quotation/home"
         />
+      </div>
 
-        <div className="container mx-auto px-4 py-20">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="bg-gray-800 rounded-lg shadow-xl p-6"
-          >
-            <h1 className="text-2xl font-bold mb-6">Rates Management</h1>
+      <div className="w-full px-4 py-20 flex flex-col items-center justify-center">
+        <h1 className="text-4xl font-bold mb-16 mt-8">Rates Management</h1>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="bg-gray-900/80 p-8 rounded-xl shadow-xl w-full max-w-4xl mx-auto border border-gray-800"
+        >
 
             {/* Notification */}
             {notification && (
@@ -274,9 +274,8 @@ const RatesManagement = () => {
               <h2 className="text-xl font-semibold text-blue-300 mb-4">Add Rates for Unrated Items</h2>
 
               {loading.unrated && unratedItems.length === 0 ? (
-                <div className="text-center py-8">
-                  <FiRefreshCw className="animate-spin mx-auto text-2xl text-blue-400" />
-                  <p className="mt-2 text-gray-400">Loading unrated items...</p>
+                <div className="space-y-4">
+                  <CardSkeleton count={3} />
                 </div>
               ) : unratedItems.length > 0 ? (
                 <div className="space-y-4">
@@ -380,10 +379,9 @@ const RatesManagement = () => {
                 </div>
               </div>
 
-              {loading.rates && rates.length === 0 && searchTerm ? (
-                <div className="text-center py-8">
-                  <FiRefreshCw className="animate-spin mx-auto text-2xl text-blue-400" />
-                  <p className="mt-2 text-gray-400">Searching rates...</p>
+              {loading.rates && rates.length === 0 ? (
+                <div className="space-y-4">
+                  <TableSkeleton rows={3} columns={3} />
                 </div>
               ) : rates.length > 0 ? (
                 <div className="space-y-4">
@@ -455,7 +453,6 @@ const RatesManagement = () => {
               )}
             </section>
           </motion.div>
-        </div>
       </div>
     </div>
   );

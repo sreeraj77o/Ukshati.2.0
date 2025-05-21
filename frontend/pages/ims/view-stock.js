@@ -4,13 +4,14 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import ScrollToTopButton from "@/components/scrollup";
-import { 
-  FiShoppingCart, FiActivity, FiSearch, FiX, 
+import {
+  FiShoppingCart, FiActivity, FiSearch, FiX,
   FiUser, FiMapPin, FiAlertTriangle, FiAlertCircle, FiPackage, FiBox, FiCheckCircle, FiTag, FiDollarSign,
   FiFilter, FiUpload, FiDownload, FiMenu
 } from "react-icons/fi";
 import Papa from "papaparse";
 import BackButton from "@/components/BackButton";
+import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
 
 export default function StockDetails() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function StockDetails() {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [location, setLocation] = useState("");
   const [remark, setRemark] = useState("");
-   
+
   const StarryBackground = dynamic(
     () => import("@/components/StarryBackground"),
     { ssr: false }
@@ -130,7 +131,7 @@ export default function StockDetails() {
 
     setCsvErrors([]);
     setUploadProgress(0);
-    
+
     Papa.parse(file, {
       header: true,
       complete: (results) => {
@@ -138,49 +139,49 @@ export default function StockDetails() {
           setCsvErrors(results.errors.map(err => `Row ${err.row}: ${err.message}`));
           return;
         }
-        
+
         const validationErrors = [];
         const validatedData = results.data.map((row, index) => {
           const rowErrors = [];
-          
+
           if (!row['product name']) rowErrors.push("Product name is required");
           if (!row.quantity || isNaN(row.quantity)) rowErrors.push("Valid quantity is required");
           if (!row['project name']) rowErrors.push("Project name is required");
           if (!row['employee name']) rowErrors.push("Employee name is required");
           if (!row.location) rowErrors.push("Location is required");
-          
+
           if (rowErrors.length > 0) {
             validationErrors.push(`Row ${index + 2}: ${rowErrors.join(", ")}`);
             return null;
           }
-          
-          const stockItem = stocks.find(s => 
+
+          const stockItem = stocks.find(s =>
             s.item_name.toLowerCase() === row['product name'].toLowerCase().trim()
           );
-          
-          const projectItem = projects.find(p => 
+
+          const projectItem = projects.find(p =>
             p.pname.toLowerCase() === row['project name'].toLowerCase().trim()
           );
-          
-          const employeeItem = employees.find(e => 
+
+          const employeeItem = employees.find(e =>
             e.name.toLowerCase() === row['employee name'].toLowerCase().trim()
           );
-          
+
           if (!stockItem) {
             validationErrors.push(`Row ${index + 2}: Product not found - ${row['product name']}`);
             return null;
           }
-          
+
           if (!projectItem) {
             validationErrors.push(`Row ${index + 2}: Project not found - ${row['project name']}`);
             return null;
           }
-          
+
           if (!employeeItem) {
             validationErrors.push(`Row ${index + 2}: Employee not found - ${row['employee name']}`);
             return null;
           }
-          
+
           return {
             stockId: stockItem.stock_id,
             productName: stockItem.item_name,
@@ -193,12 +194,12 @@ export default function StockDetails() {
             remark: row.remarks || ""
           };
         }).filter(Boolean);
-        
+
         if (validationErrors.length > 0) {
           setCsvErrors(validationErrors);
           return;
         }
-        
+
         setCsvData(validatedData);
       },
       error: (error) => {
@@ -212,27 +213,27 @@ export default function StockDetails() {
       setCsvErrors(["No valid data to upload"]);
       return;
     }
-    
+
     setIsUploading(true);
     setUploadProgress(0);
-    
+
     try {
       const batchSize = 5;
       let successfulCount = 0;
       let failedItems = [];
-      
+
       for (let i = 0; i < csvData.length; i += batchSize) {
         const batch = csvData.slice(i, i + batchSize);
-        
+
         try {
           const response = await fetch("/api/spend/bulk", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ items: batch })
           });
-          
+
           const result = await response.json();
-          
+
           if (response.ok) {
             successfulCount += result.successful.length;
             failedItems = [...failedItems, ...result.failed];
@@ -245,10 +246,10 @@ export default function StockDetails() {
             error: error.message
           }))];
         }
-        
+
         setUploadProgress(Math.min(100, ((i + batchSize) / csvData.length) * 100));
       }
-      
+
       const notificationId = Date.now();
       setNotifications(prev => [
         ...prev,
@@ -261,9 +262,9 @@ export default function StockDetails() {
           }, 10000)
         }
       ]);
-      
+
       if (failedItems.length > 0) {
-        setCsvErrors(failedItems.map(item => 
+        setCsvErrors(failedItems.map(item =>
           `${item.productName}: ${item.error || "Unknown error"}`
         ));
       } else {
@@ -294,7 +295,7 @@ export default function StockDetails() {
       'location': 'Main Warehouse',
       'remarks': 'For assembly'
     }];
-    
+
     const csv = Papa.unparse(template);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -308,20 +309,20 @@ export default function StockDetails() {
 
   const handleSpendStock = useCallback(async () => {
     const newErrors = [];
-    
+
     if (!selectedProject) newErrors.push("Project is required");
     if (!selectedEmployee) newErrors.push("Employee is required");
     if (!spendQty || spendQty <= 0) newErrors.push("Valid quantity is required");
-    
+
     const availableQty = Number(selectedStock?.quantity);
     const requestedQty = Number(spendQty);
-    
+
     if (requestedQty > availableQty) {
       newErrors.push(`Quantity exceeds available stock (${availableQty})`);
     }
-    
+
     if (!location) newErrors.push("Location is required");
-    
+
     if (newErrors.length > 0) {
       setErrors(newErrors);
       return;
@@ -371,7 +372,7 @@ export default function StockDetails() {
   // Remove expired notifications
   useEffect(() => {
     const interval = setInterval(() => {
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.filter(n => n.type === 'error' || n.type === 'warning')
       );
     }, 30000);
@@ -382,7 +383,7 @@ export default function StockDetails() {
   return (
       <div className="min-h-screen bg-black text-gray-100">
         <ScrollToTopButton />
-  
+
         {/* Notifications Container */}
         <div className="fixed z-50">
           <div className="fixed top-4 right-4 w-80 space-y-2">
@@ -394,7 +395,7 @@ export default function StockDetails() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: 100 }}
                   className="p-4 rounded-xl flex items-start transition duration-300 ease-in-out cursor-pointer shadow-xl
-                            bg-emerald-600/90 backdrop-blur-sm border border-emerald-400/20 
+                            bg-emerald-600/90 backdrop-blur-sm border border-emerald-400/20
                             text-emerald-50 hover:bg-emerald-600"
                   onClick={() => {
                     clearTimeout(notification.timeoutId);
@@ -409,7 +410,7 @@ export default function StockDetails() {
               ))}
             </AnimatePresence>
           </div>
-  
+
           <div className="fixed bottom-4 right-4 w-80 space-y-2">
             <AnimatePresence>
               {notifications.filter(n => n.type !== 'success').map(notification => (
@@ -420,7 +421,7 @@ export default function StockDetails() {
                   exit={{ opacity: 0, x: 100 }}
                   className={`p-4 rounded-xl flex items-start transition duration-300 ease-in-out cursor-pointer shadow-xl
                     backdrop-blur-sm border ${
-                      notification.type === 'error' 
+                      notification.type === 'error'
                       ? 'bg-red-600/90 border-red-400/20 text-red-50 hover:bg-red-600'
                       : 'bg-amber-600/90 border-amber-400/20 text-amber-50 hover:bg-amber-600'
                     }`}
@@ -442,7 +443,7 @@ export default function StockDetails() {
             </AnimatePresence>
           </div>
         </div>
-  
+
         <header className="p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
   <div className="max-w-7xl mx-auto flex justify-between items-center">
     {/* Left Section - Back Button */}
@@ -523,7 +524,7 @@ export default function StockDetails() {
     </div>
   </div>
 </header>
-  
+
         <main className="max-w-7xl mx-auto p-4 space-y-8">
           <section className="rounded-xl bg-black backdrop-blur-sm border border-gray-700">
             <div className="p-4 border-b border-gray-700 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -559,14 +560,14 @@ export default function StockDetails() {
                 </div>
               </div>
             </div>
-  
+
             <div className="overflow-x-auto rounded-lg border border-gray-700 bg-gray-850">
   <table className="w-full">
     <thead className="bg-gray-850">
       <tr>
         {["Product", "Category", "Quantity", "Unit Price", "Total Value", "Actions"].map((header, i) => (
-          <th 
-            key={i} 
+          <th
+            key={i}
             className="px-6 py-4 text-left text-sm font-semibold text-indigo-400 border-b border-gray-700"
           >
             {{
@@ -579,14 +580,12 @@ export default function StockDetails() {
         ))}
       </tr>
     </thead>
-    
+
     <tbody className="divide-y divide-gray-700">
       {loading ? (
         <tr>
-          <td colSpan="6" className="px-6 py-6 text-center">
-            <div className="flex items-center justify-center space-x-2 text-gray-500">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-            </div>
+          <td colSpan="6" className="p-0">
+            <TableSkeleton rows={5} columns={6} />
           </td>
         </tr>
       ) : filteredStocks.length === 0 ? (
@@ -597,11 +596,11 @@ export default function StockDetails() {
         </tr>
       ) : (
         filteredStocks.map((stock) => (
-          <tr 
-            key={stock.stock_id} 
+          <tr
+            key={stock.stock_id}
             className={`hover:bg-gray-800/30 transition-colors duration-200 ${
-              stock.quantity === 0 
-                ? "bg-red-900/20" 
+              stock.quantity === 0
+                ? "bg-red-900/20"
                 : stock.quantity <= 2 && "bg-amber-900/20"
             }`}
           >
@@ -623,13 +622,13 @@ export default function StockDetails() {
                 </div>
               </div>
             </td>
-            
+
             <td className="px-6 py-4">
               <span className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 rounded-full text-xs font-medium border border-indigo-400/20">
                 {stock.category_name}
               </span>
             </td>
-            
+
             <td className="px-6 py-4">
               <span className={`px-2 py-1 rounded-md text-sm font-medium ${
                 stock.quantity < 10 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'
@@ -637,18 +636,18 @@ export default function StockDetails() {
                 {stock.quantity}
               </span>
             </td>
-            
+
             <td className="px-6 py-4 text-sm text-gray-300">
               ₹{stock.price_pu}
             </td>
-            
+
             <td className="px-6 py-4 text-sm font-medium text-white">
               ₹{(stock.quantity * stock.price_pu).toFixed(2)}
             </td>
-            
+
             <td className="px-6 py-4">
-              <button 
-                onClick={() => openModal(stock)} 
+              <button
+                onClick={() => openModal(stock)}
                 className={`px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all ${
                   stock.quantity === 0
                     ? "bg-gray-600 text-gray-400 cursor-not-allowed"
@@ -671,7 +670,7 @@ export default function StockDetails() {
         {/* Bulk Upload Modal */}
         <AnimatePresence>
           {isBulkModalOpen && (
-            <div 
+            <div
               className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
               onClick={closeBulkModal}
             >
@@ -686,7 +685,7 @@ export default function StockDetails() {
                   <h2 className="text-2xl font-bold text-blue-400">
                     Bulk Spend Stocks
                   </h2>
-                  <button 
+                  <button
                     onClick={closeBulkModal}
                     className="text-gray-400 hover:text-white transition-colors"
                   >
@@ -770,8 +769,8 @@ export default function StockDetails() {
                         <span>{Math.round(uploadProgress)}%</span>
                       </div>
                       <div className="w-full bg-gray-700 rounded-full h-2.5">
-                        <div 
-                          className="bg-blue-600 h-2.5 rounded-full" 
+                        <div
+                          className="bg-blue-600 h-2.5 rounded-full"
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
@@ -833,7 +832,7 @@ export default function StockDetails() {
         {/* Spend Stock Modal */}
         <AnimatePresence>
           {isModalOpen && (
-            <div 
+            <div
               className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
               onClick={closeModal}
             >
@@ -848,7 +847,7 @@ export default function StockDetails() {
                   <h2 className="text-2xl font-bold text-blue-400">
                     Spend {selectedStock?.item_name}
                   </h2>
-                  <button 
+                  <button
                     onClick={closeModal}
                     className="text-gray-400 hover:text-white transition-colors"
                   >
@@ -857,85 +856,91 @@ export default function StockDetails() {
                 </div>
 
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Project
-                    </label>
-                    <select
-                      className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      value={selectedProject}
-                      onChange={(e) => setSelectedProject(e.target.value)}
-                    >
-                      <option value="">Select Project</option>
-                      {projects.map(proj => (
-                        <option key={proj.pid} value={proj.pid}>
-                          {proj.pname}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {loading ? (
+                    <FormSkeleton fields={5} />
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Project
+                        </label>
+                        <select
+                          className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          value={selectedProject}
+                          onChange={(e) => setSelectedProject(e.target.value)}
+                        >
+                          <option value="">Select Project</option>
+                          {projects.map(proj => (
+                            <option key={proj.pid} value={proj.pid}>
+                              {proj.pname}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      <FiUser className="inline mr-2" />
-                      Recorded By
-                    </label>
-                    <select
-                      className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      value={selectedEmployee}
-                      onChange={(e) => setSelectedEmployee(e.target.value)}
-                    >
-                      <option value="">Select Employee</option>
-                      {employees.map(employee => (
-                        <option key={employee.id} value={employee.id}>
-                          {employee.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          <FiUser className="inline mr-2" />
+                          Recorded By
+                        </label>
+                        <select
+                          className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          value={selectedEmployee}
+                          onChange={(e) => setSelectedEmployee(e.target.value)}
+                        >
+                          <option value="">Select Employee</option>
+                          {employees.map(employee => (
+                            <option key={employee.id} value={employee.id}>
+                              {employee.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Quantity (Available: {selectedStock?.quantity})
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max={selectedStock?.quantity}
-                      value={spendQty}
-                      onChange={(e) => setSpendQty(Number(e.target.value))}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="Enter quantity"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Quantity (Available: {selectedStock?.quantity})
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={selectedStock?.quantity}
+                          value={spendQty}
+                          onChange={(e) => setSpendQty(Number(e.target.value))}
+                          className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          placeholder="Enter quantity"
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      <FiMapPin className="inline mr-2" />
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="Enter location where stock is being used"
-                      required
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          <FiMapPin className="inline mr-2" />
+                          Location
+                        </label>
+                        <input
+                          type="text"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                          className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          placeholder="Enter location where stock is being used"
+                          required
+                        />
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Remarks
-                    </label>
-                    <textarea
-                      value={remark}
-                      onChange={(e) => setRemark(e.target.value)}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      placeholder="Additional notes (optional)"
-                      rows="3"
-                    />
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                          Remarks
+                        </label>
+                        <textarea
+                          value={remark}
+                          onChange={(e) => setRemark(e.target.value)}
+                          className="w-full bg-gray-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                          placeholder="Additional notes (optional)"
+                          rows="3"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {errors.length > 0 && (
                     <div className="p-3 bg-red-900/20 rounded-lg text-red-400 text-sm space-y-1">

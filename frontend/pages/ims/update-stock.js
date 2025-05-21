@@ -18,6 +18,7 @@ import {
 import { useRouter } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import { AnimatePresence, motion } from "framer-motion";
+import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
 
 // Custom Pagination Component
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
@@ -64,13 +65,20 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (stock) {
-      setFormData({
-        quantity: "",
-        price: stock.price_pu || ""
-      });
+      setLoading(true);
+      // Simulate loading delay
+      const timer = setTimeout(() => {
+        setFormData({
+          quantity: "",
+          price: stock.price_pu || ""
+        });
+        setLoading(false);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [stock]);
 
@@ -147,25 +155,29 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
               <FiX size={24} />
             </button>
           </div>
-          <div className="mb-6 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-300 font-medium">Product:</span>
-              <span className="text-white">{stock.item_name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-300 font-medium">Category:</span>
-              <span className="text-white">{stock.category_name}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-300 font-medium">Current Quantity:</span>
-              <span className="text-white">{stock.quantity}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-300 font-medium">Current Price:</span>
-              <span className="text-white">₹{stock.price_pu || "0.00"}</span>
-            </div>
-          </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {loading ? (
+            <FormSkeleton fields={5} />
+          ) : (
+            <>
+              <div className="mb-6 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-300 font-medium">Product:</span>
+                  <span className="text-white">{stock.item_name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-300 font-medium">Category:</span>
+                  <span className="text-white">{stock.category_name}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-300 font-medium">Current Quantity:</span>
+                  <span className="text-white">{stock.quantity}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-300 font-medium">Current Price:</span>
+                  <span className="text-white">₹{stock.price_pu || "0.00"}</span>
+                </div>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="quantity" className="block text-gray-300 mb-2">
                 Quantity to Add
@@ -255,6 +267,8 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
               </button>
             </div>
           </form>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -273,6 +287,7 @@ export default function StockUpdate() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStock, setCurrentStock] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -283,6 +298,7 @@ export default function StockUpdate() {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
 
@@ -305,10 +321,15 @@ export default function StockUpdate() {
       const stocksData = await stocksRes.json();
       const categoriesData = await categoriesRes.json();
 
+      // Simulate loading delay (remove in production if not needed)
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       setStocks(stocksData);
       setCategories(categoriesData.categories || []);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -466,7 +487,13 @@ export default function StockUpdate() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {paginatedStocks.map((stock) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan="7" className="p-0">
+                      <TableSkeleton rows={5} columns={7} />
+                    </td>
+                  </tr>
+                ) : paginatedStocks.map((stock) => (
                   <tr
                     key={stock.stock_id}
                     className="hover:bg-gray-800/30 transition-colors duration-200"

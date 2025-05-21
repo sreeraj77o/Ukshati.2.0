@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { FiAlertCircle, FiUser, FiClock, FiCalendar, FiMessageSquare, FiTrash2, FiPlus, FiBell } from 'react-icons/fi';
-import StarryBackground from '@/components/StarryBackground';
 import BackButton from '@/components/BackButton';
+import { FormSkeleton, TableSkeleton } from "@/components/skeleton";
 
 const ReminderMaintenance = () => {
   const [reminders, setReminders] = useState([]);
@@ -24,7 +24,7 @@ const ReminderMaintenance = () => {
     return reminders
       .filter(reminder => {
         const reminderDate = new Date(reminder.datetime);
-        return activeTab === 'upcoming' ? reminderDate > now : 
+        return activeTab === 'upcoming' ? reminderDate > now :
               activeTab === 'past' ? reminderDate <= now : true;
       })
       .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
@@ -39,7 +39,7 @@ const ReminderMaintenance = () => {
       }
 
       const permission = await Notification.requestPermission();
-      
+
       if (permission === "granted") {
         setNotificationsEnabled(true);
         showSuccess("Notifications Enabled", "You'll receive reminder notifications");
@@ -57,11 +57,11 @@ const ReminderMaintenance = () => {
   // Handle reminder notifications
   const setupNotificationListener = useCallback(() => {
     if (!navigator.serviceWorker.controller) return;
-    
+
     const messageHandler = (event) => {
       if (event.data?.type === 'REMINDER_DUE') {
         const reminder = event.data.reminder;
-        
+
         if (Notification.permission === 'granted') {
           new Notification('Reminder', {
             body: `${reminder.message} for ${reminder.cname}`,
@@ -70,7 +70,7 @@ const ReminderMaintenance = () => {
             requireInteraction: true
           });
         }
-        
+
         Swal.fire({
           icon: 'info',
           title: 'Reminder Due',
@@ -95,7 +95,7 @@ const ReminderMaintenance = () => {
           registration = await navigator.serviceWorker.register('/service-worker.js');
           console.log('Service Worker registered with scope:', registration.scope);
           setupNotificationListener();
-          
+
           const readyRegistration = await navigator.serviceWorker.ready;
           if (readyRegistration.active) {
             readyRegistration.active.postMessage('startBackgroundChecks');
@@ -133,13 +133,13 @@ const ReminderMaintenance = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch customers
         const customersRes = await fetch('/api/customers');
         if (!customersRes.ok) throw new Error('Failed to load customers');
         const customersData = await customersRes.json();
         if (isMounted) setCustomers(customersData.customers || []);
-        
+
         // Fetch reminders
         await fetchReminders();
       } catch (error) {
@@ -182,7 +182,7 @@ const ReminderMaintenance = () => {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    
+
     try {
       const response = await fetch('/api/reminders', {
         method: 'POST',
@@ -227,12 +227,12 @@ const ReminderMaintenance = () => {
 
     if (isConfirmed) {
       try {
-        const response = await fetch(`/api/reminders?rid=${rid}`, { 
-          method: 'DELETE' 
+        const response = await fetch(`/api/reminders?rid=${rid}`, {
+          method: 'DELETE'
         });
-        
+
         if (!response.ok) throw new Error('Failed to delete reminder');
-        
+
         await showSuccess('Deleted!', 'Reminder has been deleted');
         window.location.reload();
       } catch (error) {
@@ -248,142 +248,145 @@ const ReminderMaintenance = () => {
   }, [showSuccess]);
 
   return (
-    <div className="min-h-screen p-2 sm:p-4 md:p-6 lg:p-8 relative">
-      <StarryBackground />
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-gray-900/80 to-gray-900/30" />
-      
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 relative z-10">
-        <div className="px-2 sm:px-4">
-          <BackButton route='/crm/home' />
-        </div>
+    <div className="min-h-screen p-2 sm:p-4 md:p-6 lg:p-8 relative bg-black">
 
-        <div className="text-center space-y-2 px-2 sm:px-4">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500">
+      <div className="absolute top-4 left-4 z-10">
+        <BackButton route='/crm/home' />
+      </div>
+
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 relative z-10 pt-20">
+
+        <div className="text-center space-y-4 px-2 sm:px-4 mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-6">
             Reminder Management
           </h1>
-          
+
           <button
             onClick={requestNotificationPermission}
-            className={`mt-1 sm:mt-2 inline-flex items-center px-3 py-1 text-xs sm:text-sm font-medium rounded-full shadow-sm transition-colors ${
-              notificationsEnabled 
-                ? 'bg-green-700 hover:bg-green-800 text-white' 
+            className={`mt-4 inline-flex items-center px-4 py-2 text-xs sm:text-sm font-medium rounded-full shadow-sm transition-colors ${
+              notificationsEnabled
+                ? 'bg-green-700 hover:bg-green-800 text-white'
                 : 'bg-indigo-600 hover:bg-indigo-700 text-white'
             }`}
           >
-            <FiBell className="mr-1 text-sm sm:text-base" />
+            <FiBell className="mr-2 text-sm sm:text-base" />
             {notificationsEnabled ? 'Notifications Enabled' : 'Enable Notifications'}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-4">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8 px-2 sm:px-4 mt-4">
           {/* Create Reminder Form - Always full width on mobile, then becomes sidebar on xl+ */}
           <div className="xl:col-span-1">
             <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-3 sm:p-4 md:p-6 border border-gray-700/50">
-              <div className="flex items-center mb-3 sm:mb-4 md:mb-6">
-                <FiPlus className="text-indigo-500 mr-2 text-lg sm:text-xl" />
-                <h2 className="text-lg sm:text-xl font-semibold text-white">
+              <div className="flex items-center mb-5 sm:mb-6 md:mb-8">
+                <FiPlus className="text-indigo-500 mr-3 text-xl sm:text-2xl" />
+                <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white">
                   Create New Reminder
                 </h2>
               </div>
-              
-              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                <div className="space-y-1 sm:space-y-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-300">
-                    <FiUser className="inline mr-1 sm:mr-2" />
-                    Customer
-                  </label>
-                  <select
-                    name="customerId"
-                    value={formData.customerId}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
-                    required
+
+              {loading ? (
+                <FormSkeleton fields={4} />
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                  <div className="space-y-1 sm:space-y-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-300">
+                      <FiUser className="inline mr-1 sm:mr-2" />
+                      Customer
+                    </label>
+                    <select
+                      name="customerId"
+                      value={formData.customerId}
+                      onChange={handleInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
+                      required
+                    >
+                      <option value="">Select a customer...</option>
+                      {customers.map(customer => (
+                        <option key={customer.cid} value={customer.cid}>
+                          {customer.cname}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1 sm:space-y-2">
+                    <label className="block text-xs sm:text-sm font-medium text-gray-300">
+                      <FiMessageSquare className="inline mr-1 sm:mr-2" />
+                      Message
+                    </label>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
+                      rows="3"
+                      placeholder="Enter reminder message..."
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+                    <div className="space-y-1 sm:space-y-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300">
+                        <FiCalendar className="inline mr-1 sm:mr-2" />
+                        Date
+                      </label>
+                      <input
+                        type="date"
+                        name="date"
+                        value={formData.date}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1 sm:space-y-2">
+                      <label className="block text-xs sm:text-sm font-medium text-gray-300">
+                        <FiClock className="inline mr-1 sm:mr-2" />
+                        Time
+                      </label>
+                      <input
+                        type="time"
+                        name="time"
+                        value={formData.time}
+                        onChange={handleInputChange}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2 sm:py-3 rounded-lg transition-all duration-200 mt-2 sm:mt-4 shadow-md sm:shadow-lg hover:shadow-indigo-500/20 text-sm sm:text-base"
                   >
-                    <option value="">Select a customer...</option>
-                    {customers.map(customer => (
-                      <option key={customer.cid} value={customer.cid}>
-                        {customer.cname}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1 sm:space-y-2">
-                  <label className="block text-xs sm:text-sm font-medium text-gray-300">
-                    <FiMessageSquare className="inline mr-1 sm:mr-2" />
-                    Message
-                  </label>
-                  <textarea
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
-                    rows="3"
-                    placeholder="Enter reminder message..."
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                  <div className="space-y-1 sm:space-y-2">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-300">
-                      <FiCalendar className="inline mr-1 sm:mr-2" />
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={formData.date}
-                      onChange={handleInputChange}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1 sm:space-y-2">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-300">
-                      <FiClock className="inline mr-1 sm:mr-2" />
-                      Time
-                    </label>
-                    <input
-                      type="time"
-                      name="time"
-                      value={formData.time}
-                      onChange={handleInputChange}
-                      className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-700/50 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 text-white text-sm sm:text-base"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-medium py-2 sm:py-3 rounded-lg transition-all duration-200 mt-2 sm:mt-4 shadow-md sm:shadow-lg hover:shadow-indigo-500/20 text-sm sm:text-base"
-                >
-                  Schedule Reminder
-                </button>
-              </form>
+                    Schedule Reminder
+                  </button>
+                </form>
+              )}
             </div>
           </div>
 
           {/* Reminders List - Full width on mobile, then 2/3 on xl+ */}
           <div className="xl:col-span-2">
             <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-lg sm:shadow-2xl p-3 sm:p-4 md:p-6 border border-gray-700/50 h-full">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 sm:mb-6 md:mb-8 gap-2 sm:gap-0">
                 <div className="flex items-center">
-                  <FiAlertCircle className="text-indigo-500 mr-2 text-lg sm:text-xl" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-white">
+                  <FiAlertCircle className="text-indigo-500 mr-3 text-xl sm:text-2xl" />
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white">
                     Your Reminders
                   </h2>
                 </div>
-                
+
                 <div className="flex space-x-1 sm:space-x-2 bg-gray-700/50 rounded-lg p-1">
                   {['upcoming', 'past', 'all'].map(tab => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
                       className={`px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md transition-colors ${
-                        activeTab === tab 
-                          ? 'bg-indigo-600 text-white' 
+                        activeTab === tab
+                          ? 'bg-indigo-600 text-white'
                           : 'text-gray-300 hover:bg-gray-600'
                       }`}
                     >
@@ -392,21 +395,20 @@ const ReminderMaintenance = () => {
                   ))}
                 </div>
               </div>
-              
+
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-8 sm:py-12">
-                  <div className="animate-spin rounded-full h-10 sm:h-12 w-10 sm:w-12 border-t-2 border-b-2 border-indigo-500 mb-3 sm:mb-4"></div>
-                  <p className="text-gray-400 text-sm sm:text-base">Loading reminders...</p>
+                <div className="p-4">
+                  <TableSkeleton rows={5} columns={3} />
                 </div>
               ) : filteredReminders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
                   <FiAlertCircle className="text-gray-500 text-3xl sm:text-4xl mb-3 sm:mb-4" />
                   <h3 className="text-base sm:text-lg font-medium text-gray-300">No reminders found</h3>
                   <p className="text-gray-500 mt-1 text-xs sm:text-sm">
-                    {activeTab === 'upcoming' 
-                      ? "You don't have any upcoming reminders" 
-                      : activeTab === 'past' 
-                        ? "No past reminders found" 
+                    {activeTab === 'upcoming'
+                      ? "You don't have any upcoming reminders"
+                      : activeTab === 'past'
+                        ? "No past reminders found"
                         : "No reminders created yet"}
                   </p>
                 </div>
@@ -415,10 +417,10 @@ const ReminderMaintenance = () => {
                   {filteredReminders.map(reminder => {
                     const reminderDate = new Date(reminder.datetime);
                     const isPast = reminderDate <= new Date();
-                    
+
                     return (
-                      <div 
-                        key={reminder.rid} 
+                      <div
+                        key={reminder.rid}
                         className={`bg-gray-700/50 rounded-lg sm:rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-4 hover:bg-gray-600/50 border-l-4 ${
                           isPast ? 'border-red-500/50' : 'border-indigo-500/50'
                         }`}

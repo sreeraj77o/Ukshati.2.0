@@ -1,17 +1,18 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import StarryBackground from "@/components/StarryBackground";
-import { Scroll, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import EditButton from "./editButton";
 import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
+import { TableSkeleton } from "@/components/skeleton";
 
 export default function ProjectDetails() {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [filterDate, setFilterDate] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
 
@@ -20,6 +21,7 @@ export default function ProjectDetails() {
   }, []);
 
   const fetchProjects = async (start = "") => {
+    setLoading(true);
     try {
       const url = start
         ? `/api/allProjects?start=${encodeURIComponent(formatDate(start))}`
@@ -28,11 +30,16 @@ export default function ProjectDetails() {
       const response = await fetch(url);
       const data = await response.json();
 
+      // Simulate data loading delay (remove in production if not needed)
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const safeData = Array.isArray(data) ? data : [];
       setProjects(safeData);
       setFilteredProjects(safeData);
     } catch (error) {
       console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,7 +132,7 @@ export default function ProjectDetails() {
     );
 
     filteredProjects.forEach((proj) => {
-      printWindow.document.write(`  
+      printWindow.document.write(`
         <tr>
           <td>${proj.pname || "N/A"}</td>
           <td>${proj.cname || "N/A"}</td>
@@ -133,7 +140,7 @@ export default function ProjectDetails() {
           <td>${proj.start_date || "N/A"}</td>
           <td>${proj.end_date || "N/A"}</td>
           <td>₹${proj.Amount || "0"}</td>
-    
+
           <td>${proj.Comments || "N/A"}</td>
         </tr>
       `);
@@ -152,9 +159,8 @@ export default function ProjectDetails() {
 
   return (
     <div>
-      <BackButton route="/expense" />
-      <div className="min-h-screen flex flex-col items-center relative bg-cover bg-center space-y-8 p-10">
-        <StarryBackground />
+      <BackButton route="/expense/home" />
+      <div className="min-h-screen flex flex-col items-center relative bg-black space-y-8 p-10">
         <ScrollToTopButton />
         <h1 className="text-5xl font-extrabold text-white tracking-wide">
           Project Details
@@ -189,53 +195,59 @@ export default function ProjectDetails() {
         </div>
 
         {/* Table Section */}
-        <table className="w-full text-white text-sm bg-white/10 backdrop-blur-lg rounded-3xl shadow-md">
-          <thead>
-            <tr className="bg-black/40">
-              <th className="p-4">Project Name</th>
-              <th>Customer Name</th>
-              <th>Status</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th className="text-center">Amount</th>
-              <th className="text-center">Comments</th>
-              <th>Edit (Admin)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProjects.length > 0 ? (
-              filteredProjects.map((proj, index) => (
-                <tr key={index} className="hover:bg-white/10 transition-all">
-                  <td className="py-4 text-center">{proj.pname || "N/A"}</td>
-                  <td className="text-center">{proj.cname || "N/A"}</td>
-                  <td className="text-center">{proj.status || "N/A"}</td>
-                  <td className="text-center">{proj.start_date || "N/A"}</td>
-                  <td className="text-center">{proj.end_date || "N/A"}</td>
+        {loading ? (
+          <div className="w-full">
+            <TableSkeleton rows={8} columns={8} />
+          </div>
+        ) : (
+          <table className="w-full text-white text-sm bg-white/10 backdrop-blur-lg rounded-3xl shadow-md">
+            <thead>
+              <tr className="bg-black/40">
+                <th className="p-4">Project Name</th>
+                <th>Customer Name</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th className="text-center">Amount</th>
+                <th className="text-center">Comments</th>
+                <th>Edit (Admin)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProjects.length > 0 ? (
+                filteredProjects.map((proj, index) => (
+                  <tr key={index} className="hover:bg-white/10 transition-all">
+                    <td className="py-4 text-center">{proj.pname || "N/A"}</td>
+                    <td className="text-center">{proj.cname || "N/A"}</td>
+                    <td className="text-center">{proj.status || "N/A"}</td>
+                    <td className="text-center">{proj.start_date || "N/A"}</td>
+                    <td className="text-center">{proj.end_date || "N/A"}</td>
 
-                  <td className="text-center">₹{proj.Amount || "0"}</td>
-                  <td className="text-center">{proj.Comments || "N/A"}</td>
+                    <td className="text-center">₹{proj.Amount || "0"}</td>
+                    <td className="text-center">{proj.Comments || "N/A"}</td>
 
-                  <td className="text-center">
-                    <EditButton project={proj} />
+                    <td className="text-center">
+                      <EditButton project={proj} />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="py-5 text-gray-400">
+                    No projects found.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" className="py-5 text-gray-400">
-                  No projects found.
-                </td>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="font-semibold">
+                <td colSpan="5" />
+                <td className="text-center">Total: ₹{totalAmount.toFixed(2)}</td>
+                <td colSpan="2" />
               </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr className="font-semibold">
-              <td colSpan="5" />
-              <td className="text-center">Total: ₹{totalAmount.toFixed(2)}</td>
-              <td colSpan="2" />
-            </tr>
-          </tfoot>
-        </table>
+            </tfoot>
+          </table>
+        )}
 
         {/*  Download Buttons */}
         <div className="flex gap-8 mt-8 text-white">

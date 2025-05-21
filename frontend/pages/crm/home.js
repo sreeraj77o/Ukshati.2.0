@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import BackButton from "@/components/BackButton";
 import Tilt from 'react-parallax-tilt';
+import { CardSkeleton, TableSkeleton } from "@/components/skeleton";
 
 const CRMDashboardVisualizations = dynamic(
   () => import("@/components/CRMdash"),
@@ -25,36 +26,36 @@ const CRMDashboardVisualizations = dynamic(
 );
 
 const metricsData = [
-  { 
-    id: 1, 
-    title: "Total Customers", 
-    value: "-", 
-    icon: <FiUsers className="text-indigo-500" />, 
-    trend: "+5.2%", 
+  {
+    id: 1,
+    title: "Total Customers",
+    value: "-",
+    icon: <FiUsers className="text-indigo-500" />,
+    trend: "+5.2%",
     color: "indigo"
   },
-  { 
-    id: 2, 
-    title: "Active Projects", 
-    value: "-", 
-    icon: <FiPackage className="text-sky-500" />, 
-    trend: "+2.1%", 
+  {
+    id: 2,
+    title: "Active Projects",
+    value: "-",
+    icon: <FiPackage className="text-sky-500" />,
+    trend: "+2.1%",
     color: "sky"
   },
-  { 
-    id: 3, 
-    title: "Pending Tasks", 
-    value: "-", 
-    icon: <FiBell className="text-amber-500" />, 
-    trend: "-3.4%", 
+  {
+    id: 3,
+    title: "Pending Tasks",
+    value: "-",
+    icon: <FiBell className="text-amber-500" />,
+    trend: "-3.4%",
     color: "amber"
   },
-  { 
-    id: 4, 
-    title: "Completed Projects", 
-    value: "-", 
-    icon: <FiPieChart className="text-emerald-500" />, 
-    trend: "+12.7%", 
+  {
+    id: 4,
+    title: "Completed Projects",
+    value: "-",
+    icon: <FiPieChart className="text-emerald-500" />,
+    trend: "+12.7%",
     color: "emerald"
   },
 ];
@@ -78,24 +79,24 @@ const CRMDashboard = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        
+
         const customersResponse = await fetch('/api/customers');
         const customersData = await customersResponse.json();
-        
+
         const projectsResponse = await fetch('/api/tasks');
         const projectsData = await projectsResponse.json();
-        
+
         const remindersResponse = await fetch('/api/reminders');
         const remindersData = await remindersResponse.json();
-        
+
         setCustomers(customersData.customers || []);
         setProjects(Array.isArray(projectsData) ? projectsData : []);
         setReminders(Array.isArray(remindersData) ? remindersData : []);
         setFilteredCustomers(customersData.customers || []);
-        updateMetrics(customersData.customers || [], 
-                     Array.isArray(projectsData) ? projectsData : [], 
+        updateMetrics(customersData.customers || [],
+                     Array.isArray(projectsData) ? projectsData : [],
                      Array.isArray(remindersData) ? remindersData : []);
-        
+
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -127,7 +128,7 @@ const CRMDashboard = () => {
     if (searchTerm.trim() === '') {
       setFilteredCustomers(customers);
     } else {
-      const filtered = customers.filter(customer => 
+      const filtered = customers.filter(customer =>
         customer.cname.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredCustomers(filtered);
@@ -145,12 +146,12 @@ const CRMDashboard = () => {
     showNotification("info", `Navigating to ${section}...`);
   };
 
-  if (!isMounted || isLoading) {
+  if (!isMounted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-          <p className="mt-4 text-indigo-500 font-medium">Loading dashboard data...</p>
+          <p className="mt-4 text-indigo-500 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -185,33 +186,37 @@ const CRMDashboard = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric) => (
-            <motion.div
-              key={metric.id}
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-700"
-              whileHover={{ y: -5 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="p-5">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="rounded-full p-3 bg-gray-900 text-indigo-400">
-                    {metric.icon}
+          {isLoading ? (
+            <CardSkeleton count={4} />
+          ) : (
+            metrics.map((metric) => (
+              <motion.div
+                key={metric.id}
+                className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden border border-gray-700"
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="p-5">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="rounded-full p-3 bg-gray-900 text-indigo-400">
+                      {metric.icon}
+                    </div>
+                    <span className={`text-${metric.color}-400 text-sm font-medium`}>
+                      {metric.trend}
+                    </span>
                   </div>
-                  <span className={`text-${metric.color}-400 text-sm font-medium`}>
-                    {metric.trend}
-                  </span>
+                  <div>
+                    <h3 className="text-gray-400 text-sm">{metric.title}</h3>
+                    <p className="text-2xl font-bold text-gray-100">{metric.value}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-gray-400 text-sm">{metric.title}</h3>
-                  <p className="text-2xl font-bold text-gray-100">{metric.value}</p>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            ))
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <motion.div 
+          <motion.div
             className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg lg:col-span-2 border border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -221,7 +226,7 @@ const CRMDashboard = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-indigo-300">Recent Projects</h2>
                 <Link href="/crm/project" passHref>
-                  <span 
+                  <span
                     className="text-indigo-400 hover:text-indigo-300 text-sm font-medium cursor-pointer"
                     onClick={() => handleNavigate("Projects")}
                   >
@@ -231,7 +236,9 @@ const CRMDashboard = () => {
               </div>
             </div>
             <div className="p-4 sm:p-5">
-              {projects.length > 0 ? (
+              {isLoading ? (
+                <TableSkeleton rows={5} columns={4} />
+              ) : projects.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-700">
                     <thead className="bg-gray-800">
@@ -252,16 +259,16 @@ const CRMDashboard = () => {
                             <div className="text-gray-300">{project.cname}</div>
                           </td>
                           <td className="px-3 sm:px-4 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                              ${project.status === 'Ongoing' ? 'bg-blue-900 text-blue-200' : 
-                                project.status === 'Completed' ? 'bg-green-900 text-green-200' : 
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                              ${project.status === 'Ongoing' ? 'bg-blue-900 text-blue-200' :
+                                project.status === 'Completed' ? 'bg-green-900 text-green-200' :
                                 'bg-yellow-900 text-yellow-200'}`}>
                               {project.status}
                             </span>
                           </td>
                           <td className="px-3 sm:px-4 py-4 whitespace-nowrap text-sm sm:text-base">
                             <div className="text-gray-300">
-                              {new Date(project.start_date).toLocaleDateString()} - 
+                              {new Date(project.start_date).toLocaleDateString()} -
                               {project.end_date !== "TBD" ? new Date(project.end_date).toLocaleDateString() : "TBD"}
                             </div>
                           </td>
@@ -278,7 +285,7 @@ const CRMDashboard = () => {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg border border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -288,7 +295,7 @@ const CRMDashboard = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-indigo-300">Upcoming Reminders</h2>
                 <Link href="/crm/reminders" passHref>
-                  <span 
+                  <span
                     className="text-indigo-400 hover:text-indigo-300 text-sm font-medium cursor-pointer"
                     onClick={() => handleNavigate("Reminders")}
                   >
@@ -298,7 +305,25 @@ const CRMDashboard = () => {
               </div>
             </div>
             <div className="p-4 sm:p-5">
-              {reminders.length > 0 ? (
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[...Array(4)].map((_, index) => (
+                    <div key={index} className="flex items-start space-x-3 animate-pulse">
+                      <div className="flex-shrink-0">
+                        <div className="rounded-full p-2 bg-gray-700 h-9 w-9"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
+                        <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-700 rounded w-1/4"></div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <div className="h-5 w-16 bg-gray-700 rounded-full"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : reminders.length > 0 ? (
                 <div className="space-y-4">
                   {reminders.slice(0, 4).map((reminder, index) => (
                     <div key={index} className="flex items-start space-x-3">
@@ -319,9 +344,9 @@ const CRMDashboard = () => {
                         </p>
                       </div>
                       <div className="flex-shrink-0">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${reminder.priority === 'High' ? 'bg-red-900 text-red-200' : 
-                            reminder.priority === 'Medium' ? 'bg-yellow-900 text-yellow-200' : 
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                          ${reminder.priority === 'High' ? 'bg-red-900 text-red-200' :
+                            reminder.priority === 'Medium' ? 'bg-yellow-900 text-yellow-200' :
                             'bg-blue-900 text-blue-200'}`}>
                           {reminder.priority || "Normal"}
                         </span>
@@ -339,7 +364,7 @@ const CRMDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-          <motion.div 
+          <motion.div
             className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-lg border border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -349,7 +374,7 @@ const CRMDashboard = () => {
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-indigo-300">Recent Customers</h2>
                 <Link href="/crm/customers" passHref>
-                  <span 
+                  <span
                     className="text-indigo-400 hover:text-indigo-300 text-sm font-medium cursor-pointer"
                     onClick={() => handleNavigate("Customers")}
                   >
@@ -359,7 +384,24 @@ const CRMDashboard = () => {
               </div>
             </div>
             <div className="p-4 sm:p-5">
-              {filteredCustomers.length > 0 ? (
+              {isLoading ? (
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, index) => (
+                    <div key={index} className="flex items-center space-x-3 p-2 sm:p-3 rounded-lg animate-pulse">
+                      <div className="flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-gray-700"></div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <div className="h-5 w-16 bg-gray-700 rounded-full"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredCustomers.length > 0 ? (
                 <div className="space-y-3">
                   {filteredCustomers.slice(0, 5).map((customer) => (
                     <div key={customer.cid} className="flex items-center space-x-3 p-2 sm:p-3 hover:bg-gray-700 rounded-lg">
@@ -379,9 +421,9 @@ const CRMDashboard = () => {
                         </p>
                       </div>
                       <div className="flex-shrink-0">
-                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${customer.status === 'customer' ? 'bg-green-900 text-green-200' : 
-                            customer.status === 'lead' ? 'bg-yellow-900 text-yellow-200' : 
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                          ${customer.status === 'customer' ? 'bg-green-900 text-green-200' :
+                            customer.status === 'lead' ? 'bg-yellow-900 text-yellow-200' :
                             'bg-blue-900 text-blue-200'}`}>
                           {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
                         </span>
@@ -397,7 +439,7 @@ const CRMDashboard = () => {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -511,8 +553,8 @@ const CRMDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 px-4 py-3 rounded-lg shadow-lg max-w-xs z-50
-            ${notification.type === 'error' ? 'bg-red-900 text-red-100' : 
-              notification.type === 'success' ? 'bg-green-900 text-green-100' : 
+            ${notification.type === 'error' ? 'bg-red-900 text-red-100' :
+              notification.type === 'success' ? 'bg-green-900 text-green-100' :
               'bg-indigo-900 text-indigo-100'}`}
         >
           <div className="flex items-center">

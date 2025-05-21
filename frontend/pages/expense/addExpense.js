@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import StarryBackground from "@/components/StarryBackground";
 import {
   FiArrowUp,
   FiCalendar,
@@ -10,8 +9,8 @@ import {
   FiCheckCircle,
 } from "react-icons/fi";
 import BackButton from "@/components/BackButton";
-import { Scroll } from "lucide-react";
 import ScrollToTopButton from "@/components/scrollup";
+import { FormSkeleton } from "@/components/skeleton";
 
 export default function AddExpense() {
   const router = useRouter();
@@ -23,15 +22,30 @@ export default function AddExpense() {
   const [comments, setComments] = useState("");
   const [projects, setProjects] = useState([]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user.id) {
-      setEmployeeId(user.id); // Autofill employeeId from logged-in user
-    } else {
-      setMessage("User not logged in. Please log in first.");
-      router.push("/expense/login"); // Redirect to login if no user found
-    }
+    const loadUserData = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        if (user.id) {
+          setEmployeeId(user.id); // Autofill employeeId from logged-in user
+
+          // Simulate data loading delay (remove in production if not needed)
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+          setLoading(false);
+        } else {
+          setMessage("User not logged in. Please log in first.");
+          router.push("/expense/login"); // Redirect to login if no user found
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+        router.push("/expense/login");
+      }
+    };
+
+    loadUserData();
   }, [router]);
 
   useEffect(() => {
@@ -80,8 +94,7 @@ export default function AddExpense() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <StarryBackground />
+    <div className="min-h-screen relative overflow-hidden bg-black">
       <BackButton route="/expense/home" Icon={FiArrowUp} />
       <ScrollToTopButton />
 
@@ -100,129 +113,133 @@ export default function AddExpense() {
             </div>
 
             {/* Form Section */}
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Date Input */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-blue-300 font-medium">
-                    <FiCalendar className="text-lg" />
-                    Date
-                  </label>
-                  <div className="relative">
+            {loading ? (
+              <FormSkeleton fields={6} />
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Date Input */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-blue-300 font-medium">
+                      <FiCalendar className="text-lg" />
+                      Date
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        required
+                        className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Employee ID */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-blue-300 font-medium">
+                      <FiUser className="text-lg" />
+                      Employee ID
+                    </label>
                     <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
+                      type="number"
+                      value={employeeId}
+                      readOnly
+                      className="w-full p-4 rounded-xl bg-white/5 border border-white/10 cursor-not-allowed opacity-80 text-gray-300"
+                    />
+                  </div>
+
+                  {/* Project Status */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-blue-300 font-medium">
+                      <FiCheckCircle className="text-lg" />
+                      Project Status
+                    </label>
+                    <select
+                      value={projectStatus}
+                      onChange={(e) => setProjectStatus(e.target.value)}
                       required
-                      className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white transition-all"
+                      className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white appearance-none"
+                    >
+                      <option value="" className="bg-gray-800">
+                        Select Status
+                      </option>
+                      <option value="Ongoing" className="bg-gray-800">
+                        Ongoing
+                      </option>
+                      <option value="On Hold" className="bg-gray-800">
+                        On Hold
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* Project Select */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-blue-300 font-medium">
+                      <FiCheckCircle className="text-lg" />
+                      Select Project
+                    </label>
+                    <select
+                      value={projectId}
+                      onChange={(e) => setProjectId(e.target.value)}
+                      required
+                      disabled={!projectStatus}
+                      className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="" className="bg-gray-800">
+                        Select Project
+                      </option>
+                      {projects.map((project) => (
+                        <option
+                          key={project.pid}
+                          value={project.pid}
+                          className="bg-gray-800"
+                        >
+                          {project.pname} (ID: {project.pid})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Amount Input */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-blue-300 font-medium">
+                      <FiDollarSign className="text-lg" />
+                      Amount
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      required
+                      className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white"
                     />
                   </div>
                 </div>
 
-                {/* Employee ID */}
+                {/* Comments Textarea */}
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-blue-300 font-medium">
-                    <FiUser className="text-lg" />
-                    Employee ID
+                    <FiFileText className="text-lg" />
+                    Comments
                   </label>
-                  <input
-                    type="number"
-                    value={employeeId}
-                    readOnly
-                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 cursor-not-allowed opacity-80 text-gray-300"
+                  <textarea
+                    value={comments}
+                    onChange={(e) => setComments(e.target.value)}
+                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white min-h-[120px]"
                   />
                 </div>
 
-                {/* Project Status */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-blue-300 font-medium">
-                    <FiCheckCircle className="text-lg" />
-                    Project Status
-                  </label>
-                  <select
-                    value={projectStatus}
-                    onChange={(e) => setProjectStatus(e.target.value)}
-                    required
-                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white appearance-none"
-                  >
-                    <option value="" className="bg-gray-800">
-                      Select Status
-                    </option>
-                    <option value="Ongoing" className="bg-gray-800">
-                      Ongoing
-                    </option>
-                    <option value="On Hold" className="bg-gray-800">
-                      On Hold
-                    </option>
-                  </select>
-                </div>
-
-                {/* Project Select */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-blue-300 font-medium">
-                    <FiCheckCircle className="text-lg" />
-                    Select Project
-                  </label>
-                  <select
-                    value={projectId}
-                    onChange={(e) => setProjectId(e.target.value)}
-                    required
-                    disabled={!projectStatus}
-                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="" className="bg-gray-800">
-                      Select Project
-                    </option>
-                    {projects.map((project) => (
-                      <option
-                        key={project.pid}
-                        value={project.pid}
-                        className="bg-gray-800"
-                      >
-                        {project.pname} (ID: {project.pid})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Amount Input */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-blue-300 font-medium">
-                    <FiDollarSign className="text-lg" />
-                    Amount
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    required
-                    className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white"
-                  />
-                </div>
-              </div>
-
-              {/* Comments Textarea */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-blue-300 font-medium">
-                  <FiFileText className="text-lg" />
-                  Comments
-                </label>
-                <textarea
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white min-h-[120px]"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className="w-full py-4 px-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl font-semibold text-white hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2"
-              >
-                Add Expense
-              </button>
-            </form>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full py-4 px-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl font-semibold text-white hover:from-blue-600 hover:to-purple-600 transition-all duration-300 transform hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2"
+                >
+                  Add Expense
+                </button>
+              </form>
+            )}
 
             {/* Status Message */}
             {message && (

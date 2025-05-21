@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import StarryBackground from "@/components/StarryBackground";
 import BackButton from '@/components/BackButton';
 import Modal from '@/components/Modal';
 import ScrollToTopButton from '@/components/scrollup';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
+import { FormSkeleton, TableSkeleton, CardSkeleton } from '@/components/skeleton';
 
 const QuoteManager = () => {
   const router = useRouter();
@@ -21,7 +21,7 @@ const QuoteManager = () => {
   const [labourDescription, setLabourDescription] = useState('');
   const [otherItems, setOtherItems] = useState([]);
   const [totalCost, setTotalCost] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Set to true initially
   const [generatedQuote, setGeneratedQuote] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,10 +51,17 @@ const QuoteManager = () => {
   }, [selectedItemsStr]);
 
   useEffect(() => {
+    setIsLoading(true);
     fetch('/api/projects')
       .then((response) => response.json())
-      .then((data) => setProjects(data))
-      .catch((err) => console.error('Error fetching projects:', err));
+      .then((data) => {
+        setProjects(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching projects:', err);
+        setIsLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -68,24 +75,44 @@ const QuoteManager = () => {
           setCustomer(customerRes);
           setCategories(categoriesRes);
         })
-        .catch((err) => console.error('Error fetching data:', err))
+        .catch((err) => {
+          console.error('Error fetching data:', err);
+        })
         .finally(() => setIsLoading(false));
     }
   }, [projectId]);
 
   useEffect(() => {
     if (categories.length > 0) {
-      categories.forEach((category) => {
+      setIsLoading(true);
+      const fetchPromises = categories.map((category) =>
         fetch(`/api/items/${category.category_id}`)
-          .then((res) => res.json())
+          .then((res) => {
+            // Check if the response is ok (status in the range 200-299)
+            if (!res.ok) {
+              // If response is not ok, return an empty array instead of throwing an error
+              console.warn(`No items found for category ${category.category_id}`);
+              return [];
+            }
+            return res.json();
+          })
           .then((data) => {
             setItemsByCategory((prev) => ({
               ...prev,
               [category.category_id]: data,
             }));
+            return data;
           })
-          .catch((err) => console.error(`Error fetching items for category ${category.category_name}:`, err));
-      });
+          .catch((err) => {
+            console.error(`Error fetching items for category ${category.category_name}:`, err);
+            // Return an empty array on error to prevent further errors
+            return [];
+          })
+      );
+
+      Promise.all(fetchPromises)
+        .then(() => setIsLoading(false))
+        .catch(() => setIsLoading(false));
     }
   }, [categories]);
 
@@ -114,7 +141,7 @@ const QuoteManager = () => {
       }, 0);
     }, 0);
 
-    
+
 
     // Calculate labour cost
     const labourTotal = parseFloat(labourCost) || 0;
@@ -302,6 +329,7 @@ const QuoteManager = () => {
     setShowDownloadOptions(false);
   };
   const generateQuote = async () => {
+    setLoading(true);
     const quoteId = await fetchLastQuoteId();
     const quoteDate = new Date().toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -547,6 +575,7 @@ const QuoteManager = () => {
 
     const pdfData = doc.output('dataurlstring');
     setGeneratedQuote(pdfData);
+    setLoading(false);
   };
 
   const saveQuote = () => {
@@ -595,38 +624,50 @@ const QuoteManager = () => {
   };
 
   return (
-    <div className="bg-cover bg-center text-white">
-      <StarryBackground />
+    <div className="bg-black text-white min-h-screen flex flex-col items-center justify-center relative">
       <ScrollToTopButton />
-      <BackButton route='/quotation/home'/>
+      <div className="absolute top-4 left-4 z-10">
+        <BackButton route='/quotation/home'/>
+      </div>
 
-      <div className="flex flex-col mt-20 bg-cover bg-center text-white items-center justify-center">
-        <h1 className="text-3xl font-bold mb-6">Quote Management</h1>
+      <div className="flex flex-col text-white items-center justify-center w-full px-4 py-20">
+        <h1 className="text-4xl font-bold mb-16 mt-8">Quote Management</h1>
 
         <motion.div
-          className="bg-gray-900 bg-opacity-90 p-6 rounded-lg shadow-lg w-full max-w-4xl"
+          className="bg-gray-900/80 p-8 rounded-xl shadow-xl w-full max-w-4xl mx-auto border border-gray-800"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <label className="text-white">Select Project ID:</label>
-          <select
-            onChange={(e) => setProjectId(e.target.value)}
-            value={projectId}
-            className="bg-gray-700 text-white p-2 rounded w-full md:w-1/2 mb-4"
-          >
-            <option value="">-- Select Project --</option>
-            {projects.map((proj) => (
-              <option key={proj.pid} value={proj.pid}>
-                {proj.pname}
-              </option>
-            ))}
-          </select>
+          {isLoading ? (
+            <FormSkeleton rows={3} />
+          ) : (
+            <div className="text-center mb-8">
+              <label className="text-white text-lg mb-2 block">Select Project:</label>
+              <select
+                onChange={(e) => setProjectId(e.target.value)}
+                value={projectId}
+                className="bg-gray-800 text-white p-3 rounded-lg w-full md:w-2/3 mx-auto border border-gray-700 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">-- Select Project --</option>
+                {projects.map((proj) => (
+                  <option key={proj.pid} value={proj.pid}>
+                    {proj.pname}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {customer && (
-            <div className="mb-6">
+          {isLoading ? (
+            <div className="mb-8">
+              <CardSkeleton count={1} />
+            </div>
+          ) : customer && (
+            <div className="mb-8 bg-gray-800/50 p-4 rounded-lg border border-gray-700 text-center">
+              <h3 className="text-lg font-semibold mb-2 text-blue-400">Customer Information</h3>
               <p className="text-white">
-                <strong>Customer:</strong> {customer.customer_name}
+                <strong>Name:</strong> {customer.customer_name}
               </p>
               <p className="text-white">
                 <strong>Address:</strong> {customer.address}
@@ -638,113 +679,91 @@ const QuoteManager = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {categories.map((cat) => {
-              // Skip Labour category from the grid
-              if (cat.category_name === 'Labour') return null;
+            {isLoading ? (
+              <CardSkeleton count={6} />
+            ) : (
+              categories.map((cat) => {
+                // Skip Labour category from the grid
+                if (cat.category_name === 'Labour') return null;
 
-              const selectedItemsForCategory = getSelectedItemsForCategory(cat.category_id);
-              const categoryTotal = getCategoryTotal(cat.category_id);
+                const selectedItemsForCategory = getSelectedItemsForCategory(cat.category_id);
 
-              return (
-                <motion.div
-                  key={cat.category_id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <button
-                      onClick={() => navigateToCategoryItems(cat.category_id)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg w-full text-left flex justify-between items-center"
-                    >
-                      <span>{cat.category_name}</span>
-                      <span>→</span>
-                    </button>
+                return (
+                  <motion.div
+                    key={cat.category_id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <button
+                        onClick={() => navigateToCategoryItems(cat.category_id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg w-full text-left flex justify-between items-center"
+                      >
+                        <span>{cat.category_name}</span>
+                        <span>→</span>
+                      </button>
 
-                    {/* Add download button for Drip and Plumbing */}
-                    {(cat.category_name === 'Drip' || cat.category_name === 'Plumbing') &&
-                      selectedItemsForCategory.length > 0 && (
-                        <button
-                          onClick={() => handleDownloadClick(cat.category_id)}
-                          className="ml-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                          title="Download Items List"
-                        >
-                          ↓
-                        </button>
-                      )}
-                    {/* <Modal
-                      isOpen={showDownloadOptions}
-                      onClose={() => setShowDownloadOptions(false)}
-                      title="Download Options"
-                      preventFlicker={true}
-                    >
-                      <div className="space-y-4 p-4">
-                        <button
-                          onClick={() => generateDripPlumbingPDF('single')}
-                          className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          Download {categories.find(c => c.category_id.toString() === selectedCategoryForDownload?.toString())?.category_name} Only
-                        </button>
-
-                        <button
-                          onClick={() => generateDripPlumbingPDF('combined')}
-                          className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                        >
-                          Download Combined Drip & Plumbing
-                        </button>
-
-                        <button
-                          onClick={() => setShowDownloadOptions(false)}
-                          className="w-full px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </Modal> */}
-                  </div>
-
-                  {selectedItemsForCategory.length > 0 && (
-                    <div className="mt-2 bg-gray-800 p-3 rounded-lg">
-                      <h4 className="font-bold text-white mb-2">Selected Items:</h4>
-                      <ul className="space-y-2">
-                        {selectedItemsForCategory.map((item) => {
-                          const itemDetails = itemsByCategory[cat.category_id]?.find(i => i.item_id === item.item_id);
-                          return (
-                            <li
-                              key={item.item_id}
-                              className={`flex justify-between ${item.printSeparately ? 'border-l-4 border-yellow-500 pl-2' : ''}`}
-                            >
-                              <span className="text-white">
-                                {itemDetails?.item_name || 'Unknown Item'}
-                                {item.printSeparately && ' (Print Separately)'}
-                                (Qty: {item.quantity})
-                              </span>
-                              <span className="text-green-400">
-                                Rs {(item.cost * item.quantity).toFixed(2)}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      <div className="mt-2 text-right font-bold text-white">
-                        Category Subtotal: Rs {getCategoryTotal(cat.category_id).toFixed(2)}
-                      </div>
-                      {selectedItemsForCategory.some(item => item.printSeparately) && (
-                        <div className="mt-1 text-right text-yellow-400">
-                          (Excluding {selectedItemsForCategory.filter(item => item.printSeparately).length}
-                          separate items)
-                        </div>
-                      )}
+                      {/* Add download button for Drip and Plumbing */}
+                      {(cat.category_name === 'Drip' || cat.category_name === 'Plumbing') &&
+                        selectedItemsForCategory.length > 0 && (
+                          <button
+                            onClick={() => handleDownloadClick(cat.category_id)}
+                            className="ml-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                            title="Download Items List"
+                          >
+                            ↓
+                          </button>
+                        )}
                     </div>
-                  )}
-                </motion.div>
-              );
-            })}
+
+                    {selectedItemsForCategory.length > 0 && (
+                      <div className="mt-2 bg-gray-800 p-3 rounded-lg">
+                        <h4 className="font-bold text-white mb-2">Selected Items:</h4>
+                        <ul className="space-y-2">
+                          {selectedItemsForCategory.map((item) => {
+                            const itemDetails = itemsByCategory[cat.category_id]?.find(i => i.item_id === item.item_id);
+                            return (
+                              <li
+                                key={item.item_id}
+                                className={`flex justify-between ${item.printSeparately ? 'border-l-4 border-yellow-500 pl-2' : ''}`}
+                              >
+                                <span className="text-white">
+                                  {itemDetails?.item_name || 'Unknown Item'}
+                                  {item.printSeparately && ' (Print Separately)'}
+                                  (Qty: {item.quantity})
+                                </span>
+                                <span className="text-green-400">
+                                  Rs {(item.cost * item.quantity).toFixed(2)}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                        <div className="mt-2 text-right font-bold text-white">
+                          Category Subtotal: Rs {getCategoryTotal(cat.category_id).toFixed(2)}
+                        </div>
+                        {selectedItemsForCategory.some(item => item.printSeparately) && (
+                          <div className="mt-1 text-right text-yellow-400">
+                            (Excluding {selectedItemsForCategory.filter(item => item.printSeparately).length}
+                            separate items)
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })
+            )}
           </div>
 
 
 
 
-          {projectId && (
+          {isLoading ? (
+            <div className="mb-6">
+              <FormSkeleton rows={2} />
+            </div>
+          ) : projectId && (
             <>
               {/* Labour Cost Section */}
               <div className="mb-6 bg-gray-800 p-4 rounded-lg">
@@ -904,16 +923,20 @@ const QuoteManager = () => {
           )}
 
 
-          {projectId && (
+          {isLoading ? (
+            <div className="mb-8">
+              <CardSkeleton count={1} />
+            </div>
+          ) : projectId && (
             <>
-              <div className="text-xl font-bold text-white mb-6">
-                Total Cost: Rs {totalCost.toFixed(2)}
+              <div className="text-2xl font-bold text-white mb-8 text-center bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                Total Cost: <span className="text-green-400">Rs {totalCost.toFixed(2)}</span>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <motion.button
                   onClick={saveQuote}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-colors"
+                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg shadow-lg hover:from-green-700 hover:to-green-800 transition-colors font-semibold"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -921,14 +944,14 @@ const QuoteManager = () => {
                 </motion.button>
 
                 {successMessage && (
-                  <div className="text-green-500 flex items-center">
-                    {successMessage}
+                  <div className="text-green-500 flex items-center bg-green-900/20 px-4 py-2 rounded-lg">
+                    ✓ {successMessage}
                   </div>
                 )}
 
                 <motion.button
                   onClick={generateQuote}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-colors"
+                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-lg hover:from-blue-700 hover:to-blue-800 transition-colors font-semibold"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -973,19 +996,26 @@ const QuoteManager = () => {
   </div>
 </Modal>
 
-        {generatedQuote && (
+        {loading && !generatedQuote ? (
+          <div className="mt-12 w-full max-w-4xl mx-auto">
+            <h3 className="text-white text-2xl mb-6 text-center font-bold">Generating Quote...</h3>
+            <div className="border border-gray-700 rounded-xl shadow-xl p-8 bg-gray-900/80">
+              <CardSkeleton count={4} />
+            </div>
+          </div>
+        ) : generatedQuote && (
           <motion.div
-            className="mt-8 w-full"
+            className="mt-12 w-full max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h3 className="text-white text-xl mb-4">Generated Quote</h3>
+            <h3 className="text-white text-2xl mb-6 text-center font-bold">Generated Quote</h3>
             <iframe
               src={generatedQuote}
               width="100%"
-              height="600px"
-              className="border rounded-lg"
+              height="700px"
+              className="border border-gray-700 rounded-xl shadow-xl"
               title="Generated Quote"
             />
           </motion.div>

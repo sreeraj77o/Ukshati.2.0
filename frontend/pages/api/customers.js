@@ -50,7 +50,7 @@ export default async function handler(req, res) {
         "SELECT * FROM customer WHERE cid = ?",
         [cid]
       );
-      
+
       if (existing.length === 0) {
         return res.status(404).json({ error: "Customer not found" });
       }
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
 
       return res.status(200).json(mergedData);
     }
-    
+
     // DELETE customer
     if (req.method === "DELETE") {
       const { cid } = req.query;
@@ -83,13 +83,47 @@ export default async function handler(req, res) {
         "SELECT * FROM customer WHERE cid = ?",
         [cid]
       );
-      
+
       if (existing.length === 0) {
         return res.status(404).json({ error: "Customer not found" });
       }
 
-      await connection.execute("DELETE FROM customer WHERE cid = ?", [cid]);
-      return res.status(200).json({ message: "Customer deleted successfully" });
+      try {
+        // Start a transaction
+        await connection.beginTransaction();
+
+        // First, delete related invoices
+        const [deleteInvoicesResult] = await connection.execute(
+          "DELETE FROM invoices WHERE cid = ?",
+          [cid]
+        );
+
+        const deletedInvoicesCount = deleteInvoicesResult.affectedRows;
+
+        // Then delete the customer
+        const [deleteCustomerResult] = await connection.execute(
+          "DELETE FROM customer WHERE cid = ?",
+          [cid]
+        );
+
+        // Commit the transaction
+        await connection.commit();
+
+        return res.status(200).json({
+          message: "Customer deleted successfully",
+          deletedInvoices: deletedInvoicesCount,
+          customerDeleted: deleteCustomerResult.affectedRows > 0
+        });
+      } catch (error) {
+        // Rollback the transaction in case of error
+        await connection.rollback();
+
+        console.error("Delete error:", error);
+        return res.status(500).json({
+          error: "Failed to delete customer",
+          details: error.message
+        });
+      }
     }
   } catch (error) {
     console.error("API Error:", error);

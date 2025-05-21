@@ -1,14 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { 
+import {
   FiBox, FiPackage, FiArrowUp, FiArrowDown, FiPlus, FiActivity,
   FiSettings, FiLogOut, FiAlertTriangle, FiRefreshCw, FiDollarSign
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import BackButton from "@/components/BackButton";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
+import { CardSkeleton, TableSkeleton, ChartSkeleton } from "@/components/skeleton";
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -18,7 +17,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Scroll } from "lucide-react";
 import ScrollToTopButton from "@/components/scrollup";
 
 ChartJS.register(
@@ -95,12 +93,23 @@ export default function Dashboard() {
   ];
 
   const StatCard = ({ icon: Icon, title, value, trend, isLoading }) => (
-    <motion.div 
+    <motion.div
       whileHover={{ scale: 1.02 }}
       className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg min-h-[150px]"
     >
       {isLoading ? (
-        <Skeleton count={3} height={30} />
+        <div className="animate-pulse">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-4 bg-gray-700 rounded w-1/2"></div>
+              <div className="h-8 bg-gray-700 rounded w-3/4"></div>
+            </div>
+            <div className="p-3 rounded-full bg-gray-700 h-10 w-10"></div>
+          </div>
+          <div className="mt-4 flex items-center space-x-2">
+            <div className="h-4 bg-gray-700 rounded w-1/3"></div>
+          </div>
+        </div>
       ) : (
         <>
           <div className="flex items-center justify-between">
@@ -182,7 +191,7 @@ export default function Dashboard() {
             <p className="text-gray-400">Welcome back!</p>
           </div>
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={fetchData}
               className="p-2 hover:bg-gray-800 rounded-lg transition flex items-center gap-2"
               disabled={loading}
@@ -193,7 +202,7 @@ export default function Dashboard() {
             <button className="p-2 hover:bg-gray-800 rounded-lg transition">
               <FiSettings className="text-xl" />
             </button>
-            <button 
+            <button
               onClick={() => {
                 localStorage.clear();
                 router.push("/login");
@@ -213,31 +222,31 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard 
-            icon={FiBox} 
-            title="Total Items" 
-            value={stats?.totalItems} 
+          <StatCard
+            icon={FiBox}
+            title="Total Items"
+            value={stats?.totalItems}
             trend={{ icon: FiArrowUp, value: 12, label: 'vs last month', color: 'bg-blue-500' }}
             isLoading={loading}
           />
-          <StatCard 
-            icon={FiPackage} 
-            title="Categories" 
-            value={stats?.categories} 
+          <StatCard
+            icon={FiPackage}
+            title="Categories"
+            value={stats?.categories}
             trend={{ icon: FiArrowUp, value: 3, label: 'new categories', color: 'bg-purple-500' }}
             isLoading={loading}
           />
-          <StatCard 
-            icon={FiAlertTriangle} 
-            title="Low Stock" 
-            value={stats?.lowStock} 
+          <StatCard
+            icon={FiAlertTriangle}
+            title="Low Stock"
+            value={stats?.lowStock}
             trend={{ icon: FiArrowDown, value: 8, label: 'resolved', color: 'bg-red-500' }}
             isLoading={loading}
           />
-          <StatCard 
-            icon={FiDollarSign} 
-            title="Spent Stock" 
-            value={stats?.spentStock} 
+          <StatCard
+            icon={FiDollarSign}
+            title="Spent Stock"
+            value={stats?.spentStock}
             trend={{ icon: FiArrowUp, value: 5, label: 'this month', color: 'bg-green-500' }}
             isLoading={loading}
           />
@@ -251,11 +260,11 @@ export default function Dashboard() {
               <h2 className="text-lg md:text-xl font-semibold">Stock Distribution</h2>
             </div>
             {loading ? (
-              <Skeleton height={300} />
+              <ChartSkeleton height={300} />
             ) : (
               <div className="w-full h-[300px]">
-                <Bar 
-                  data={categoryChartData()} 
+                <Bar
+                  data={categoryChartData()}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
@@ -296,18 +305,28 @@ export default function Dashboard() {
           <div className="bg-black p-4 md:p-6 rounded-xl">
             <h2 className="text-lg md:text-xl font-semibold mb-6">Quick Actions</h2>
             <div className="grid grid-cols-1 gap-3">
-              {quickActions.map((action) => (
-                <motion.button
-                  key={action.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => router.push(action.route)}
-                  className={`${action.color} p-3 md:p-4 rounded-lg flex items-center gap-3 transition-all`}
-                >
-                  <action.icon className="text-xl md:text-2xl text-white" />
-                  <span className="text-left text-sm md:text-base">{action.title}</span>
-                </motion.button>
-              ))}
+              {loading ? (
+                // Skeleton for Quick Actions
+                Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="bg-gray-700 p-3 md:p-4 rounded-lg flex items-center gap-3 animate-pulse">
+                    <div className="h-8 w-8 rounded-full bg-gray-600"></div>
+                    <div className="h-4 bg-gray-600 rounded w-32"></div>
+                  </div>
+                ))
+              ) : (
+                quickActions.map((action) => (
+                  <motion.button
+                    key={action.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push(action.route)}
+                    className={`${action.color} p-3 md:p-4 rounded-lg flex items-center gap-3 transition-all`}
+                  >
+                    <action.icon className="text-xl md:text-2xl text-white" />
+                    <span className="text-left text-sm md:text-base">{action.title}</span>
+                  </motion.button>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -317,9 +336,20 @@ export default function Dashboard() {
           <h2 className="text-lg md:text-xl font-semibold mb-6">Recent Stock Updates</h2>
           <div className="space-y-3">
             {loading ? (
-              Array(4).fill(0).map((_, i) => (
-                <Skeleton key={i} height={60} />
-              ))
+              <div className="space-y-3">
+                {Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg animate-pulse">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-gray-600 h-10 w-10"></div>
+                      <div>
+                        <div className="h-4 bg-gray-600 rounded w-24 mb-2"></div>
+                        <div className="h-3 bg-gray-600 rounded w-32"></div>
+                      </div>
+                    </div>
+                    <div className="h-3 bg-gray-600 rounded w-20"></div>
+                  </div>
+                ))}
+              </div>
             ) : error ? (
               <p className="text-gray-400">Unable to load recent activity</p>
             ) : (

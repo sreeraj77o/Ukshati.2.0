@@ -1,7 +1,7 @@
 'use client';
 import BackButton from "@/components/BackButton";
-import StarryBackground from "@/components/StarryBackground";
 import { useEffect, useState } from "react";
+import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
@@ -13,6 +13,7 @@ export default function Projects() {
   const [customerId, setCustomerId] = useState("");
   const [editId, setEditId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProjects();
@@ -21,12 +22,19 @@ export default function Projects() {
 
   const fetchProjects = async () => {
     try {
+      setLoading(true);
       const res = await fetch("/api/tasks");
       if (!res.ok) throw new Error("Failed to fetch projects");
       const data = await res.json();
+
+      // Simulate data loading delay (remove in production if not needed)
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       setProjects(data);
     } catch (error) {
       console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -43,14 +51,14 @@ export default function Projects() {
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === "TBD" || dateString === "null") return "TBD";
-  
+
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "TBD"; // Guard against invalid dates
-  
+
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
     return date.toISOString().split("T")[0];
   };
-  
+
 
   const statusOptions = [
     { value: "", label: "Select Status" },
@@ -68,12 +76,12 @@ export default function Projects() {
     const isValidDate = (date) => {
       return date && !isNaN(new Date(date).getTime());
     };
-    
+
     if (!isValidDate(startDate)) {
       alert("Start date is invalid or missing.");
       return;
     }
-    
+
     const projectData = {
       pname: name,
       start_date: new Date(startDate).toISOString().split("T")[0],
@@ -149,74 +157,83 @@ export default function Projects() {
   );
 
   return (
-    <div className="crm">
-      <StarryBackground />
-      <BackButton route="/crm/home" />
+    <div className="crm bg-black min-h-screen">
+      <div className="absolute top-4 left-4 z-10">
+        <BackButton route="/crm/home" />
+      </div>
       <div className="container">
-        <h1 className="page-title">Project Management</h1>
-        <form onSubmit={handleSubmit} className="project-form">
-          <div className="form-grid">
-            <div className="input-group">
-              <label>Project Name</label>
-              <input
-                type="text"
-                placeholder="Enter project name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="input-group">
-              <label>End Date (Optional)</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              /> {/* Removed required attribute */}
-            </div>
-            <div className="input-group">
-              <label>Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                required
-              >
-                {statusOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="input-group">
-              <label>Customer</label>
-              <select
-                value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
-                required
-              >
-                <option value="">Select Customer</option>
-                {customers.map((customer) => (
-                  <option key={customer.cid} value={customer.cid}>
-                    {customer.cid} - {customer.cname}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button type="submit" className="submit-button">
-              {editId ? "Update Project" : "Add Project"}
-            </button>
-          </div>
-        </form>
+        <div className="mt-16">
+          <h1 className="page-title">Project Management</h1>
+        </div>
+        <div className="project-form">
+          {loading ? (
+            <FormSkeleton fields={5} />
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div className="form-grid">
+                <div className="input-group">
+                  <label>Project Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter project name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="input-group">
+                  <label>Start Date</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="input-group">
+                  <label>End Date (Optional)</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  /> {/* Removed required attribute */}
+                </div>
+                <div className="input-group">
+                  <label>Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    required
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="input-group">
+                  <label>Customer</label>
+                  <select
+                    value={customerId}
+                    onChange={(e) => setCustomerId(e.target.value)}
+                    required
+                  >
+                    <option value="">Select Customer</option>
+                    {customers.map((customer) => (
+                      <option key={customer.cid} value={customer.cid}>
+                        {customer.cid} - {customer.cname}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="submit-button">
+                  {editId ? "Update Project" : "Add Project"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
         <div className="search-bar">
           <input
             type="text"
@@ -226,51 +243,57 @@ export default function Projects() {
           />
         </div>
         <div className="projects-table">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Status</th>
-                <th>Customer</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProjects.map((project) => (
-                <tr key={project.pid}>
-                  <td>{project.pid}</td>
-                  <td>{project.pname}</td>
-                  <td>{formatDate(project.start_date)}</td>
-                  <td>{formatDate(project.end_date)}</td>
-                  <td>
-                    <span className={`status-badge ${project.status.replace(' ', '-')}`}>
-                      {project.status}
-                    </span>
-                  </td>
-                  <td>{project.cname || "N/A"}</td>
-                  <td className="actions">
-                    <button
-                      onClick={() => handleEdit(project)}
-                      className="edit-button"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(project.pid)}
-                      className="delete-button"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredProjects.length === 0 && (
-            <div className="no-results">No projects found</div>
+          {loading ? (
+            <TableSkeleton rows={5} columns={7} />
+          ) : (
+            <>
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Customer</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProjects.map((project) => (
+                    <tr key={project.pid}>
+                      <td>{project.pid}</td>
+                      <td>{project.pname}</td>
+                      <td>{formatDate(project.start_date)}</td>
+                      <td>{formatDate(project.end_date)}</td>
+                      <td>
+                        <span className={`status-badge ${project.status.replace(' ', '-')}`}>
+                          {project.status}
+                        </span>
+                      </td>
+                      <td>{project.cname || "N/A"}</td>
+                      <td className="actions">
+                        <button
+                          onClick={() => handleEdit(project)}
+                          className="edit-button"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(project.pid)}
+                          className="delete-button"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredProjects.length === 0 && (
+                <div className="no-results">No projects found</div>
+              )}
+            </>
           )}
         </div>
         <style jsx>{`
@@ -286,7 +309,8 @@ export default function Projects() {
           .page-title {
             font-size: 2.5rem;
             text-align: center;
-            margin-bottom: 2rem;
+            margin-top: 1.5rem;
+            margin-bottom: 2.5rem;
             background: linear-gradient(45deg, #00ffff, #0080ff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;

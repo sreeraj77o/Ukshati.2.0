@@ -1,23 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import {
-  FaPlus,
-  FaEye,
-  FaEdit,
-  FaTrash,
-  FaUserPlus,
-  FaCheck,
-  FaUsers,
-  FaBars,
-  FaTimes,
-  FaUser,
-  FaSignOutAlt,
-} from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
-import dynamic from "next/dynamic";
+import { Wallet, Briefcase, Pause, Check, Menu, Info } from 'lucide-react';
+import { motion } from "framer-motion";
+import Tilt from "react-parallax-tilt";
 import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
+import { CardSkeleton } from "@/components/skeleton";
 
 export default function Home() {
   const router = useRouter();
@@ -29,64 +18,24 @@ export default function Home() {
     role: "",
     password: "",
   });
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [showEmployeeDetails, setShowEmployeeDetails] = useState(false);
-  const [activeCard, setActiveCard] = useState(null);
-  const [employees, setEmployees] = useState([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
+  // State for employee modal
   const [formSubmitting, setFormSubmitting] = useState(false);
-  const [error, setError] = useState(null);
-  const [loggedInUser, setLoggedInUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [userData, setUserData] = useState({});
-  const [expandedEmployee, setExpandedEmployee] = useState(null);
+  // State for card flipping
+  const [flipped, setFlipped] = useState(Array(5).fill(false));
+  // State for loading
+  const [loading, setLoading] = useState(true);
 
-  const StarryBackground = dynamic(
-    () => import("@/components/StarryBackground"),
-    { ssr: false }
-  );
-
-  const fetchEmployees = async () => {
-    try {
-      setLoadingEmployees(true);
-      const startTime = Date.now();
-      const response = await fetch("/api/employees");
-
-      console.log("Fetch response:", {
-        status: response.status,
-        timeTaken: `${Date.now() - startTime}ms`,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("Received employees:", data.employees);
-
-      if (!Array.isArray(data.employees)) {
-        throw new Error("Invalid employee data format");
-      }
-
-      setEmployees(data.employees);
-      setError(null);
-    } catch (error) {
-      console.error("Fetch error:", error);
-      setError(error.message);
-      setEmployees([]);
-    } finally {
-      setLoadingEmployees(false);
-    }
-  };
-
-  const toggleEmployeeDetails = (employeeId) => {
-    setExpandedEmployee(expandedEmployee === employeeId ? null : employeeId);
+  // Handle card flip
+  const handleFlip = (index) => {
+    setFlipped(prev => {
+      const newFlipped = [...prev];
+      newFlipped[index] = !newFlipped[index];
+      return newFlipped;
+    });
   };
 
   useEffect(() => {
-    const loadUserData = () => {
+    const loadUserData = async () => {
       try {
         const storedUser = localStorage.getItem("user");
         const storedRole = localStorage.getItem("userRole");
@@ -99,13 +48,11 @@ export default function Home() {
         const parsedUser = JSON.parse(storedUser);
         if (!parsedUser?.email) throw new Error("Invalid user data");
 
-        setUserData({
-          name: parsedUser.name,
-          email: parsedUser.email,
-          phone: parsedUser.phone || "N/A",
-        });
+        // Simulate data loading delay (remove in production if not needed)
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-        setUserRole(storedRole.toLowerCase());
+        // Set loading to false after authentication check
+        setLoading(false);
       } catch (error) {
         console.error("Session load error:", error);
         router.push("/expense/login");
@@ -114,27 +61,60 @@ export default function Home() {
     loadUserData();
   }, [router]);
 
-  const inventoryCards = [
+  const expenseCards = [
     {
-      id: 1,
       title: "Add expense",
-      Icon: FaPlus,
-      colors: ["#1e40af", "#3b82f6", "#93c5fd", "#3b82f6", "#1e40af"], // Dark → Light → Dark
-      route: "/expense/addExpense",
-      image: "https://www.pngmart.com/files/8/Inventory-PNG-HD.png",
+      description: "Create and manage expenses",
+      icon: <Wallet size={24} className="text-white" />,
+      gradient: "bg-gradient-to-r from-red-400/30 to-rose-400/40",
+      value: "₹0",
+      label: "today",
+      team: "Filed by Finance team",
+      route: "/expense/addExpense"
     },
-
     {
-      id: 2,
-      title: "View expenses",
-      Icon: FaEye,
-      colors: ["#065f46", "#10b981", "#6ee7b7", "#10b981", "#065f46"], // Dark → Light → Dark
-      route: "/expense",
-      image:
-        "https://png.pngtree.com/png-clipart/20230825/original/pngtree-inventory-control-vector-warehouse-industry-picture-image_8773876.png",
+      title: "Ongoing",
+      description: "Track ongoing expenses",
+      icon: <Briefcase size={24} className="text-white" />,
+      gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40",
+      value: "5",
+      label: "active",
+      team: "Filed by Finance team",
+      route: "/Ongoing"
+    },
+    {
+      title: "On Hold",
+      description: "Expenses awaiting approval",
+      icon: <Pause size={24} className="text-white" />,
+      gradient: "bg-gradient-to-r from-yellow-400/30 to-amber-500/40",
+      value: "2",
+      label: "pending",
+      team: "Awaiting manager approval",
+      route: "/On Hold"
+    },
+    {
+      title: "Completed",
+      description: "Settled expense reports",
+      icon: <Check size={24} className="text-white" />,
+      gradient: "bg-gradient-to-r from-green-400/30 to-emerald-400/40",
+      value: "12",
+      label: "this month",
+      team: "Processed by Finance team",
+      route: "/Completed"
+    },
+    {
+      title: "All Projects",
+      description: "View all expense projects",
+      icon: <Menu size={24} className="text-white" />,
+      gradient: "bg-gradient-to-r from-violet-400/30 to-purple-500/40",
+      value: "19",
+      label: "total",
+      team: "Across all departments",
+      route: "/all-projects"
     },
   ];
 
+  // Employee modal submit handler
   const handleAddEmployee = async (e) => {
     e.preventDefault();
     setFormSubmitting(true);
@@ -152,120 +132,74 @@ export default function Home() {
         throw new Error(errorData.error || "Failed to create employee");
       }
 
-      const newEmployee = await response.json();
-      setEmployees((prev) => [...prev, newEmployee]);
-      setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
       setFormData({ name: "", email: "", phone: "", role: "", password: "" });
       setShowEmployeeModal(false);
     } catch (error) {
-      setError(error.message);
       console.error("Submission error:", error);
     } finally {
       setFormSubmitting(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("token");
-    router.push("/dashboard");
-  };
-
   return (
-    <div className="flex flex-col min-h-screen bg-cover text-black">
-      <StarryBackground />
+    <div className="flex flex-col min-h-screen bg-black text-white">
       <BackButton route="/dashboard" />
       <ScrollToTopButton/>
 
       <div className="flex flex-col items-center flex-grow p-6 pt-20">
-        <h1 className="text-4xl font-bold mb-16 mt-16 text-center text-white">
+        <h1 className="text-3xl font-medium text-white mb-10">
           Expense Management System
         </h1>
 
-        <div className="w-full max-w-7xl px-4">
-          <motion.div
-            className="flex gap-4 h-[500px]"
-            animate={{
-              marginRight: isMenuOpen ? "16rem" : "0",
-            }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          >
-            {inventoryCards.map((card) => (
-              <motion.div
-                key={card.id}
-                className="relative rounded-2xl overflow-hidden cursor-pointer shadow-xl"
-                initial={{ flex: 0.7 }}
-                animate={{
-                  flex: activeCard === card.id ? 2 : 0.7,
-                  scale: activeCard === card.id ? 1.03 : 1,
-                }}
-                onHoverStart={() => setActiveCard(card.id)}
-                onHoverEnd={() => setActiveCard(null)}
-                onClick={() => router.push(card.route)}
-                transition={{
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 20,
-                }}
-              >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl">
+          {loading ? (
+            <CardSkeleton count={5} />
+          ) : (
+            expenseCards.map((card, index) => (
+              <Tilt key={index} tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={true} glareMaxOpacity={0.1}>
                 <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(45deg, ${card.colors.join(
-                      ", "
-                    )})`,
-                    backgroundSize: "400% 400%",
-                  }}
-                  animate={{
-                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                  }}
-                  transition={{
-                    duration: 5,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                />
-
-                <motion.div
-                  className="absolute inset-0 bg-black/20 transition-all duration-300"
-                  style={{
-                    backgroundImage: `url(${card.image})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                  animate={{
-                    opacity: activeCard === card.id ? 1 : 0,
-                  }}
-                />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
-                  <motion.h2
-                    className="text-2xl font-bold text-center whitespace-nowrap"
-                    animate={{
-                      fontSize: activeCard === card.id ? "2rem" : "1.5rem",
-                      marginBottom: activeCard === card.id ? "1.5rem" : "1rem",
-                      rotate: activeCard === card.id ? 0 : -90,
-                      transformOrigin: "center",
-                    }}
-                  >
-                    {card.title}
-                  </motion.h2>
-                  <motion.div
-                    animate={{
-                      opacity: activeCard === card.id ? 1 : 0,
-                    }}
-                  >
-                    <card.Icon className="text-4xl mb-4" />
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`relative h-64 rounded-xl overflow-hidden shadow-lg cursor-pointer ${card.gradient}`}
+                  onClick={() => router.push(card.route)}
+                >
+                  <div className="absolute inset-0 p-6 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="p-3 rounded-lg bg-white/10 backdrop-blur-sm">
+                          {card.icon}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFlip(index);
+                          }}
+                          className="p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
+                        >
+                          {flipped[index] ? <Info size={20} className="text-white/80" /> : <Info size={20} className="text-white/80" />}
+                        </button>
+                      </div>
+                      <h3 className="mt-4 text-xl font-bold text-white">{card.title}</h3>
+                      <p className="mt-1 text-gray-200">{card.description}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-white">{card.value}</p>
+                        <p className="text-xs text-gray-200">{card.label}</p>
+                      </div>
+                      <div className="text-xs text-gray-200">
+                        {card.team}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </Tilt>
+            ))
+          )}
         </div>
       </div>
 
-      <footer className="w-full backdrop-blur-sm text-white py-4 text-center mt-auto">
+      <footer className="w-full bg-black border-t border-gray-800 text-white py-4 text-center mt-auto">
         <p className="text-sm">© {new Date().getFullYear()} Expense System</p>
       </footer>
 

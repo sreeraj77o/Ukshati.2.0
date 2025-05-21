@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import ScrollToTopButton from '@/components/scrollup';
 import { motion } from 'framer-motion';
 import BackButton from '@/components/BackButton';
-import StarryBackground from "@/components/StarryBackground";
+import { CardSkeleton } from '@/components/skeleton';
 
 const CategoryItemsPage = () => {
   const router = useRouter();
@@ -12,7 +12,6 @@ const CategoryItemsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState({});
-  const [categories, setCategories] = useState([]);
 
   // Safe parsing of URL parameters
   const parseSelectedItems = (str) => {
@@ -31,22 +30,23 @@ const CategoryItemsPage = () => {
 
   useEffect(() => {
     if (categoryId) {
-      // Fetch categories first to get their names
-      fetch('/api/categories')
-        .then(res => res.json())
-        .then(cats => {
-          setCategories(cats);
-
-          // Then fetch items for the current category
-          return fetch(`/api/items/${categoryId}`);
+      // Fetch items for the current category
+      fetch(`/api/items/${categoryId}`)
+        .then(res => {
+          // Check if the response is ok (status in the range 200-299)
+          if (!res.ok) {
+            console.warn(`No items found for category ${categoryId}`);
+            return [];
+          }
+          return res.json();
         })
-        .then(res => res.json())
         .then(data => {
-          setItems(data);
+          setItems(data || []);
           setIsLoading(false);
         })
         .catch((err) => {
           console.error('Error fetching data:', err);
+          setItems([]);
           setIsLoading(false);
         });
     }
@@ -86,7 +86,7 @@ const CategoryItemsPage = () => {
         }
         return item;
       });
-      
+
       return {
         ...prev,
         [categoryId]: updatedItems
@@ -128,24 +128,24 @@ const CategoryItemsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden">
-      <StarryBackground />
+    <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center">
       <ScrollToTopButton />
 
-      <div className="relative z-10">
-        <StarryBackground />
+      <div className="absolute top-4 left-4 z-10">
         <BackButton
           label="Back"
           onClick={handleSaveAndReturn}
         />
+      </div>
 
-        <div className="container mx-auto px-4 py-20">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="bg-gray-800 rounded-lg shadow-xl p-6"
-          >
+      <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center w-full">
+        <h1 className="text-4xl font-bold mb-16 mt-8">Category Items</h1>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="bg-gray-900/80 p-8 rounded-xl shadow-xl w-full max-w-4xl mx-auto border border-gray-800"
+        >
             <h1 className="text-2xl font-bold mb-2">
               {parsedCustomer?.customer_name}
             </h1>
@@ -162,8 +162,8 @@ const CategoryItemsPage = () => {
             </div>
 
             {isLoading ? (
-              <div className="text-center py-10">
-                <p>Loading items...</p>
+              <div className="space-y-4">
+                <CardSkeleton count={5} />
               </div>
             ) : (
               <div className="space-y-4">
@@ -243,7 +243,6 @@ const CategoryItemsPage = () => {
               </motion.button>
             </div>
           </motion.div>
-        </div>
       </div>
     </div>
   );

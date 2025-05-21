@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { FiArrowLeft, FiActivity, FiSearch, FiMapPin, FiFilter, FiClock, FiCalendar, FiPackage, FiBookmark, FiDollarSign, FiCreditCard, FiFolder, FiUser } from "react-icons/fi";
 import StarryBackground from "@/components/StarryBackground";
 import BackButton from "@/components/BackButton";
+import { TableSkeleton } from "@/components/skeleton";
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   const visiblePages = 5;
@@ -280,8 +281,8 @@ export default function InventorySpent() {
             </div>
             {/* Table */}
             {loading ? (
-  <div className="p-8 text-center text-gray-400">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+  <div className="p-0">
+    <TableSkeleton rows={5} columns={9} />
   </div>
 ) : error ? (
   <div className="p-6 text-center text-red-400 bg-red-900/20 rounded-lg">
@@ -321,18 +322,18 @@ export default function InventorySpent() {
           ))}
         </tr>
       </thead>
-      
+
       <tbody className="divide-y divide-gray-700">
         {paginatedStocks.map((spent, index) => (
           <tr key={index} className="hover:bg-gray-850/30 transition-colors">
             <td className="px-6 py-4 font-medium text-gray-100">{spent.item_name}</td>
-            
+
             <td className="px-6 py-4">
               <span className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 rounded-full text-sm border border-indigo-400/20">
                 {spent.category_name || "Uncategorized"}
               </span>
             </td>
-            
+
             <td className="px-6 py-4">
               <span className={`px-3 py-1 rounded-md text-sm font-medium ${
                 spent.quantity_used < 5 ? 'bg-amber-900/30 text-amber-400' : 'bg-green-900/30 text-green-400'
@@ -340,25 +341,25 @@ export default function InventorySpent() {
                 {spent.quantity_used}
               </span>
             </td>
-            
+
             <td className="px-6 py-4 text-gray-300">₹{spent.unit_price}</td>
-            
+
             <td className="px-6 py-4 font-medium text-indigo-400">
               ₹{spent.total_price}
             </td>
-            
+
             <td className="px-6 py-4 text-gray-400">
               {spent.location || (
                 <span className="italic text-gray-500">Not specified</span>
               )}
             </td>
-            
+
             <td className="px-6 py-4 max-w-[200px] truncate text-gray-300" title={spent.project_name}>
               {spent.project_name || "N/A"}
             </td>
-            
+
             <td className="px-6 py-4 text-gray-300">{spent.employee_name || "Unknown"}</td>
-            
+
             <td className="px-6 py-4">
               <div className="flex items-center space-x-2 text-gray-400">
                 <FiClock className="w-4 h-4" />

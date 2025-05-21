@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   try {
     connection = await connectToDB();
     const [categories] = await connection.query("SELECT category_id, category_name FROM category");
-    
+
     return res.status(200).json({ success: true, categories });
   } catch (error) {
     console.error("Database error:", error);

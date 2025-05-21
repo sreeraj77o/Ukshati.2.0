@@ -7,10 +7,12 @@ import generatePDF from '../../components/pdfGenerator';
 import BackButton from '@/components/BackButton';
 import ScrollToTopButton from '@/components/scrollup';
 import { AnimatePresence, motion } from 'framer-motion';
+import { FormSkeleton, CardSkeleton } from '@/components/skeleton';
 
 export default function Home() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [expenseData, setExpenseData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const expenseDetailsRef = useRef(null);
   const pdfButtonRef = useRef(null);
 
@@ -34,6 +36,17 @@ export default function Home() {
     }
   }, [expenseData]);
 
+  // Handle loading state
+  useEffect(() => {
+    // Simulate initial loading
+    setLoading(true);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-black overflow-hidden">
       <BackButton route='/dashboard' />
@@ -42,7 +55,7 @@ export default function Home() {
         <div className="w-full max-w-4xl mb-16 sm:mb-20 md:mb-28 space-y-6 md:space-y-8 backdrop-blur-lg bg-black/30 rounded-xl sm:rounded-2xl border border-gray-600 shadow-lg sm:shadow-2xl p-4 sm:p-6 md:p-8 transition-all duration-300">
           <div className="space-y-4 md:space-y-6">
             <BillHeading />
-            
+
             <div className="space-y-1 md:space-y-2">
               <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-transparent bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text flex items-center justify-center gap-2">
                 <svg
@@ -58,13 +71,23 @@ export default function Home() {
             </div>
 
             <div className="space-y-4 md:space-y-6">
-              <ProjectDropdown onSelect={setSelectedProjectId} />
-              
+              {loading ? (
+                <div className="space-y-4 max-w-2xl mx-auto">
+                  <div className="text-center space-y-1">
+                    <div className="h-8 bg-gray-700 rounded-lg w-48 mx-auto animate-pulse"></div>
+                    <div className="h-4 bg-gray-700 rounded-lg w-64 mx-auto animate-pulse"></div>
+                  </div>
+                  <div className="h-12 bg-gray-700 rounded-lg w-full animate-pulse"></div>
+                </div>
+              ) : (
+                <ProjectDropdown onSelect={setSelectedProjectId} />
+              )}
+
               {selectedProjectId && (
                 <div ref={expenseDetailsRef} className="mt-2 sm:mt-4">
-                  <ExpenseDetails 
-                    projectId={selectedProjectId} 
-                    setExpenseData={setExpenseData} 
+                  <ExpenseDetails
+                    projectId={selectedProjectId}
+                    setExpenseData={setExpenseData}
                   />
                 </div>
               )}

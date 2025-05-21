@@ -1,18 +1,25 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
 import { GlobeAltIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline";
+import { FormSkeleton } from "@/components/skeleton";
 
 export default function ProjectDropdown({ onSelect }) {
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
   const [selectedProject, setSelectedProject] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        setLoading(true);
         const response = await fetch("/api/projects");
         if (!response.ok) throw new Error("Failed to fetch projects");
         const data = await response.json();
+
+        // Simulate loading delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         const projectOptions = data.map((project) => ({
           value: project.pid,
           label: (
@@ -28,6 +35,8 @@ export default function ProjectDropdown({ onSelect }) {
         setProjects(projectOptions);
       } catch (error) {
         setError(`⚠️ ${error.message}`);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -93,25 +102,29 @@ export default function ProjectDropdown({ onSelect }) {
         </div>
       )}
 
-      <Select
-        options={projects}
-        value={selectedProject}
-        onChange={handleChange}
-        styles={customStyles}
-        placeholder={
-          <div className="flex items-center space-x-2">
-            <ChevronUpDownIcon className="w-5 h-5 text-gray-400" />
-            <span className="text-gray-400">Search or select project...</span>
-          </div>
-        }
-        isSearchable={true}
-        isClearable={true}
-        components={{
-          DropdownIndicator: () => (
-            <ChevronUpDownIcon className="w-5 h-5 text-gray-400 mr-2" />
-          ),
-        }}
-      />
+      {loading ? (
+        <div className="h-12 bg-gray-700 rounded-lg animate-pulse"></div>
+      ) : (
+        <Select
+          options={projects}
+          value={selectedProject}
+          onChange={handleChange}
+          styles={customStyles}
+          placeholder={
+            <div className="flex items-center space-x-2">
+              <ChevronUpDownIcon className="w-5 h-5 text-gray-400" />
+              <span className="text-gray-400">Search or select project...</span>
+            </div>
+          }
+          isSearchable={true}
+          isClearable={true}
+          components={{
+            DropdownIndicator: () => (
+              <ChevronUpDownIcon className="w-5 h-5 text-gray-400 mr-2" />
+            ),
+          }}
+        />
+      )}
     </div>
   );
 }

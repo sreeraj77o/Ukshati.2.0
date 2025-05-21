@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { FiArrowUp } from "react-icons/fi";
-import StarryBackground from "@/components/StarryBackground";
 import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
 
@@ -84,14 +82,14 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
     );
 
     filteredProjects.forEach((proj) => {
-      printWindow.document.write(`  
+      printWindow.document.write(`
         <tr>
           <td>${proj.pname || "N/A"}</td>
           <td>${proj.cname || "N/A"}</td>
           <td>${proj.start_date || "N/A"}</td>
           <td>${proj.end_date || "N/A"}</td>
           <td>₹${proj.Amount || "0"}</td>
-       
+
           <td>${proj.Comments || "N/A"}</td>
         </tr>
       `);
@@ -110,9 +108,8 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
 
   return (
     <div>
-      <BackButton route="/expense" />
-      <div className="min-h-screen flex justify-center items-center relative bg-cover bg-center">
-        <StarryBackground />
+      <BackButton route="/expense/home" />
+      <div className="min-h-screen flex justify-center items-center relative bg-black">
         <ScrollToTopButton />
         {/* Card Container */}
         <div className="glass-card w-[98vw] max-w-none p-10 rounded-3xl text-center space-y-10">

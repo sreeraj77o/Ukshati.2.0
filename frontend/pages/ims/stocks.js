@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { FiUploadCloud, FiFilePlus, FiShoppingCart, FiX, FiTag, FiBox, FiDollarSign , FiFile, FiUpload, FiActivity, FiSearch, FiCheckCircle, FiFilter } from "react-icons/fi";
 import ScrollToTopButton from "@/components/scrollup";
 import BackButton from "@/components/BackButton";
+import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
 
 export default function StockDetails() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function StockDetails() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [startDate, setStartDate] = useState(""); 
+  const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
@@ -28,12 +29,12 @@ export default function StockDetails() {
           fetch("/api/categories"),
           fetch("/api/stocks")
         ]);
-        
+
         const [categoriesData, stocksData] = await Promise.all([
           catRes.json(),
           stockRes.json()
         ]);
-        
+
         setCategories(categoriesData.categories || []);
         setStocks((stocksData || []).sort((a, b) => b.stock_id - a.stock_id));
       } catch (error) {
@@ -44,7 +45,7 @@ export default function StockDetails() {
     };
     fetchData();
   }, []);
-  
+
   // Apply category filter
   const filteredStocks = stocks.filter(stock => {
     const categoryMatch = selectedCategory === "all" || stock.category_name === selectedCategory;
@@ -141,18 +142,18 @@ export default function StockDetails() {
         });
 
         setCsvData(validEntries);
-        
+
         if (validEntries.length === 0) {
           setErrors([
             "No valid entries found. Common issues:",
-            ...invalidEntries.slice(0, 5).map(entry => 
+            ...invalidEntries.slice(0, 5).map(entry =>
               `Row ${entry.row}: ${entry.errors.join(', ')}`
             )
           ]);
         } else if (invalidEntries.length > 0) {
           setErrors([
             `Found ${validEntries.length} valid entries (${invalidEntries.length} invalid):`,
-            ...invalidEntries.slice(0, 5).map(entry => 
+            ...invalidEntries.slice(0, 5).map(entry =>
               `Row ${entry.row}: ${entry.errors.join(', ')}`
             )
           ]);
@@ -175,7 +176,7 @@ export default function StockDetails() {
     try {
       setUploadProgress(10);
       setErrors([]);
-      
+
       const response = await fetch("/api/upload-stocks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,13 +184,13 @@ export default function StockDetails() {
       });
 
       const contentType = response.headers.get("content-type");
-      const result = contentType?.includes("application/json") 
+      const result = contentType?.includes("application/json")
         ? await response.json()
         : null;
 
       if (!response.ok) {
-        const errorMessage = result?.error || 
-                            result?.message || 
+        const errorMessage = result?.error ||
+                            result?.message ||
                             `HTTP Error ${response.status}: ${await response.text()}`;
         throw new Error(errorMessage);
       }
@@ -199,10 +200,10 @@ export default function StockDetails() {
         ...stock,
         price_pu: Number(stock.price_pu)
       }));
-      
+
       setStocks(prev => [...updatedStocks, ...prev]);
       setUploadProgress(100);
-      
+
       setTimeout(() => {
         setCsvData([]);
         setUploadProgress(0);
@@ -223,12 +224,12 @@ export default function StockDetails() {
   const handleAddStock = async (e) => {
     e.preventDefault();
     const { categoryName, productName, quantity, price } = formData;
-    
+
     try {
       const response = await fetch("/api/stocks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           category_name: categoryName,
           productName,
           quantity: Number(quantity),
@@ -241,16 +242,16 @@ export default function StockDetails() {
       if (!response.ok) {
         throw new Error(result.error || "Failed to add stock");
       }
-      
+
       setStocks(prev => [{
         stock_id: result.stockId || Date.now(),
         item_name: productName,
         category_name: categoryName,
         quantity: Number(quantity),
         price_pu: Number(price),
-        created_at: new Date().toISOString() 
+        created_at: new Date().toISOString()
       }, ...prev]);
-      
+
       setFormData({ categoryName: "", productName: "", quantity: "", price: "" });
     } catch (error) {
       setErrors([error.message]);
@@ -285,7 +286,7 @@ export default function StockDetails() {
 
       <main className="max-w-7xl mx-auto p-4 space-y-8">
         <section className="grid md:grid-cols-2 gap-6">
-          <div 
+          <div
             className={`relative group p-8 rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg border-2 ${
               isDragging ? 'border-blue-400/80' : 'border-gray-700'
             } transition-all duration-300 shadow-xl hover:shadow-blue-500/10`}
@@ -298,7 +299,7 @@ export default function StockDetails() {
                 <div className="absolute -inset-2 bg-blue-500/10 rounded-full blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <FiUploadCloud className="text-4xl text-blue-400 transform group-hover:scale-110 transition-transform" />
               </div>
-              
+
               <div className="text-center space-y-2">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   Bulk Data Upload
@@ -345,7 +346,7 @@ export default function StockDetails() {
                     <span>{uploadProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-700 rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-blue-400 to-purple-400 h-3 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${uploadProgress}%` }}
                     />
@@ -357,7 +358,7 @@ export default function StockDetails() {
                 onClick={handleBulkUpload}
                 disabled={!csvData.length}
                 className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2
-                  ${csvData.length ? 
+                  ${csvData.length ?
                     'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/30' :
                     'bg-gray-700 text-gray-400 cursor-not-allowed'}
                   ${uploadProgress === 100 && 'bg-green-500 hover:bg-green-400'}`}
@@ -387,60 +388,66 @@ export default function StockDetails() {
             <div className="flex flex-col items-center space-y-4">
               <FiFilePlus className="text-4xl text-green-400" />
               <h2 className="text-xl font-semibold">Add Stock Manually</h2>
-              
-              <form onSubmit={handleAddStock} className="w-full space-y-4">
-                <select
-                  value={formData.categoryName}
-                  onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
-                  className="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Select Category</option>
-                  {categories.map(category => (
-                    <option key={category.category_id} value={category.category_name}>
-                      {category.category_name}
-                    </option>
-                  ))}
-                </select>
 
-                <input
-                  type="text"
-                  placeholder="Product Name"
-                  value={formData.productName}
-                  onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                  className="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
-                  required
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    type="number"
-                    placeholder="Quantity"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    className="p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
-                    min="1"
-                    required
-                  />
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Price"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                    className="p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
-                    min="0.01"
-                    required
-                  />
+              {loading ? (
+                <div className="w-full">
+                  <FormSkeleton fields={4} />
                 </div>
+              ) : (
+                <form onSubmit={handleAddStock} className="w-full space-y-4">
+                  <select
+                    value={formData.categoryName}
+                    onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
+                    className="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(category => (
+                      <option key={category.category_id} value={category.category_name}>
+                        {category.category_name}
+                      </option>
+                    ))}
+                  </select>
 
-                <button
-                  type="submit"
-                  className="w-full py-2 px-4 bg-green-600 rounded-lg font-medium hover:bg-green-500 transition-colors"
-                >
-                  Add Stock Item
-                </button>
-              </form>
+                  <input
+                    type="text"
+                    placeholder="Product Name"
+                    value={formData.productName}
+                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                    className="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                    required
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <input
+                      type="number"
+                      placeholder="Quantity"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      className="p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                      min="1"
+                      required
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Price"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      className="p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                      min="0.01"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-2 px-4 bg-green-600 rounded-lg font-medium hover:bg-green-500 transition-colors"
+                  >
+                    Add Stock Item
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </section>
@@ -453,7 +460,7 @@ export default function StockDetails() {
               <FiShoppingCart className="text-blue-400" />
               Current Stock List
             </h2>
-            
+
             <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-4">
               {/* Date Filters */}
               <div className="grid grid-cols-2 gap-2 w-full sm:w-64">
@@ -530,14 +537,12 @@ export default function StockDetails() {
                   </th>
                 </tr>
               </thead>
-              
+
               <tbody className="divide-y divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-6 text-center">
-                      <div className="flex items-center justify-center space-x-2 text-gray-500">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                      </div>
+                    <td colSpan="6" className="p-0">
+                      <TableSkeleton rows={5} columns={6} />
                     </td>
                   </tr>
                 ) : filteredStocks.length === 0 ? (
@@ -548,8 +553,8 @@ export default function StockDetails() {
                   </tr>
                 ) : (
                   filteredStocks.map((stock) => (
-                    <tr 
-                      key={stock.stock_id} 
+                    <tr
+                      key={stock.stock_id}
                       className="hover:bg-gray-850/50 transition-colors duration-200"
                     >
                       <td className="px-6 py-4 text-sm font-medium text-white">
