@@ -7,7 +7,8 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import BackButton from "@/components/BackButton";
-import { CardSkeleton, TableSkeleton, ChartSkeleton } from "@/components/skeleton";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -17,6 +18,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { Scroll } from "lucide-react";
 import ScrollToTopButton from "@/components/scrollup";
 
 ChartJS.register(
@@ -39,19 +41,21 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [stocksRes, categoriesRes, spentRes] = await Promise.all([
+      const [stocksRes, categoriesRes, spentRes,stockCount] = await Promise.all([
         fetch('/api/stocks'),
         fetch('/api/categories'),
-        fetch('/api/inventory_spent')
+        fetch('/api/inventory_spent'),
+        fetch('/api/stocks?count=true')
       ]);
 
-      if (!stocksRes.ok || !categoriesRes.ok || !spentRes.ok) {
+      if (!stocksRes.ok || !categoriesRes.ok || !spentRes.ok || !stockCount.ok) {
         throw new Error('Failed to fetch data');
       }
 
       const stocksData = await stocksRes.json();
       const categoriesData = await categoriesRes.json();
       const spentData = await spentRes.json();
+      const stockCountData = await stockCount.json();
 
       if (categoriesData.success && categoriesData.categories) {
         setCategories(categoriesData.categories);
@@ -64,7 +68,7 @@ export default function Dashboard() {
       const totalStockValue = stocksData.reduce((sum, item) => sum + (item.quantity * item.price_pu), 0);
 
       setStats({
-        totalItems: stocksData.length,
+        totalItems: stockCountData.count,
         categories: categoriesData.categories.length,
         lowStock: lowStockItems.length,
         spentStock: spentData.length || 0,
@@ -98,18 +102,7 @@ export default function Dashboard() {
       className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg min-h-[150px]"
     >
       {isLoading ? (
-        <div className="animate-pulse">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-              <div className="h-8 bg-gray-700 rounded w-3/4"></div>
-            </div>
-            <div className="p-3 rounded-full bg-gray-700 h-10 w-10"></div>
-          </div>
-          <div className="mt-4 flex items-center space-x-2">
-            <div className="h-4 bg-gray-700 rounded w-1/3"></div>
-          </div>
-        </div>
+        <Skeleton count={3} height={30} />
       ) : (
         <>
           <div className="flex items-center justify-between">
@@ -260,7 +253,7 @@ export default function Dashboard() {
               <h2 className="text-lg md:text-xl font-semibold">Stock Distribution</h2>
             </div>
             {loading ? (
-              <ChartSkeleton height={300} />
+              <Skeleton height={300} />
             ) : (
               <div className="w-full h-[300px]">
                 <Bar
