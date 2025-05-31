@@ -76,38 +76,15 @@ export default async function handler(req, res) {
         });
       }
 
-      // Update stock quantity first
-      await db.execute(
-        "UPDATE stock SET quantity = quantity - ? WHERE stock_id = ?",
-        [spentQty, stockId]
-      );
-
-      // Create spent record
+      // Create spent record (the database trigger will handle stock quantity update)
       const [insertResult] = await db.execute(
-        `INSERT INTO inventory_spent 
+        `INSERT INTO inventory_spent
          (stock_id, quantity_used, used_for, recorded_by, location, remark, spent_at)
          VALUES (?, ?, ?, ?, ?, ?, NOW())`,
         [stockId, spentQty, used_for, recorded_by, location, remark || null]
       );
 
-      // Create transaction log
-      await db.execute(
-        `INSERT INTO stock_transactions 
-         (stock_id, transaction_type, quantity_change, previous_quantity, 
-          new_quantity, price_pu, project_id, employee_id, notes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          stockId,
-          'SPEND',
-          -spentQty,
-          quantity,
-          quantity - spentQty,
-          price_pu,
-          used_for,
-          recorded_by,
-          `Stock spent by employee ${recorded_by} for project ${used_for} at ${location}. ${remark || ''}`
-        ]
-      );
+      // Transaction log is automatically created by the database trigger
 
       await db.commit();
 

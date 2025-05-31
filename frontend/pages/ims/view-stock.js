@@ -40,6 +40,7 @@ export default function StockDetails() {
   const [selectedEmployee, setSelectedEmployee] = useState("");
   const [location, setLocation] = useState("");
   const [remark, setRemark] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const StarryBackground = dynamic(
     () => import("@/components/StarryBackground"),
@@ -118,6 +119,7 @@ export default function StockDetails() {
     setSelectedEmployee("");
     setLocation("");
     setRemark("");
+    setIsSubmitting(false); // Reset submission state
   }, []);
 
   const closeModal = useCallback(() => {
@@ -308,6 +310,12 @@ export default function StockDetails() {
   }, []);
 
   const handleSpendStock = useCallback(async () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      console.log("Already submitting, ignoring duplicate call");
+      return;
+    }
+
     const newErrors = [];
 
     if (!selectedProject) newErrors.push("Project is required");
@@ -329,6 +337,13 @@ export default function StockDetails() {
     }
 
     try {
+      setIsSubmitting(true);
+      console.log("Starting spend operation for:", {
+        stockId: selectedStock.stock_id,
+        spentQty: requestedQty,
+        itemName: selectedStock.item_name
+      });
+
       const response = await fetch("/api/spend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -348,6 +363,8 @@ export default function StockDetails() {
         throw new Error(data.error || "Failed to update stock");
       }
 
+      console.log("Spend operation successful:", data);
+
       await fetchData();
       closeModal();
 
@@ -365,9 +382,12 @@ export default function StockDetails() {
       ]);
 
     } catch (error) {
+      console.error("Spend operation failed:", error);
       setErrors([error.message]);
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [selectedStock, selectedProject, selectedEmployee, spendQty, location, remark, fetchData, closeModal]);
+  }, [selectedStock, selectedProject, selectedEmployee, spendQty, location, remark, fetchData, closeModal, isSubmitting]);
 
   // Remove expired notifications
   useEffect(() => {
@@ -956,12 +976,29 @@ export default function StockDetails() {
                   <div className="mt-6 flex gap-4">
                     <button
                       onClick={handleSpendStock}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      disabled={isSubmitting}
+                      className={`flex-1 font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                        isSubmitting
+                          ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      }`}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Confirm Spend
+                      {isSubmitting ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Confirm Spend
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={closeModal}

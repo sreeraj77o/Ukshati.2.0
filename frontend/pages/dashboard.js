@@ -5,17 +5,17 @@ import { useRouter } from "next/router";
 import React from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import Tilt from "react-parallax-tilt";
-import { 
-  FaBars, 
-  FaUser, 
-  FaUserPlus, 
-  FaTimes, 
+import {
+  FaBars,
+  FaUser,
+  FaUserPlus,
+  FaTimes,
   FaCheck,
-  FaUsers, 
-  FaBoxOpen, 
-  FaMoneyBillWave, 
-  FaFileInvoiceDollar, 
-  FaFileContract, 
+  FaUsers,
+  FaBoxOpen,
+  FaMoneyBillWave,
+  FaFileInvoiceDollar,
+  FaFileContract,
   FaChevronDown,
   FaSignOutAlt,
   FaQuestion,
@@ -37,6 +37,7 @@ import {
 
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import Footer from "@/components/Footer";
+import { DashboardSkeleton } from "@/components/skeleton";
 
 ChartJS.register(
   CategoryScale,
@@ -85,7 +86,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
       <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold mb-4 text-white">Add Employee</h2>
-        
+
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
@@ -97,7 +98,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
             <input
@@ -108,7 +109,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
             <input
@@ -118,7 +119,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Role</label>
             <select
@@ -132,7 +133,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
               <option value="employee">Employee</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
             <input
@@ -143,7 +144,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
               required
             />
           </div>
-          
+
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"
@@ -257,20 +258,24 @@ useEffect(() => {
   const checkMobile = () => {
     const mobile = window.innerWidth < 1024;
     setIsMobile(mobile);
-    setIsSidebarOpen(!mobile);
+    // Don't automatically open sidebar on page load
+    // Only close it if we're on mobile and it's currently open
+    if (mobile && isSidebarOpen) {
+      setIsSidebarOpen(false);
+    }
   };
-  
+
   checkMobile();
   window.addEventListener('resize', checkMobile);
   return () => window.removeEventListener('resize', checkMobile);
-}, []);
+}, [isSidebarOpen]);
 
   // Fetch all dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
+
         // First fetch base data
         const [customersRes, stocksRes, lastQuoteRes, invoicesRes, projectsRes, tasksRes, remindersRes] = await Promise.all([
           fetch('/api/customers'),
@@ -281,7 +286,7 @@ useEffect(() => {
           fetch('api/tasks'),
           fetch('/api/reminders')
         ]);
-  
+
         // Parse base data
         const [customersData, stocksData, lastQuoteData, invoicesData, projectsData, tasksData, remindersData] = await Promise.all([
           customersRes.ok ? await customersRes.json() : [],
@@ -292,27 +297,27 @@ useEffect(() => {
           tasksRes.ok ? await tasksRes.json() : [],
           remindersRes.ok ? await remindersRes.json() : []
         ]);
-  
+
         // Calculate total revenue from invoices
         const totalRevenue = invoicesData.reduce((sum, invoice) => {
           return sum + parseFloat(invoice.grandTotal || 0);
         }, 0);
-  
-        const latestQuote = lastQuoteData[0] || {}; 
+
+        const latestQuote = lastQuoteData[0] || {};
         const totalQuotesValue = lastQuoteData.reduce((sum, quote) => {
           return sum + parseFloat(quote.total_cost || 0);
         }, 0);
-  
+
         const totalExpenses = projectsData.reduce((sum, project) => {
           return sum + parseFloat(project.Amount || 0);
         }, 0);
-        
+
         // Calculate task stats
         const completedTasks = tasksData.filter(task => task.status === 'Completed').length;
         const inProgressTasks = tasksData.filter(task => task.status === 'Ongoing').length;
         const pendingTasks = tasksData.filter(task => task.status === 'On Hold').length;
         const totalTasks = tasksData.length;
-        
+
         // Set dashboard data
         setDashboardData({
           customers: Array.isArray(customersData?.customers) ? customersData.customers.length : 0,
@@ -331,14 +336,14 @@ useEffect(() => {
             expenses: Number(totalExpenses) || 0,
             quotesCount: totalQuotesValue || 0,
             totalProjects: projectsData.length,
-            activeProjects: tasksData.filter(task => 
+            activeProjects: tasksData.filter(task =>
               ['Ongoing', 'In Progress'].includes(task.status)
             ).length,
           }
         });
 
         console.log(stocksData.length)
-  
+
         setError(null);
       } catch (error) {
         console.error('Dashboard data fetch error:', error);
@@ -347,22 +352,22 @@ useEffect(() => {
         setLoading(false);
       }
     };
-  
+
     fetchDashboardData();
   }, []);
 
   // Features data with dynamic values
   const features = [
-    { 
-      name: "CRM", 
-      path: "/crm/home", 
-      icon: <FaUsers className="text-white" />, 
-      gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40", 
+    {
+      name: "CRM",
+      path: "/crm/home",
+      icon: <FaUsers className="text-white" />,
+      gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40",
       description: "Manage customer relationships",
       imageDescription: "Customer Relationship Overview",
-      stats: { 
+      stats: {
         main: dashboardData.customers,
-      }, 
+      },
       filedBy: "CRM team",
       accordion: [
         { title: "Customer Management", content: "Track customer interactions and history." },
@@ -370,11 +375,11 @@ useEffect(() => {
       ],
       image: "https://img.freepik.com/free-vector/flat-customer-support-illustration_23-2148899114.jpg"
     },
-    { 
-      name: "Inventory", 
-      path: "/ims/home", 
-      icon: <FaBoxOpen className="text-white" />, 
-      gradient: "bg-gradient-to-r from-emerald-400/30 to-teal-400/40", 
+    {
+      name: "Inventory",
+      path: "/ims/home",
+      icon: <FaBoxOpen className="text-white" />,
+      gradient: "bg-gradient-to-r from-emerald-400/30 to-teal-400/40",
       description: "Track stock and supplies",
       imageDescription: "Inventory Management System",
       stats: { main: dashboardData.stocks },
@@ -385,28 +390,28 @@ useEffect(() => {
       ],
       image: "https://img.freepik.com/premium-vector/warehouse-workers-check-inventory-levels-items-shelves-inventory-management-stock-control-vector-illustration_327176-1435.jpg"
     },
-    { 
-      name: "Expense", 
-      path: "/expense/home", 
-      icon: <FaMoneyBillWave className="text-white" />, 
-      gradient: "bg-gradient-to-r from-pink-400/30 to-rose-400/40", 
+    {
+      name: "Expense",
+      path: "/expense/home",
+      icon: <FaMoneyBillWave className="text-white" />,
+      gradient: "bg-gradient-to-r from-pink-400/30 to-rose-400/40",
       description: "Monitor business expenses",
       imageDescription: "Expense Tracking Dashboard",
-      stats: { 
-        main: `₹${dashboardData.expenses.toLocaleString('en-IN')}`, 
+      stats: {
+        main: `₹${dashboardData.expenses.toLocaleString('en-IN')}`,
       },
       filedBy: "Finance team",
       accordion: [
         { title: "Expense Tracking", content: "Track all business expenses in one place." },
         { title: "Reports", content: "Generate detailed expense reports." }
       ],
-      image: "https://www.itarian.com/assets-new/images/time-and-expense-tracking.png" 
+      image: "https://www.itarian.com/assets-new/images/time-and-expense-tracking.png"
     },
-    { 
-      name: "Billing", 
-      path: "billing/billing", 
-      icon: <FaFileInvoiceDollar className="text-white" />, 
-      gradient: "bg-gradient-to-r from-violet-400/30 to-purple-500/40", 
+    {
+      name: "Billing",
+      path: "billing/billing",
+      icon: <FaFileInvoiceDollar className="text-white" />,
+      gradient: "bg-gradient-to-r from-violet-400/30 to-purple-500/40",
       description: "Generate and manage invoices",
       imageDescription: "Billing Management System",
       stats: { main: dashboardData.invoices },
@@ -417,21 +422,21 @@ useEffect(() => {
       ],
       image: "https://img.freepik.com/free-vector/invoice-concept-illustration_114360-2805.jpg"
     },
-    { 
-      name: "Quotation", 
-      path: "/quotation/home", 
-      icon: <FaFileContract className="text-white" />, 
-      gradient: "bg-gradient-to-r from-yellow-400/30 to-amber-500/40", 
+    {
+      name: "Quotation",
+      path: "/quotation/home",
+      icon: <FaFileContract className="text-white" />,
+      gradient: "bg-gradient-to-r from-yellow-400/30 to-amber-500/40",
       description: "Create and send quotations",
       imageDescription: "Quotation Management System",
-      stats: { 
+      stats: {
         main: `₹${dashboardData.stats.quotesCount}` || 0
       },
       filedBy: "sales.team__ and others",
       accordion: [],
-      image: "https://png.pngtree.com/thumb_back/fh260/background/20221006/pngtree-money-concept-quotation-on-chalkboard-background-learn-investment-market-photo-image_22951928.jpg" 
+      image: "https://png.pngtree.com/thumb_back/fh260/background/20221006/pngtree-money-concept-quotation-on-chalkboard-background-learn-investment-market-photo-image_22951928.jpg"
     }
-  ];  
+  ];
 
   // Stats data with dynamic values
   const statsData = [
@@ -446,12 +451,12 @@ useEffect(() => {
   const [isAboutUsOpen, setIsAboutUsOpen] = useState(false);
   const [isContactUsOpen, setIsContactUsOpen] = useState(false);
 
-  
+
   const handleHelpClick = () => {
     const mailtoLink = `mailto:jaideepn3590@duck.com?subject=Help Request`;
     window.location.href = mailtoLink;
   };
-  
+
   const handleFlip = (index) => {
     setFlipped(prev => {
       const newFlipped = [...prev];
@@ -464,7 +469,7 @@ useEffect(() => {
     try {
       setLoadingEmployees(true);
       const response = await fetch('/api/employees');
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP ${response.status}: ${errorText}`);
@@ -493,7 +498,7 @@ useEffect(() => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id: employeeId }), 
+        body: JSON.stringify({ id: employeeId }),
       });
 
       if (!response.ok) {
@@ -517,7 +522,7 @@ useEffect(() => {
       try {
         const storedUser = localStorage.getItem("user");
         const storedRole = localStorage.getItem("userRole");
-        
+
         if (!storedUser || !storedRole) {
           router.push("/");
           return;
@@ -581,14 +586,7 @@ useEffect(() => {
   const closeContactUs = () => setIsContactUsOpen(false);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-white">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -620,28 +618,28 @@ useEffect(() => {
           )}
         </motion.div>
       </button>
-      
+
       <h1 className="text-2xl font-bold text-white">Dashboard</h1>
     </div>
 
     {/* Right Section - Navigation Icons */}
     <div className="flex items-center space-x-5">
       {/* Help */}
-      <button 
+      <button
         onClick={handleHelpClick}
         className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all"
       >
         <FaQuestion className="text-gray-300" />
       </button>
-      
+
       {/* About Us */}
-      <button 
+      <button
         onClick={openAboutUs}
         className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all"
       >
         <FaInfoCircle className="text-gray-300" />
       </button>
-      
+
       {/* Profile Dropdown */}
       <div className="relative">
         <button
@@ -658,7 +656,7 @@ useEffect(() => {
             <FaChevronDown className="text-xs" />
           </motion.span>
         </button>
-        
+
         <AnimatePresence>
           {isDropdownOpen && (
             <motion.div
@@ -705,7 +703,7 @@ useEffect(() => {
             <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">Ukshati</span>
           </Link>
         </div>
-        
+
         <div className="py-4">
           <nav className="px-4 space-y-1">
             <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
@@ -714,39 +712,39 @@ useEffect(() => {
               </svg>
               <span className="font-medium">Dashboard</span>
             </Link>
-            
+
             <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaUsers className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">CRM</span>
             </Link>
-            
+
             <Link href="/ims/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaBoxOpen className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Inventory</span>
             </Link>
-            
+
             <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaFileContract className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Quotations</span>
             </Link>
-            
+
             <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Billing</span>
             </Link>
-            
+
             <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaMoneyBillWave className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Expenses</span>
             </Link>
-            
+
             <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaCalendar className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Reminders</span>
             </Link>
           </nav>
         </div>
-        
+
         {/* User Info */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
           <div className="flex items-center space-x-3">
@@ -776,7 +774,7 @@ useEffect(() => {
   )}
 </AnimatePresence>
         {/* Sidebar for larger screens */}
-        
+
         <AnimatePresence>
   {isSidebarOpen && (
     <>
@@ -802,7 +800,7 @@ useEffect(() => {
   </button>
 </div>
         </div>
-        
+
         <div className="py-4">
           <nav className="px-4 space-y-1">
             <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
@@ -811,7 +809,7 @@ useEffect(() => {
               </svg>
               <span className="font-medium">Dashboard</span>
             </Link>
-            
+
             <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaUsers className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
               <span className="font-medium">CRM</span>
@@ -820,29 +818,29 @@ useEffect(() => {
               <FaBoxOpen className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Inventory</span>
             </Link>
-            
+
             <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaFileContract className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Quotations</span>
             </Link>
-            
+
             <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Billing</span>
             </Link>
-            
+
             <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaMoneyBillWave className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Expenses</span>
             </Link>
-            
+
             <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaCalendar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Reminders</span>
             </Link>
           </nav>
         </div>
-        
+
         {/* User Info */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
           <div className="flex items-center space-x-3">
@@ -1126,7 +1124,7 @@ useEffect(() => {
                                   <FaChevronDown className={`transition-transform ${expandedEmployee === employee._id ? 'rotate-180' : ''}`} />
                                 </button>
                                 <button
-                                  onClick={() => handleDeleteEmployee(employee.id)} 
+                                  onClick={() => handleDeleteEmployee(employee.id)}
                                   className="p-1.5 ml-2 text-red-400 hover:text-red-300 transition-colors"
                                 >
                                   <FaTimes />

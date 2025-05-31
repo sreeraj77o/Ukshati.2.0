@@ -60,15 +60,9 @@ export default async function handler(req, res) {
             throw new Error("Employee not found");
           }
 
-          // Update stock
+          // Record spending (the database trigger will handle stock quantity update)
           await db.query(
-            "UPDATE stock SET quantity = quantity - ? WHERE stock_id = ?",
-            [item.spentQty, item.stockId]
-          );
-
-          // Record spending
-          await db.query(
-            `INSERT INTO inventory_spent 
+            `INSERT INTO inventory_spent
              (stock_id, quantity_used, used_for, recorded_by, location, remark)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [item.stockId, item.spentQty, item.used_for, item.recorded_by, item.location, item.remark || null]
@@ -94,9 +88,9 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error("Bulk spend error:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "Bulk operation failed",
-      details: error.message 
+      details: error.message
     });
   } finally {
     if (db) db.release();

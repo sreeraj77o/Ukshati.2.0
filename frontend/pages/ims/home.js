@@ -7,8 +7,7 @@ import {
 } from "react-icons/fi";
 import { motion } from "framer-motion";
 import BackButton from "@/components/BackButton";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
+import { CardSkeleton, TableSkeleton, ChartSkeleton } from "@/components/skeleton";
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -102,7 +101,7 @@ export default function Dashboard() {
       className="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-xl shadow-lg min-h-[150px]"
     >
       {isLoading ? (
-        <Skeleton count={3} height={30} />
+        <CardSkeleton />
       ) : (
         <>
           <div className="flex items-center justify-between">
@@ -253,7 +252,7 @@ export default function Dashboard() {
               <h2 className="text-lg md:text-xl font-semibold">Stock Distribution</h2>
             </div>
             {loading ? (
-              <Skeleton height={300} />
+              <ChartSkeleton height={300} />
             ) : (
               <div className="w-full h-[300px]">
                 <Bar
@@ -329,20 +328,7 @@ export default function Dashboard() {
           <h2 className="text-lg md:text-xl font-semibold mb-6">Recent Stock Updates</h2>
           <div className="space-y-3">
             {loading ? (
-              <div className="space-y-3">
-                {Array(4).fill(0).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-gray-600 h-10 w-10"></div>
-                      <div>
-                        <div className="h-4 bg-gray-600 rounded w-24 mb-2"></div>
-                        <div className="h-3 bg-gray-600 rounded w-32"></div>
-                      </div>
-                    </div>
-                    <div className="h-3 bg-gray-600 rounded w-20"></div>
-                  </div>
-                ))}
-              </div>
+              <TableSkeleton rows={4} columns={1} />
             ) : error ? (
               <p className="text-gray-400">Unable to load recent activity</p>
             ) : (
