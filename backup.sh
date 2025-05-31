@@ -1,9 +1,18 @@
 #!/bin/bash
 
-# Dump current database state
-mysqldump -ucompany -p$MYSQL_PASSWORD company_db > /docker-entrypoint-initdb.d/init.sql
+# Define backup directory (mapped to host via docker-compose)
+BACKUP_DIR=/backups
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+BACKUP_FILE="${BACKUP_DIR}/backup_${TIMESTAMP}.sql"
 
-# Preserve permissions
-chmod 644 /docker-entrypoint-initdb.d/init.sql
+# Create backup directory if it doesn’t exist
+mkdir -p ${BACKUP_DIR}
 
-echo "$(date): Database backup completed" >> /var/log/backup.log
+# Dump the database to a timestamped file
+mysqldump -ucompany -p$MYSQL_PASSWORD company_db > ${BACKUP_FILE}
+
+# Set permissions so the file is readable
+chmod 644 ${BACKUP_FILE}
+
+# Log the backup
+echo "$(date): Database backup saved to ${BACKUP_FILE}" >> /var/log/backup.log
