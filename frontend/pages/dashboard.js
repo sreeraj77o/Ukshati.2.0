@@ -21,6 +21,7 @@ import {
   FaQuestion,
   FaInfoCircle,
   FaCalendar,
+  FaBell,
 } from "react-icons/fa";
 import {
   Chart as ChartJS,
@@ -93,7 +94,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
               required
             />
@@ -104,7 +105,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
               required
             />
@@ -115,7 +116,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
             <input
               type="tel"
               value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
             />
           </div>
@@ -124,7 +125,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
             <label className="block text-sm font-medium text-gray-300 mb-1">Role</label>
             <select
               value={formData.role}
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
               required
             >
@@ -139,7 +140,7 @@ const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loadi
             <input
               type="password"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
               required
             />
@@ -216,7 +217,7 @@ const ProjectCard = ({ id, customer, status, progress, value }) => {
           </div>
         </div>
       </div>
-      </div>
+    </div>
   );
 };
 
@@ -253,22 +254,35 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isReminderDropdownOpen, setIsReminderDropdownOpen] = useState(false);
 
-useEffect(() => {
-  const checkMobile = () => {
-    const mobile = window.innerWidth < 1024;
-    setIsMobile(mobile);
-    // Don't automatically open sidebar on page load
-    // Only close it if we're on mobile and it's currently open
-    if (mobile && isSidebarOpen) {
-      setIsSidebarOpen(false);
-    }
-  };
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      // Don't automatically open sidebar on page load
+      // Only close it if we're on mobile and it's currently open
+      if (mobile && isSidebarOpen) {
+        setIsSidebarOpen(false);
+      }
+    };
 
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
-  return () => window.removeEventListener('resize', checkMobile);
-}, [isSidebarOpen]);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, [isSidebarOpen]);
+
+  // Close reminder dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isReminderDropdownOpen && !event.target.closest('.reminder-dropdown')) {
+        setIsReminderDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isReminderDropdownOpen]);
 
   // Fetch all dashboard data
   useEffect(() => {
@@ -580,7 +594,7 @@ useEffect(() => {
     router.push("/");
   };
 
-  const openAboutUs = ()  => setIsAboutUsOpen(true);
+  const openAboutUs = () => setIsAboutUsOpen(true);
   const closeAboutUs = () => setIsAboutUsOpen(false);
   const openContactUs = () => setIsContactUsOpen(true);
   const closeContactUs = () => setIsContactUsOpen(false);
@@ -594,281 +608,353 @@ useEffect(() => {
       {/* Main Content */}
       <div className="ml-0">
         {/* Header */}
-<header className="bg-black shadow-md border-b border-gray-700">
-  <div className="px-6 py-4 flex items-center justify-between">
-    {/* Left Section - Hamburger Menu and Title */}
-    <div className="flex items-center space-x-4">
-      {/* Hamburger Button */}
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className=" p-2 text-gray-400 hover:text-white focus:outline-none"
-      >
-        <motion.div
-          animate={isSidebarOpen ? "open" : "closed"}
-          variants={{
-            open: { rotate: 180 },
-            closed: { rotate: 0 }
-          }}
-          transition={{ duration: 0.3 }}
-        >
-          {isSidebarOpen ? (
-            <FaTimes className="w-6 h-6" />
-          ) : (
-            <FaBars className="w-6 h-6" />
-          )}
-        </motion.div>
-      </button>
-
-      <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-    </div>
-
-    {/* Right Section - Navigation Icons */}
-    <div className="flex items-center space-x-5">
-      {/* Help */}
-      <button
-        onClick={handleHelpClick}
-        className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all"
-      >
-        <FaQuestion className="text-gray-300" />
-      </button>
-
-      {/* About Us */}
-      <button
-        onClick={openAboutUs}
-        className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all"
-      >
-        <FaInfoCircle className="text-gray-300" />
-      </button>
-
-      {/* Profile Dropdown */}
-      <div className="relative">
-        <button
-          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 transition-all"
-        >
-          <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center">
-            <span className="font-medium">{userData?.name?.[0] || 'U'}</span>
-          </div>
-          <motion.span
-            animate={{ rotate: isDropdownOpen ? 180 : 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <FaChevronDown className="text-xs" />
-          </motion.span>
-        </button>
-
-        <AnimatePresence>
-          {isDropdownOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-0 mt-2 w-48 bg-black rounded-lg shadow-lg border border-gray-700 z-50"
-            >
-              <div className="p-4 border-b border-gray-700">
-                <p className="text-sm font-medium text-cyan-400">{userData?.name || 'User'}</p>
-                <p className="text-xs text-cyan-400 truncate">{userData?.email || 'user@example.com'}</p>
-              </div>
-              <div className="py-1">
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
+        <header className="bg-black shadow-md border-b border-gray-700">
+          <div className="px-6 py-4 flex items-center justify-between">
+            {/* Left Section - Hamburger Menu and Title */}
+            <div className="flex items-center space-x-4">
+              {/* Hamburger Button */}
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className=" p-2 text-gray-400 hover:text-white focus:outline-none"
+              >
+                <motion.div
+                  animate={isSidebarOpen ? "open" : "closed"}
+                  variants={{
+                    open: { rotate: 180 },
+                    closed: { rotate: 0 }
+                  }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <FaSignOutAlt className="mr-2" /> Sign Out
+                  {isSidebarOpen ? (
+                    <FaTimes className="w-6 h-6" />
+                  ) : (
+                    <FaBars className="w-6 h-6" />
+                  )}
+                </motion.div>
+              </button>
+
+              <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+            </div>
+
+            {/* Right Section - Navigation Icons */}
+            <div className="flex items-center space-x-5">
+              {/* Help */}
+              <button
+                onClick={handleHelpClick}
+                className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all"
+              >
+                <FaQuestion className="text-gray-300" />
+              </button>
+
+              {/* About Us */}
+              <button
+                onClick={openAboutUs}
+                className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all"
+              >
+                <FaInfoCircle className="text-gray-300" />
+              </button>
+
+              {/* Reminders */}
+              <div className="relative reminder-dropdown">
+                <button
+                  onClick={() => setIsReminderDropdownOpen(!isReminderDropdownOpen)}
+                  className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all relative"
+                >
+                  <FaBell className="text-gray-300" />
+                  {dashboardData.reminders && dashboardData.reminders.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {dashboardData.reminders.length}
+                    </span>
+                  )}
                 </button>
+
+                <AnimatePresence>
+                  {isReminderDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-80 bg-black rounded-lg shadow-lg border border-gray-700 z-50"
+                    >
+                      <div className="p-4 border-b border-gray-700">
+                        <h3 className="text-sm font-medium text-white flex items-center">
+                          <FaBell className="mr-2" />
+                          Reminders ({dashboardData.reminders?.length || 0})
+                        </h3>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {dashboardData.reminders && dashboardData.reminders.length > 0 ? (
+                          dashboardData.reminders.slice(0, 5).map((reminder, index) => (
+                            <div key={reminder.rid || index} className="p-3 border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors">
+                              <div className="flex items-start space-x-3">
+                                <div className="p-1.5 bg-blue-600/20 rounded-full mt-1">
+                                  <FaCalendar className="text-blue-400 text-xs" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-white truncate">
+                                    {reminder.cname || 'Unknown Customer'}
+                                  </p>
+                                  <p className="text-xs text-gray-300 mt-1 line-clamp-2">
+                                    {reminder.message}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {reminder.reminder_date} at {reminder.reminder_time}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center text-gray-400">
+                            <FaBell className="mx-auto mb-2 text-2xl opacity-50" />
+                            <p className="text-sm">No reminders set</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 border-t border-gray-700">
+                        <Link
+                          href="/crm/reminders"
+                          className="block w-full text-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors text-sm"
+                          onClick={() => setIsReminderDropdownOpen(false)}
+                        >
+                          View All Reminders
+                        </Link>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  </div>
-</header>
+
+              {/* Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 transition-all"
+                >
+                  <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center">
+                    <span className="font-medium">{userData?.name?.[0] || 'U'}</span>
+                  </div>
+                  <motion.span
+                    animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <FaChevronDown className="text-xs" />
+                  </motion.span>
+                </button>
+
+                <AnimatePresence>
+                  {isDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 bg-black rounded-lg shadow-lg border border-gray-700 z-50"
+                    >
+                      <div className="p-4 border-b border-gray-700">
+                        <p className="text-sm font-medium text-cyan-400">{userData?.name || 'User'}</p>
+                        <p className="text-xs text-cyan-400 truncate">{userData?.email || 'user@example.com'}</p>
+                      </div>
+                      <div className="py-1">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
+                        >
+                          <FaSignOutAlt className="mr-2" /> Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </header>
 
         {/* Mobile Sidebar with Animation */}
-<AnimatePresence>
-  {isSidebarOpen && (
-    <>
-      <motion.div
-        initial={{ x: -300 }}
-        animate={{ x: 0 }}
-        exit={{ x: -300 }}
-        transition={{ type: "tween" }}
-        className="fixed lg:hidden top-0 left-0 bottom-0 w-64 bg-black border-r border-gray-700 z-50 shadow-xl"
-      >
-        <div className="p-5 flex items-center justify-center border-b border-black">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold text-xl">💧</div>
-            <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">Ukshati</span>
-          </Link>
-        </div>
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <>
+              <motion.div
+                initial={{ x: -300 }}
+                animate={{ x: 0 }}
+                exit={{ x: -300 }}
+                transition={{ type: "tween" }}
+                className="fixed lg:hidden top-0 left-0 bottom-0 w-64 bg-black border-r border-gray-700 z-50 shadow-xl"
+              >
+                <div className="p-5 flex items-center justify-center border-b border-black">
+                  <Link href="/dashboard" className="flex items-center space-x-2">
+                    <div className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold text-xl">💧</div>
+                    <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">Ukshati</span>
+                  </Link>
+                </div>
 
-        <div className="py-4">
-          <nav className="px-4 space-y-1">
-            <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
-              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-              </svg>
-              <span className="font-medium">Dashboard</span>
-            </Link>
+                <div className="py-4">
+                  <nav className="px-4 space-y-1">
+                    <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
+                      <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                      </svg>
+                      <span className="font-medium">Dashboard</span>
+                    </Link>
 
-            <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaUsers className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">CRM</span>
-            </Link>
+                    <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaUsers className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">CRM</span>
+                    </Link>
 
-            <Link href="/ims/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaBoxOpen className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Inventory</span>
-            </Link>
+                    <Link href="/ims/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaBoxOpen className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Inventory</span>
+                    </Link>
 
-            <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaFileContract className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Quotations</span>
-            </Link>
+                    <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaFileContract className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Quotations</span>
+                    </Link>
 
-            <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Billing</span>
-            </Link>
+                    <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Billing</span>
+                    </Link>
 
-            <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaMoneyBillWave className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Expenses</span>
-            </Link>
+                    <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaMoneyBillWave className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Expenses</span>
+                    </Link>
 
-            <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaCalendar className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Reminders</span>
-            </Link>
-          </nav>
-        </div>
+                    <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaCalendar className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Reminders</span>
+                    </Link>
+                  </nav>
+                </div>
 
-        {/* User Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
-              <FaUser className="text-gray-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{userData?.name || 'User'}</p>
-              <p className="text-xs text-gray-400 truncate">{userData?.email || 'user@example.com'}</p>
-            </div>
-            <button onClick={handleLogout} className="p-1.5 text-gray-400 hover:text-white transition-colors">
-              <FaSignOutAlt />
-            </button>
-          </div>
-        </div>
-      </motion.div>
+                {/* User Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
+                      <FaUser className="text-gray-300" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{userData?.name || 'User'}</p>
+                      <p className="text-xs text-gray-400 truncate">{userData?.email || 'user@example.com'}</p>
+                    </div>
+                    <button onClick={handleLogout} className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                      <FaSignOutAlt />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
 
-      {/* Overlay */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-        onClick={() => setIsSidebarOpen(false)}
-      />
-    </>
-  )}
-</AnimatePresence>
+              {/* Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            </>
+          )}
+        </AnimatePresence>
         {/* Sidebar for larger screens */}
 
         <AnimatePresence>
-  {isSidebarOpen && (
-    <>
-      <motion.div
-        initial={{ x: -300 }}
-        animate={{ x: 0 }}
-        exit={{ x: -300 }}
-        transition={{ type: "tween" }}
-        className="hidden lg:block fixed left-0 top-0 bottom-0 w-64 bg-black border-r border-gray-700 z-30"
-      >
-        <div className="p-5 flex items-center justify-center border-b border-black">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full bg-cyan-800 flex items-center justify-center text-white font-bold text-2xl">💧</div>
-            <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">Ukshati</span>
-          </Link>
-          <div className="absolute top-4 right-4 lg:block hidden">
-  <button
-    onClick={() => setIsSidebarOpen(false)}
-    className="text-gray-400 hover:text-white transition-colors p-1 rounded"
-    aria-label="Close Sidebar"
-  >
-    <FaTimes className="w-5 h-5" />
-  </button>
-</div>
-        </div>
+          {isSidebarOpen && (
+            <>
+              <motion.div
+                initial={{ x: -300 }}
+                animate={{ x: 0 }}
+                exit={{ x: -300 }}
+                transition={{ type: "tween" }}
+                className="hidden lg:block fixed left-0 top-0 bottom-0 w-64 bg-black border-r border-gray-700 z-30"
+              >
+                <div className="p-5 flex items-center justify-center border-b border-black">
+                  <Link href="/dashboard" className="flex items-center space-x-2">
+                    <div className="w-10 h-10 rounded-full bg-cyan-800 flex items-center justify-center text-white font-bold text-2xl">💧</div>
+                    <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">Ukshati</span>
+                  </Link>
+                  <div className="absolute top-4 right-4 lg:block hidden">
+                    <button
+                      onClick={() => setIsSidebarOpen(false)}
+                      className="text-gray-400 hover:text-white transition-colors p-1 rounded"
+                      aria-label="Close Sidebar"
+                    >
+                      <FaTimes className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
 
-        <div className="py-4">
-          <nav className="px-4 space-y-1">
-            <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
-              <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-              </svg>
-              <span className="font-medium">Dashboard</span>
-            </Link>
+                <div className="py-4">
+                  <nav className="px-4 space-y-1">
+                    <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
+                      <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                      </svg>
+                      <span className="font-medium">Dashboard</span>
+                    </Link>
 
-            <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaUsers className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">CRM</span>
-            </Link>
-             <Link href="/ims/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaBoxOpen className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Inventory</span>
-            </Link>
+                    <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaUsers className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">CRM</span>
+                    </Link>
+                    <Link href="/ims/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaBoxOpen className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Inventory</span>
+                    </Link>
 
-            <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaFileContract className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Quotations</span>
-            </Link>
+                    <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaFileContract className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Quotations</span>
+                    </Link>
 
-            <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Billing</span>
-            </Link>
+                    <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Billing</span>
+                    </Link>
 
-            <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaMoneyBillWave className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Expenses</span>
-            </Link>
+                    <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaMoneyBillWave className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Expenses</span>
+                    </Link>
 
-            <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-              <FaCalendar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-              <span className="font-medium">Reminders</span>
-            </Link>
-          </nav>
-        </div>
+                    <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+                      <FaCalendar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
+                      <span className="font-medium">Reminders</span>
+                    </Link>
+                  </nav>
+                </div>
 
-        {/* User Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
-              <FaUser className="text-gray-300" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-cyan-400 truncate">{userData?.name || 'User'}</p>
-              <p className="text-xs text-cyan-400 truncate">{userData?.email || 'user@example.com'}</p>
-            </div>
-            <button onClick={handleLogout} className="p-1.5 text-red-600 hover:text-white transition-colors">
-              <FaSignOutAlt />
-            </button>
-          </div>
-        </div>
-      </motion.div>
+                {/* User Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
+                      <FaUser className="text-gray-300" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-cyan-400 truncate">{userData?.name || 'User'}</p>
+                      <p className="text-xs text-cyan-400 truncate">{userData?.email || 'user@example.com'}</p>
+                    </div>
+                    <button onClick={handleLogout} className="p-1.5 text-red-600 hover:text-white transition-colors">
+                      <FaSignOutAlt />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
 
-      {/* Overlay */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-        onClick={() => setIsSidebarOpen(false)}
-      />
-    </>
-  )}
-</AnimatePresence>
+              {/* Overlay */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            </>
+          )}
+        </AnimatePresence>
 
 
         {/* Main Content Area */}
@@ -916,7 +1002,7 @@ useEffect(() => {
             <button
               onClick={() => setActiveTab('analytics')}
               className={`px-4 py-2 font-medium text-sm ${activeTab === 'analytics' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400 hover:text-white'}`}
-              >
+            >
               Analytics
             </button>
           </div>
@@ -981,16 +1067,16 @@ useEffect(() => {
                     </button>
                   </div>
                   <div>
-  {(dashboardData.tasks || []).slice(0, 4).map((task, index) => (
-    <ProjectCard
-      key={index}
-      id={task.id?.slice(-4).toUpperCase()}
-      customer={task.pname || 'Unknown Customer'}
-      status={task.status || 'Pending'}
-      progress={task.progress || 0}
-    />
-  ))}
-</div>
+                    {(dashboardData.tasks || []).slice(0, 4).map((task, index) => (
+                      <ProjectCard
+                        key={index}
+                        id={task.id?.slice(-4).toUpperCase()}
+                        customer={task.pname || 'Unknown Customer'}
+                        status={task.status || 'Pending'}
+                        progress={task.progress || 0}
+                      />
+                    ))}
+                  </div>
                 </div>
                 <div className="bg-black rounded-xl p-6 shadow-lg border border-gray-700">
                   <h2 className="text-xl font-bold text-white mb-6">Project Stats</h2>
@@ -1169,90 +1255,90 @@ useEffect(() => {
               </div>
             )}
 
-{activeTab === 'analytics' && (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    {/* Line Chart - Revenue */}
-    <div className="bg-black rounded-xl p-4 shadow-lg border border-gray-700">
-      <h2 className="text-xl font-bold text-white mb-4">Revenue Trend</h2>
-      <Line
-        data={{
-          labels: ['Current'],
-          datasets: [
-            {
-              label: 'Revenue',
-              data: [dashboardData.stats.revenue],
-              borderColor: '#3B82F6',
-              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-              tension: 0.4,
-              fill: true,
-            }
-          ]
-        }}
-        options={{
-          responsive: true,
-          plugins: { legend: { labels: { color: '#fff' } } },
-          scales: {
-            x: { ticks: { color: '#ccc' } },
-            y: { ticks: { color: '#ccc' } }
-          }
-        }}
-      />
-    </div>
+            {activeTab === 'analytics' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Line Chart - Revenue */}
+                <div className="bg-black rounded-xl p-4 shadow-lg border border-gray-700">
+                  <h2 className="text-xl font-bold text-white mb-4">Revenue Trend</h2>
+                  <Line
+                    data={{
+                      labels: ['Current'],
+                      datasets: [
+                        {
+                          label: 'Revenue',
+                          data: [dashboardData.stats.revenue],
+                          borderColor: '#3B82F6',
+                          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                          tension: 0.4,
+                          fill: true,
+                        }
+                      ]
+                    }}
+                    options={{
+                      responsive: true,
+                      plugins: { legend: { labels: { color: '#fff' } } },
+                      scales: {
+                        x: { ticks: { color: '#ccc' } },
+                        y: { ticks: { color: '#ccc' } }
+                      }
+                    }}
+                  />
+                </div>
 
-    {/* Bar Chart - Expenses */}
-    <div className="bg-black rounded-xl p-4 shadow-lg border border-gray-700">
-      <h2 className="text-xl font-bold text-white mb-4">Expense Breakdown</h2>
-      <Bar
-        data={{
-          labels: ['Total Expenses'],
-          datasets: [
-            {
-              label: 'Expenses',
-              data: [dashboardData.stats.expenses],
-              backgroundColor: ['#EF4444']
-            }
-          ]
-        }}
-        options={{
-          responsive: true,
-          plugins: { legend: { labels: { color: '#fff' } } },
-          scales: {
-            x: { ticks: { color: '#ccc' } },
-            y: { ticks: { color: '#ccc' } }
-          }
-        }}
-      />
-    </div>
+                {/* Bar Chart - Expenses */}
+                <div className="bg-black rounded-xl p-4 shadow-lg border border-gray-700">
+                  <h2 className="text-xl font-bold text-white mb-4">Expense Breakdown</h2>
+                  <Bar
+                    data={{
+                      labels: ['Total Expenses'],
+                      datasets: [
+                        {
+                          label: 'Expenses',
+                          data: [dashboardData.stats.expenses],
+                          backgroundColor: ['#EF4444']
+                        }
+                      ]
+                    }}
+                    options={{
+                      responsive: true,
+                      plugins: { legend: { labels: { color: '#fff' } } },
+                      scales: {
+                        x: { ticks: { color: '#ccc' } },
+                        y: { ticks: { color: '#ccc' } }
+                      }
+                    }}
+                  />
+                </div>
 
-    {/* Doughnut Chart - Customers */}
-    <div className="bg-black rounded-xl p-12 shadow-lg border border-gray-700">
-      <h2 className="text-xl font-bold text-white mb-4">Customer Distribution</h2>
-      <Doughnut
-        data={{
-          labels: ['Total Customers'],
-          datasets: [
-            {
-              data: [dashboardData.customers, 100],
-              backgroundColor: ['#10B981', '#374151'],
-              borderColor: '#111827',
-              borderWidth: 2,
-            }
-          ]
-        }}
-        options={{
-          responsive: true,
-          plugins: {
-            legend: {
-              labels: { color: '#fff' },
-              position: 'bottom'
-            }
-          },
-          cutout: '70%'
-        }}
-      />
-    </div>
-  </div>
-)}
+                {/* Doughnut Chart - Customers */}
+                <div className="bg-black rounded-xl p-12 shadow-lg border border-gray-700">
+                  <h2 className="text-xl font-bold text-white mb-4">Customer Distribution</h2>
+                  <Doughnut
+                    data={{
+                      labels: ['Total Customers'],
+                      datasets: [
+                        {
+                          data: [dashboardData.customers, 100],
+                          backgroundColor: ['#10B981', '#374151'],
+                          borderColor: '#111827',
+                          borderWidth: 2,
+                        }
+                      ]
+                    }}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          labels: { color: '#fff' },
+                          position: 'bottom'
+                        }
+                      },
+                      cutout: '70%'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
           </div>
         </main>
@@ -1291,62 +1377,62 @@ useEffect(() => {
               </button>
               <h2 className="text-2xl font-bold text-white mb-4">About Ukshati</h2>
               <div className="prose prose-invert max-w-none">
-  <p className="text-gray-200 mb-4">
-    Ukshati Technologies Pvt. Ltd. (उक्षति – "sprinkle water") is an innovative company focused on automating the process of watering plants to reduce water wastage and promote sustainability. We've developed a smart, internet-connected watering platform designed to serve households, balconies, gardens, and agricultural fields with precision and ease.
-  </p>
+                <p className="text-gray-200 mb-4">
+                  Ukshati Technologies Pvt. Ltd. (उक्षति – "sprinkle water") is an innovative company focused on automating the process of watering plants to reduce water wastage and promote sustainability. We've developed a smart, internet-connected watering platform designed to serve households, balconies, gardens, and agricultural fields with precision and ease.
+                </p>
 
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-    <div className="bg-gray-700/50 p-4 rounded-lg">
-      <h3 className="text-lg font-medium text-white mb-2">Our Mission</h3>
-      <p className="text-gray-200">
-        To simplify plant care through automation, reduce freshwater wastage, and bring intelligent irrigation to every home and farm.
-      </p>
-    </div>
-    <div className="bg-gray-700/50 p-4 rounded-lg">
-      <h3 className="text-lg font-medium text-white mb-2">Our Vision</h3>
-      <p className="text-gray-200">
-        To become a global leader in smart irrigation solutions by delivering customizable, energy-efficient systems that make sustainable watering effortless.
-      </p>
-    </div>
-  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-gray-700/50 p-4 rounded-lg">
+                    <h3 className="text-lg font-medium text-white mb-2">Our Mission</h3>
+                    <p className="text-gray-200">
+                      To simplify plant care through automation, reduce freshwater wastage, and bring intelligent irrigation to every home and farm.
+                    </p>
+                  </div>
+                  <div className="bg-gray-700/50 p-4 rounded-lg">
+                    <h3 className="text-lg font-medium text-white mb-2">Our Vision</h3>
+                    <p className="text-gray-200">
+                      To become a global leader in smart irrigation solutions by delivering customizable, energy-efficient systems that make sustainable watering effortless.
+                    </p>
+                  </div>
+                </div>
 
-  <h3 className="text-lg font-medium text-white mb-2">Key Features</h3>
-  <ul className="text-gray-200 space-y-2 mb-6">
-    <li className="flex items-start">
-      <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
-      <span>Smart water tap device with internet connectivity and 6+ month alkaline battery life</span>
-    </li>
-    <li className="flex items-start">
-      <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
-      <span>Mobile app notifications for battery and tank levels</span>
-    </li>
-    <li className="flex items-start">
-      <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
-      <span>Custom irrigation setups for balconies, gardens, and agriculture fields</span>
-    </li>
-    <li className="flex items-start">
-      <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
-      <span>Stylish tank enclosures and rooftop water solutions for urban homes</span>
-    </li>
-    <li className="flex items-start">
-      <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
-      <span>UniCON Controller and field nodes for full-scale farm automation</span>
-    </li>
-    <li className="flex items-start">
-      <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
-      <span>Cloud-connected platform for watering history and remote control</span>
-    </li>
-  </ul>
+                <h3 className="text-lg font-medium text-white mb-2">Key Features</h3>
+                <ul className="text-gray-200 space-y-2 mb-6">
+                  <li className="flex items-start">
+                    <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                    <span>Smart water tap device with internet connectivity and 6+ month alkaline battery life</span>
+                  </li>
+                  <li className="flex items-start">
+                    <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                    <span>Mobile app notifications for battery and tank levels</span>
+                  </li>
+                  <li className="flex items-start">
+                    <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                    <span>Custom irrigation setups for balconies, gardens, and agriculture fields</span>
+                  </li>
+                  <li className="flex items-start">
+                    <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                    <span>Stylish tank enclosures and rooftop water solutions for urban homes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                    <span>UniCON Controller and field nodes for full-scale farm automation</span>
+                  </li>
+                  <li className="flex items-start">
+                    <FaCheck className="text-green-400 mt-1 mr-2 flex-shrink-0" />
+                    <span>Cloud-connected platform for watering history and remote control</span>
+                  </li>
+                </ul>
 
-  <div className="flex justify-end">
-    <button
-      onClick={closeAboutUs}
-      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
-    >
-      Close
-    </button>
-  </div>
-</div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeAboutUs}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
 
             </motion.div>
           </motion.div>
