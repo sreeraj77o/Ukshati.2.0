@@ -51,64 +51,90 @@
           }
           
         case 'POST':
-          // Create new requisition
-          const { project_id, items, required_by, notes } = req.body;
-          
-          // Generate requisition number (REQ-YYYYMMDD-XXX)
-          const date = new Date();
-          const dateStr = date.toISOString().slice(0,10).replace(/-/g,'');
-          
-          const [lastReq] = await db.execute(
-            `SELECT requisition_number FROM purchase_requisitions 
-            WHERE requisition_number LIKE ? 
-            ORDER BY id DESC LIMIT 1`,
-            [`REQ-${dateStr}-%`]
-          );
-          
-          let reqNumber;
-          if (lastReq.length === 0) {
-            reqNumber = `REQ-${dateStr}-001`;
-          } else {
-            const lastNum = parseInt(lastReq[0].requisition_number.split('-')[2]);
-            reqNumber = `REQ-${dateStr}-${(lastNum + 1).toString().padStart(3, '0')}`;
-          }
-          
-          // Start transaction
-          await db.beginTransaction();
-          
-          const [result] = await db.execute(
-            `INSERT INTO purchase_requisitions 
-            (requisition_number, project_id, requested_by, required_by, notes, status)
-            VALUES (?, ?, ?, ?, ?, 'pending')`,
-            [reqNumber, project_id, 1, required_by, notes]
-          );
-          
-          const requisitionId = result.insertId;
-          
-          // Insert items
-          for (const item of items) {
-            await db.execute(
-              `INSERT INTO requisition_items 
-              (requisition_id, item_name, description, quantity, unit, estimated_price, stock_id)
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                requisitionId, 
-                item.name, 
-                item.description, 
-                item.quantity, 
-                item.unit, 
-                item.estimated_price || null, 
-                item.stock_id || null
-              ]
+          try {
+            // Create new requisition
+            const { project_id, items, required_by, notes } = req.body;
+            
+            console.log("Received requisition data:", req.body); // Add logging
+            
+            // Validate required fields
+            if (!project_id) {
+              return res.status(400).json({ error: "Project is required" });
+            }
+            if (!required_by) {
+              return res.status(400).json({ error: "Required date is required" });
+            }
+            if (!items || !items.length) {
+              return res.status(400).json({ error: "At least one item is required" });
+            }
+            
+            // Generate requisition number (REQ-YYYYMMDD-XXX)
+            const date = new Date();
+            const dateStr = date.toISOString().slice(0,10).replace(/-/g,'');
+            
+            const [lastReq] = await db.execute(
+              `SELECT requisition_number FROM purchase_requisitions 
+              WHERE requisition_number LIKE ? 
+              ORDER BY id DESC LIMIT 1`,
+              [`REQ-${dateStr}-%`]
             );
+            
+            let reqNumber;
+            if (lastReq.length === 0) {
+              reqNumber = `REQ-${dateStr}-001`;
+            } else {
+              const lastNum = parseInt(lastReq[0].requisition_number.split('-')[2]);
+              reqNumber = `REQ-${dateStr}-${(lastNum + 1).toString().padStart(3, '0')}`;
+            }
+            
+            // Start transaction
+            await db.beginTransaction();
+            
+            try {
+              // Insert requisition
+              const [result] = await db.execute(
+                `INSERT INTO purchase_requisitions 
+                (requisition_number, project_id, requested_by, required_by, notes, status)
+                VALUES (?, ?, ?, ?, ?, 'pending')`,
+                [reqNumber, project_id, 1, required_by, notes]
+              );
+              
+              const requisitionId = result.insertId;
+              console.log("Created requisition with ID:", requisitionId); // Add logging
+              
+              // Insert items
+              for (const item of items) {
+                await db.execute(
+                  `INSERT INTO requisition_items 
+                  (requisition_id, item_name, description, quantity, unit, estimated_price, stock_id)
+                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    requisitionId, 
+                    item.name, 
+                    item.description, 
+                    item.quantity, 
+                    item.unit, 
+                    item.estimated_price || null, 
+                    item.stock_id || null
+                  ]
+                );
+              }
+              
+              await db.commit();
+              
+              return res.status(201).json({ 
+                id: requisitionId, 
+                requisition_number: reqNumber 
+              });
+            } catch (error) {
+              // Rollback on error
+              await db.rollback();
+              throw error;
+            }
+          } catch (error) {
+            console.error("Error creating requisition:", error);
+            return res.status(500).json({ error: error.message });
           }
-          
-          await db.commit();
-          
-          return res.status(201).json({ 
-            id: requisitionId, 
-            requisition_number: reqNumber 
-          });
           
         default:
           res.setHeader('Allow', ['GET', 'POST']);

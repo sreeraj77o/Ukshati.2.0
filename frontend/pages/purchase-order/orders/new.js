@@ -31,54 +31,56 @@ export default function NewPurchaseOrder() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-    //     // Simulated data
-    //     setTimeout(() => {
-    //       setProjects([
-    //         { id: 1, name: "Smart Irrigation System - Phase 1" },
-    //         { id: 2, name: "Office Automation Project" },
-    //         { id: 3, name: "Residential Water Management" }
-    //       ]);
-          
-    //       setVendors([
-    //         { id: 1, name: "ABC Suppliers Ltd." },
-    //         { id: 2, name: "XYZ Industrial Equipment" },
-    //         { id: 3, name: "Global Tech Solutions" }
-    //       ]);
-          
-    //       setLoading(false);
-    //     }, 1000);
-    //   } catch (error) {
-    //     console.error("Error fetching data:", error);
-    //     setLoading(false);
-    //   }
-    // };
-      setLoading(true);
-      const [projectRes, vendorsRes] = await Promise.all([
-        fetch('/api/project'),
-        fetch('/api/purchase/vendors')
-      ]);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Check if we're creating from a requisition
+        const requisitionId = router.query.requisition;
+        
+        const [projectRes, vendorsRes] = await Promise.all([
+          fetch('/api/project'),
+          fetch('/api/purchase/vendors')
+        ]);
 
-      if (!projectRes.ok) {
-        throw new Error('Failed to fetch data');
+        if (!projectRes.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const projectData = await projectRes.json();
+        const vendorsData = await vendorsRes.json();
+
+        setProjects(projectData);
+        setVendors(vendorsData);
+        
+        // If creating from requisition, fetch requisition details
+        if (requisitionId) {
+          const requisitionRes = await fetch(`/api/purchase/requisitions?id=${requisitionId}`);
+          if (requisitionRes.ok) {
+            const requisitionData = await requisitionRes.json();
+            // Set formData with requisition details
+            setFormData(prev => ({
+              ...prev,
+              project_id: requisitionData.project_id,
+              items: requisitionData.items.map(item => ({
+                ...item,
+                quantity: item.quantity.toString(),
+                unit_price: item.unit_price.toString()
+              })),
+              notes: requisitionData.notes
+            }));
+          }
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
       }
+    };
 
-      const projectData = await projectRes.json();
-      console.log(projectData);
-      const vendorsData = await vendorsRes.json();
-
-      setProjects(projectData);
-      setVendors(vendorsData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
   // Calculate totals whenever items change
   useEffect(() => {

@@ -127,6 +127,19 @@ export default function PurchaseDashboard() {
       },
       filedBy: "All Teams"
     },
+    {
+      id:7,
+      title:"Aprove Requisitions",
+      Icon: FiFilter,
+      description: "Filter orders by status",
+      gradient: "bg-gradient-to-r from-orange-400/30 to-orange-500/40",
+      route: "/purchase-order/requisition/approve",
+      stats: {
+        main: "Filter",
+        secondary: "Orders"
+      },
+      filedBy: "All Teams"
+    }
   ];
 
   return (

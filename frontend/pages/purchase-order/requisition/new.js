@@ -15,12 +15,15 @@ export default function NewRequisition() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
-  const [formData, setFormData] = useState({
+
+  // Add to your initial formData state
+const [formData, setFormData] = useState({
     project_id: "",
     required_by: "",
     notes: "",
     items: [{ name: "", description: "", quantity: "", unit: "", estimated_price: "" }]
   });
+
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -106,23 +109,28 @@ export default function NewRequisition() {
     setSubmitting(true);
     
     try {
-      // Replace with actual API call
+      console.log("Submitting form data:", formData); // Add logging
+      
       const response = await fetch('/api/purchase/requisitions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      console.log('Hello');
-      const data = await response.json();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit requisition');
+      }
+      
+      const data = await response.json();
+      console.log("Response data:", data); // Add logging
       
       // Redirect to requisition list or detail page
-      router.push("/purchase-order/home");
+      router.push(`/purchase-order/requisition/detail/${data.id}`);
     } catch (error) {
       console.error("Error submitting requisition:", error);
-      setErrors(prev => ({ ...prev, form: "Failed to submit requisition. Please try again." }));
+      setErrors(prev => ({ ...prev, form: error.message || "Failed to submit requisition. Please try again." }));
+    } finally {
       setSubmitting(false);
     }
   };
@@ -198,7 +206,6 @@ export default function NewRequisition() {
                 min={new Date().toISOString().split('T')[0]}
                 disabled={submitting}
               />
-              <FiCalendar className="absolute right-3 top-3.5 text-gray-400" />
             </div>
             {errors.required_by && (
               <p className="text-red-500 text-sm mt-1">{errors.required_by}</p>
