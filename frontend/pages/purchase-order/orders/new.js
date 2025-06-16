@@ -23,7 +23,7 @@ export default function NewPurchaseOrder() {
     shipping_address: "",
     payment_terms: "Net 30 days",
     notes: "",
-    items: [{ item_name: "", description: "", quantity: "", unit: "", unit_price: "" }],
+    items: [{ item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }],
     subtotal: 0,
     tax_amount: 0,
     total_amount: 0
@@ -31,56 +31,44 @@ export default function NewPurchaseOrder() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Check if we're creating from a requisition
-        const requisitionId = router.query.requisition;
-        
-        const [projectRes, vendorsRes] = await Promise.all([
-          fetch('/api/project'),
-          fetch('/api/purchase/vendors')
-        ]);
+  const fetchData = async () => {
+    try {
+      // Check authentication first
+      const token = localStorage.getItem("token");
+      const user = localStorage.getItem("user");
 
-        if (!projectRes.ok) {
-          throw new Error('Failed to fetch data');
-        }
-
-        const projectData = await projectRes.json();
-        const vendorsData = await vendorsRes.json();
-
-        setProjects(projectData);
-        setVendors(vendorsData);
-        
-        // If creating from requisition, fetch requisition details
-        if (requisitionId) {
-          const requisitionRes = await fetch(`/api/purchase/requisitions?id=${requisitionId}`);
-          if (requisitionRes.ok) {
-            const requisitionData = await requisitionRes.json();
-            // Set formData with requisition details
-            setFormData(prev => ({
-              ...prev,
-              project_id: requisitionData.project_id,
-              items: requisitionData.items.map(item => ({
-                ...item,
-                quantity: item.quantity.toString(),
-                unit_price: item.unit_price.toString()
-              })),
-              notes: requisitionData.notes
-            }));
-          }
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
+      if (!token || !user) {
+        console.log("No authentication found, redirecting to login");
+        router.push("/");
+        return;
       }
-    };
 
-    fetchData();
-  }, []);
+      setLoading(true);
+      const [projectRes, vendorsRes] = await Promise.all([
+        fetch('/api/projects'),
+        fetch('/api/purchase/vendors')
+      ]);
+
+      if (!projectRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
+
+      const projectData = await projectRes.json();
+      console.log("Projects loaded:", projectData);
+      const vendorsData = await vendorsRes.json();
+      console.log("Vendors loaded:", vendorsData);
+
+      setProjects(projectData);
+      setVendors(vendorsData);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [router]);
 
   // Calculate totals whenever items change
   useEffect(() => {
@@ -124,7 +112,7 @@ export default function NewPurchaseOrder() {
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { item_name: "", description: "", quantity: "", unit: "", unit_price: "" }]
+      items: [...prev.items, { item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }]
     }));
   };
 
@@ -138,51 +126,101 @@ export default function NewPurchaseOrder() {
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.pid) newErrors.pid = "Project is required";
-    if (!formData.id) newErrors.id = "Vendor is required";
+
+    if (!formData.project_id) newErrors.project_id = "Project is required";
+    if (!formData.vendor_id) newErrors.vendor_id = "Vendor is required";
     if (!formData.expected_delivery_date) newErrors.expected_delivery_date = "Delivery date is required";
-    
+
     formData.items.forEach((item, index) => {
-      if (!item.item_name) newErrors[`items.${index}.item_name`] = "Item name is required";
-      if (!item.quantity) newErrors[`items.${index}.quantity`] = "Quantity is required";
-      if (item.quantity && isNaN(Number(item.quantity))) {
-        newErrors[`items.${index}.quantity`] = "Quantity must be a number";
+      if (!item.item_name || item.item_name.trim() === '') {
+        newErrors[`items.${index}.item_name`] = "Item name is required";
       }
-      if (!item.unit_price) newErrors[`items.${index}.unit_price`] = "Unit price is required";
-      if (item.unit_price && isNaN(Number(item.unit_price))) {
-        newErrors[`items.${index}.unit_price`] = "Price must be a number";
+      if (!item.quantity || item.quantity === '') {
+        newErrors[`items.${index}.quantity`] = "Quantity is required";
+      } else if (isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
+        newErrors[`items.${index}.quantity`] = "Quantity must be a positive number";
+      }
+      if (!item.unit_price || item.unit_price === '') {
+        newErrors[`items.${index}.unit_price`] = "Unit price is required";
+      } else if (isNaN(Number(item.unit_price)) || Number(item.unit_price) < 0) {
+        newErrors[`items.${index}.unit_price`] = "Price must be a valid number";
       }
     });
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setSubmitting(true);
-    
+    setErrors({}); // Clear previous errors
+
     try {
-      // Replace with actual API call
+      // Get authentication token from localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setErrors(prev => ({
+          ...prev,
+          form: "Authentication required. Please log in again."
+        }));
+        setSubmitting(false);
+        router.push("/");
+        return;
+      }
+
+      console.log("Submitting purchase order:", formData);
+
       const response = await fetch('/api/purchase/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(formData)
       });
+
       const data = await response.json();
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Redirect to orders list
-      router.push("/purchase/orders");
+      console.log("API response:", data);
+
+      if (!response.ok) {
+        // Handle authentication errors
+        if (response.status === 401) {
+          setErrors(prev => ({
+            ...prev,
+            form: "Session expired. Please log in again."
+          }));
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("userRole");
+          setTimeout(() => router.push("/"), 2000);
+          setSubmitting(false);
+          return;
+        }
+
+        // Handle validation errors
+        if (data.details && Array.isArray(data.details)) {
+          setErrors(prev => ({ ...prev, form: data.details.join(', ') }));
+        } else {
+          setErrors(prev => ({ ...prev, form: data.error || data.message || "Failed to create purchase order" }));
+        }
+        setSubmitting(false);
+        return;
+      }
+
+      // Success - redirect to purchase order home page
+      console.log("Purchase order created successfully:", data.po_number);
+      router.push("/purchase-order/home");
+
     } catch (error) {
       console.error("Error submitting purchase order:", error);
-      setErrors(prev => ({ ...prev, form: "Failed to submit purchase order. Please try again." }));
+      setErrors(prev => ({
+        ...prev,
+        form: "Network error: Failed to submit purchase order. Please check your connection and try again."
+      }));
       setSubmitting(false);
     }
   };
@@ -232,8 +270,8 @@ export default function NewPurchaseOrder() {
               >
                 <option value="">Select a project</option>
                 {projects.map(project => (
-                  <option key={project.pid} value={project.pid}>
-                    {project.pname}
+                  <option key={project.id || project.pid} value={project.id || project.pid}>
+                    {project.name || project.pname}
                   </option>
                 ))}
               </select>
@@ -249,10 +287,10 @@ export default function NewPurchaseOrder() {
               </label>
               <select
                 name="vendor_id"
-                value={formData.id}
+                value={formData.vendor_id}
                 onChange={handleChange}
                 className={`w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 ${
-                  errors.id ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                  errors.vendor_id ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
                 }`}
                 disabled={submitting}
               >
@@ -263,8 +301,8 @@ export default function NewPurchaseOrder() {
                   </option>
                 ))}
               </select>
-              {errors.id && (
-                <p className="text-red-500 text-sm mt-1">{errors.id}</p>
+              {errors.vendor_id && (
+                <p className="text-red-500 text-sm mt-1">{errors.vendor_id}</p>
               )}
             </div>
           </div>

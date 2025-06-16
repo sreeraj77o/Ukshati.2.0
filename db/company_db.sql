@@ -78,6 +78,9 @@ CREATE TABLE `customer` (
 
 LOCK TABLES `customer` WRITE;
 /*!40000 ALTER TABLE `customer` DISABLE KEYS */;
+INSERT INTO `customer` (`cid`, `cname`, `cphone`, `status`) VALUES
+(1, 'Sample Customer 1', '9876543210', 'customer'),
+(2, 'Sample Customer 2', '9876543211', 'customer');
 /*!40000 ALTER TABLE `customer` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -458,6 +461,9 @@ CREATE TABLE `project` (
 --
 LOCK TABLES `project` WRITE;
 /*!40000 ALTER TABLE `project` DISABLE KEYS */;
+INSERT INTO `project` (`pid`, `pname`, `cid`, `start_date`, `status`, `cname`) VALUES
+(1, 'Sample Project 1', 1, '2024-01-01', 'Ongoing', 'Sample Customer 1'),
+(2, 'Sample Project 2', 2, '2024-02-01', 'Ongoing', 'Sample Customer 2');
 /*!40000 ALTER TABLE `project` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -922,6 +928,77 @@ CREATE TABLE `reminders` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `vendors`
+--
+DROP TABLE IF EXISTS `vendors`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendors` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `contact_person` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `address` text,
+  `city` varchar(100) DEFAULT NULL,
+  `state` varchar(100) DEFAULT NULL,
+  `postal_code` varchar(20) DEFAULT NULL,
+  `country` varchar(100) DEFAULT 'India',
+  `tax_id` varchar(50) DEFAULT NULL,
+  `payment_terms` varchar(100) DEFAULT 'Net 30 days',
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`),
+  KEY `status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `projects` (alias for project table)
+--
+DROP TABLE IF EXISTS `projects`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `projects` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `customer_id` int DEFAULT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL,
+  `status` enum('Ongoing','Completed','On Hold') DEFAULT 'Ongoing',
+  `description` text,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `customer_id` (`customer_id`),
+  KEY `status` (`status`),
+  CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`cid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `employees` (alias for employee table)
+--
+DROP TABLE IF EXISTS `employees`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `employees` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL UNIQUE,
+  `phone` varchar(20) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` varchar(50) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `stock_transactions`
 --
 DROP TABLE IF EXISTS `stock_transactions`;
@@ -950,12 +1027,135 @@ CREATE TABLE `stock_transactions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `purchase_orders`
+--
+DROP TABLE IF EXISTS `purchase_orders`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `purchase_orders` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `po_number` varchar(50) NOT NULL UNIQUE,
+  `requisition_id` int DEFAULT NULL,
+  `vendor_id` int NOT NULL,
+  `project_id` int NOT NULL,
+  `created_by` int NOT NULL,
+  `order_date` date NOT NULL,
+  `expected_delivery_date` date DEFAULT NULL,
+  `shipping_address` text,
+  `payment_terms` varchar(100) DEFAULT 'Net 30 days',
+  `subtotal` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `tax_amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `total_amount` decimal(15,2) NOT NULL DEFAULT 0.00,
+  `notes` text,
+  `status` enum('draft','sent','confirmed','processing','partially_received','completed','cancelled') DEFAULT 'draft',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `po_number` (`po_number`),
+  KEY `vendor_id` (`vendor_id`),
+  KEY `project_id` (`project_id`),
+  KEY `created_by` (`created_by`),
+  KEY `status` (`status`),
+  KEY `order_date` (`order_date`),
+  CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `purchase_orders_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `purchase_orders_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `employees` (`id`) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `po_items`
+--
+DROP TABLE IF EXISTS `po_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `po_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `po_id` int NOT NULL,
+  `requisition_item_id` int DEFAULT NULL,
+  `item_name` varchar(255) NOT NULL,
+  `description` text,
+  `quantity` decimal(10,3) NOT NULL,
+  `unit` varchar(50) DEFAULT 'pcs',
+  `unit_price` decimal(15,2) NOT NULL,
+  `total_price` decimal(15,2) NOT NULL,
+  `stock_id` int DEFAULT NULL,
+  `quantity_received` decimal(10,3) DEFAULT 0.000,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `po_id` (`po_id`),
+  KEY `stock_id` (`stock_id`),
+  CONSTRAINT `po_items_ibfk_1` FOREIGN KEY (`po_id`) REFERENCES `purchase_orders` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `po_items_ibfk_2` FOREIGN KEY (`stock_id`) REFERENCES `stock` (`stock_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Dumping data for table `stock_transactions`
 --
 LOCK TABLES `stock_transactions` WRITE;
 /*!40000 ALTER TABLE `stock_transactions` DISABLE KEYS */;
 /* Initial transactions will be added by triggers */
 /*!40000 ALTER TABLE `stock_transactions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Insert sample data for vendors
+--
+LOCK TABLES `vendors` WRITE;
+/*!40000 ALTER TABLE `vendors` DISABLE KEYS */;
+INSERT INTO `vendors` (`name`, `contact_person`, `email`, `phone`, `address`, `city`, `state`, `postal_code`, `payment_terms`, `status`) VALUES
+('ABC Suppliers Ltd', 'John Smith', 'john@abcsuppliers.com', '9876543210', '123 Industrial Area', 'Mumbai', 'Maharashtra', '400001', 'Net 30 days', 'active'),
+('XYZ Electronics', 'Sarah Johnson', 'sarah@xyzelec.com', '9876543211', '456 Tech Park', 'Bangalore', 'Karnataka', '560001', 'Net 15 days', 'active'),
+('PQR Tools & Hardware', 'Mike Wilson', 'mike@pqrtools.com', '9876543212', '789 Market Street', 'Delhi', 'Delhi', '110001', 'Net 45 days', 'active');
+/*!40000 ALTER TABLE `vendors` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Insert sample data for projects
+--
+LOCK TABLES `projects` WRITE;
+/*!40000 ALTER TABLE `projects` DISABLE KEYS */;
+INSERT INTO `projects` (`name`, `customer_id`, `start_date`, `status`, `description`) VALUES
+('Sample Project 1', 1, '2024-01-01', 'Ongoing', 'Sample project for testing'),
+('Sample Project 2', 2, '2024-02-01', 'Ongoing', 'Another sample project');
+/*!40000 ALTER TABLE `projects` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Insert sample data for employees
+--
+LOCK TABLES `employees` WRITE;
+/*!40000 ALTER TABLE `employees` DISABLE KEYS */;
+INSERT INTO `employees` (`name`, `email`, `phone`, `password`, `role`) VALUES
+('Ukshati', 'ukshati365@gmail.com', '7259439998', '$2b$10$VFW3dVy6O91qYShoi6vEDemc8TMb7DP4SBplGWNm9snPtffVGGu5u', 'Admin');
+/*!40000 ALTER TABLE `employees` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Insert sample purchase orders for testing
+--
+LOCK TABLES `purchase_orders` WRITE;
+/*!40000 ALTER TABLE `purchase_orders` DISABLE KEYS */;
+INSERT INTO `purchase_orders` (
+    `po_number`, `vendor_id`, `project_id`, `created_by`, `order_date`,
+    `expected_delivery_date`, `shipping_address`, `payment_terms`,
+    `subtotal`, `tax_amount`, `total_amount`, `notes`, `status`
+) 
+/*!40000 ALTER TABLE `purchase_orders` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Insert sample purchase order items
+--
+LOCK TABLES `po_items` WRITE;
+/*!40000 ALTER TABLE `po_items` DISABLE KEYS */;
+INSERT INTO `po_items` (
+    `po_id`, `item_name`, `description`, `quantity`, `unit`,
+    `unit_price`, `total_price`, `stock_id`, `quantity_received`
+) 
+/*!40000 ALTER TABLE `po_items` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --

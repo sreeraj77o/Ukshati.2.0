@@ -22,6 +22,8 @@ export default function AllPurchaseOrders() {
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState("desc");
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [error, setError] = useState(null);
+  const [loadingItems, setLoadingItems] = useState({});
 
   useEffect(() => {
     fetchOrders();
@@ -33,173 +35,81 @@ export default function AllPurchaseOrders() {
 
   const fetchOrders = async () => {
     setLoading(true);
+    setError(null);
+
     try {
-      // Replace with actual API call
-      // const response = await fetch('/api/purchase/orders');
-      // const data = await response.json();
-      // setOrders(data);
-      
-      // Simulated data
-      setTimeout(() => {
-        const mockOrders = [
-          {
-            id: 1,
-            po_number: "PO-20230915-001",
-            vendor_id: 1,
-            vendor_name: "ABC Suppliers Ltd.",
-            project_id: 2,
-            project_name: "Office Automation Project",
-            order_date: "2023-09-15",
-            expected_delivery_date: "2023-09-30",
-            status: "delivered",
-            total_amount: 85000,
-            items: [
-              {
-                id: 1,
-                item_name: "Desktop Computer",
-                description: "Core i7, 16GB RAM, 512GB SSD",
-                quantity: 5,
-                unit: "Nos",
-                unit_price: 12000,
-                total_price: 60000
-              },
-              {
-                id: 2,
-                item_name: "Office Chair",
-                description: "Ergonomic with lumbar support",
-                quantity: 10,
-                unit: "Nos",
-                unit_price: 2500,
-                total_price: 25000
-              }
-            ]
-          },
-          {
-            id: 2,
-            po_number: "PO-20230910-002",
-            vendor_id: 2,
-            vendor_name: "XYZ Industrial Equipment",
-            project_id: 1,
-            project_name: "Smart Irrigation System - Phase 1",
-            order_date: "2023-09-10",
-            expected_delivery_date: "2023-09-25",
-            status: "sent",
-            total_amount: 65000,
-            items: [
-              {
-                id: 3,
-                item_name: "Water Pump",
-                description: "1HP, 220V AC",
-                quantity: 2,
-                unit: "Nos",
-                unit_price: 15000,
-                total_price: 30000
-              },
-              {
-                id: 4,
-                item_name: "PVC Pipes",
-                description: "2 inch diameter, 10ft length",
-                quantity: 50,
-                unit: "Nos",
-                unit_price: 500,
-                total_price: 25000
-              },
-              {
-                id: 5,
-                item_name: "Soil Moisture Sensors",
-                description: "Waterproof, 3V DC",
-                quantity: 20,
-                unit: "Nos",
-                unit_price: 500,
-                total_price: 10000
-              }
-            ]
-          },
-          {
-            id: 3,
-            po_number: "PO-20230905-003",
-            vendor_id: 3,
-            vendor_name: "Global Tech Solutions",
-            project_id: 3,
-            project_name: "Residential Water Management",
-            order_date: "2023-09-05",
-            expected_delivery_date: "2023-09-20",
-            status: "delivered",
-            total_amount: 45000,
-            items: [
-              {
-                id: 6,
-                item_name: "Water Flow Meter",
-                description: "Digital display, 1 inch connection",
-                quantity: 15,
-                unit: "Nos",
-                unit_price: 3000,
-                total_price: 45000
-              }
-            ]
-          },
-          {
-            id: 4,
-            po_number: "PO-20230901-004",
-            vendor_id: 4,
-            vendor_name: "Metro Office Supplies",
-            project_id: 2,
-            project_name: "Office Automation Project",
-            order_date: "2023-09-01",
-            expected_delivery_date: "2023-09-15",
-            status: "sent",
-            total_amount: 35000,
-            items: [
-              {
-                id: 7,
-                item_name: "Printer",
-                description: "Color LaserJet, Network enabled",
-                quantity: 2,
-                unit: "Nos",
-                unit_price: 12500,
-                total_price: 25000
-              },
-              {
-                id: 8,
-                item_name: "Toner Cartridge",
-                description: "Black, 5000 pages yield",
-                quantity: 5,
-                unit: "Nos",
-                unit_price: 2000,
-                total_price: 10000
-              }
-            ]
-          },
-          {
-            id: 5,
-            po_number: "PO-20230825-005",
-            vendor_id: 5,
-            vendor_name: "Eastern Hardware Co.",
-            project_id: 1,
-            project_name: "Smart Irrigation System - Phase 1",
-            order_date: "2023-08-25",
-            expected_delivery_date: "2023-09-10",
-            status: "draft",
-            total_amount: 15000,
-            items: [
-              {
-                id: 9,
-                item_name: "Control Panel Box",
-                description: "Weatherproof, IP65 rated",
-                quantity: 3,
-                unit: "Nos",
-                unit_price: 5000,
-                total_price: 15000
-              }
-            ]
-          }
-        ];
-        setOrders(mockOrders);
-        setFilteredOrders(mockOrders);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
         setLoading(false);
-      }, 1000);
+        return;
+      }
+
+      const response = await fetch('/api/purchase/orders', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError('Session expired. Please log in again.');
+          // Optionally redirect to login
+          // router.push('/login');
+          return;
+        }
+        throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Fetched purchase orders:', data);
+
+      // Fetch items for each order
+      const ordersWithItems = await Promise.all(
+        data.map(async (order) => {
+          try {
+            const itemsResponse = await fetch(`/api/purchase/orders?id=${order.id}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (itemsResponse.ok) {
+              const orderDetails = await itemsResponse.json();
+              return {
+                ...order,
+                items: orderDetails.items || []
+              };
+            } else {
+              console.warn(`Failed to fetch items for order ${order.id}`);
+              return {
+                ...order,
+                items: []
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching items for order ${order.id}:`, error);
+            return {
+              ...order,
+              items: []
+            };
+          }
+        })
+      );
+
+      setOrders(ordersWithItems);
+      setFilteredOrders(ordersWithItems);
+      setError(null);
     } catch (error) {
       console.error("Error fetching orders:", error);
+      setError(error.message || 'Failed to load purchase orders. Please try again.');
+      setOrders([]);
+      setFilteredOrders([]);
+    } finally {
       setLoading(false);
     }
   };
@@ -280,7 +190,13 @@ export default function AllPurchaseOrders() {
         return "bg-gray-500/20 text-gray-300";
       case "sent":
         return "bg-blue-500/20 text-blue-300";
-      case "delivered":
+      case "confirmed":
+        return "bg-yellow-500/20 text-yellow-300";
+      case "processing":
+        return "bg-purple-500/20 text-purple-300";
+      case "partially_received":
+        return "bg-orange-500/20 text-orange-300";
+      case "completed":
         return "bg-green-500/20 text-green-300";
       case "cancelled":
         return "bg-red-500/20 text-red-300";
@@ -295,12 +211,18 @@ export default function AllPurchaseOrders() {
         return "Draft";
       case "sent":
         return "Sent";
-      case "delivered":
-        return "Delivered";
+      case "confirmed":
+        return "Confirmed";
+      case "processing":
+        return "Processing";
+      case "partially_received":
+        return "Partially Received";
+      case "completed":
+        return "Completed";
       case "cancelled":
         return "Cancelled";
       default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
+        return status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Unknown';
     }
   };
 
@@ -398,7 +320,10 @@ export default function AllPurchaseOrders() {
                 <option value="all">All Statuses</option>
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
-                <option value="delivered">Delivered</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="processing">Processing</option>
+                <option value="partially_received">Partially Received</option>
+                <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
@@ -425,6 +350,27 @@ export default function AllPurchaseOrders() {
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
               </select>
+            </div>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <FiAlertCircle className="text-red-400 mr-3" />
+                <div>
+                  <h3 className="text-red-400 font-medium">Error Loading Orders</h3>
+                  <p className="text-red-300 text-sm mt-1">{error}</p>
+                </div>
+              </div>
+              <button
+                onClick={fetchOrders}
+                className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm"
+              >
+                Retry
+              </button>
             </div>
           </div>
         )}
