@@ -181,7 +181,7 @@ export default function Projects() {
                     required
                   />
                 </div>
-                <div className="input-group">
+                <div className="input-group ">
                   <label>Start Date</label>
                   <input
                     type="date"
@@ -335,6 +335,7 @@ export default function Projects() {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            color: white;
           }
           .input-group label {
             font-size: 0.9rem;
@@ -346,7 +347,7 @@ export default function Projects() {
             padding: 0.8rem;
             border: 1px solid rgba(0, 255, 255, 0.3);
             border-radius: 8px;
-            background: rgba(0, 20, 40, 0.8);
+            background: rgba(43, 44, 44, 0.8);
             color: #00ffff;
             font-size: 1rem;
             transition: all 0.3s ease;
