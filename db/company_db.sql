@@ -955,6 +955,19 @@ CREATE TABLE `vendors` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+LOCK TABLES `vendors` WRITE;
+
+INSERT INTO `vendors` (`name`, `contact_person`, `email`, `phone`, `address`, `city`, `state`, `postal_code`, `payment_terms`, `status`, `tax_id`, `country`) VALUES
+('GreenTech Solutions', 'Priya Sharma', 'priya@greentechsolutions.in', '9876543213', '101 Eco Park', 'Hyderabad', 'Telangana', '500032', 'Net 30 days', 'active', '27AAECG1234F1Z5', 'India'),
+('BlueWave Irrigation', 'Rahul Gupta', 'rahul@bluewaveirrigation.com', '9876543214', '202 Water Works Road', 'Chennai', 'Tamil Nadu', '600028', 'Net 15 days', 'active', '33AABCB5678G1Z3', 'India'),
+('TechTrend Innovations', 'Anita Desai', 'anita@techtrendinnovations.in', '9876543215', '303 Tech Hub', 'Pune', 'Maharashtra', '411057', 'Net 45 days', 'active', '27AAECT9012H1Z7', 'India'),
+('AquaFlow Systems', 'Vikram Singh', 'vikram@aquaflowsystems.com', '9876543216', '404 Pipeline Avenue', 'Ahmedabad', 'Gujarat', '380015', 'Net 30 days', 'active', '24AAECA3456B1Z9', 'India'),
+('SmartTools Distributors', 'Neha Patel', 'neha@smarttoolsdistributors.in', '9876543217', '505 Hardware Market', 'Kolkata', 'West Bengal', '700012', 'Net 60 days', 'inactive', '19AAECS7890K1Z1', 'India'),
+('ElectroMart Supplies', 'Sanjay Kumar', 'sanjay@electromartsupplies.com', '9876543218', '606 Circuit Street', 'Jaipur', 'Rajasthan', '302001', 'Net 30 days', 'active', '08AAECE2345M1Z3', 'India'),
+('DripTech Enterprises', 'Meena Reddy', 'meena@driptechenterprises.in', '9876543219', '707 Irrigation Lane', 'Coimbatore', 'Tamil Nadu', '641012', 'Net 15 days', 'active', '33AAECD6789N1Z5', 'India'),
+('PowerPump Industries', 'Arjun Mehta', 'arjun@powerpumpindustries.com', '9876543220', '808 Pump Road', 'Ludhiana', 'Punjab', '141008', 'Net 30 days', 'active', '03AAECP1234R1Z7', 'India');
+
+UNLOCK TABLES;
 --
 -- Table structure for table `employees` (alias for employee table)
 --
