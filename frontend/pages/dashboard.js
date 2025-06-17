@@ -22,6 +22,7 @@ import {
   FaInfoCircle,
   FaCalendar,
   FaBell,
+  FaCogs,
 } from "react-icons/fa";
 import {
   Chart as ChartJS,
@@ -861,104 +862,196 @@ export default function Dashboard() {
         </AnimatePresence>
         {/* Sidebar for larger screens */}
 
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <>
-              <motion.div
-                initial={{ x: -300 }}
-                animate={{ x: 0 }}
-                exit={{ x: -300 }}
-                transition={{ type: "tween" }}
-                className="hidden lg:block fixed left-0 top-0 bottom-0 w-64 bg-black border-r border-gray-700 z-30"
-              >
-                <div className="p-5 flex items-center justify-center border-b border-black">
-                  <Link href="/dashboard" className="flex items-center space-x-2">
-                    <div className="w-10 h-10 rounded-full bg-cyan-800 flex items-center justify-center text-white font-bold text-2xl">💧</div>
-                    <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">Ukshati</span>
-                  </Link>
-                  <div className="absolute top-4 right-4 lg:block hidden">
-                    <button
-                      onClick={() => setIsSidebarOpen(false)}
-                      className="text-gray-400 hover:text-white transition-colors p-1 rounded"
-                      aria-label="Close Sidebar"
-                    >
-                      <FaTimes className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
+        {/* New Minimal Sidebar */}
+{/* Crazy Games Style Sidebar */}
+<AnimatePresence>
+  <motion.div
+    className="fixed left-0 top-0 h-full z-40 bg-black border-r border-gray-700 flex flex-col justify-between"
+    initial={{ width: 64 }}
+    whileHover={{ width: 200 }}
+    transition={{
+      type: "spring",
+      stiffness: 300,
+      damping: 30,
+    }}
+    onMouseLeave={() => setIsSidebarOpen(false)}
+    onMouseEnter={() => setIsSidebarOpen(true)}
+  >
+    {/* Logo / Brand */}
+    <div className="p-4 flex items-center">
+      <motion.div
+        className="w-10 h-10 rounded-full bg-cyan-600 flex items-center justify-center text-white font-bold text-xl"
+        whileHover={{ rotate: 90, scale: 1.1 }}
+      >
+        💧
+      </motion.div>
+      {isSidebarOpen && (
+        <motion.span
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className="ml-3 text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500"
+        >
+          Ukshati
+        </motion.span>
+      )}
+    </div>
 
-                <div className="py-4">
-                  <nav className="px-4 space-y-1">
-                    <Link href="/dashboard" className="flex items-center px-4 py-3 text-white rounded-lg bg-cyan-600 shadow-md mb-2 group transition-all hover:bg-blue-700">
-                      <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-                      </svg>
-                      <span className="font-medium">Dashboard</span>
-                    </Link>
+    {/* Navigation Links */}
+    <nav className="flex-1 px-2 space-y-2">
+  <Link
+    href="/dashboard/home"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaCogs className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Dashboard
+      </motion.span>
+    )}
+  </Link>
 
-                    <Link href="/crm/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-                      <FaUsers className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-                      <span className="font-medium">CRM</span>
-                    </Link>
-                    <Link href="/ims/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-                      <FaBoxOpen className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-                      <span className="font-medium">Inventory</span>
-                    </Link>
+  <Link
+    href="/crm/home"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaUsers className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        CRM
+      </motion.span>
+    )}
+  </Link>
 
-                    <Link href="/quotation/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-                      <FaFileContract className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-                      <span className="font-medium">Quotations</span>
-                    </Link>
+  <Link
+    href="/ims/home"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaBoxOpen className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        IMS
+      </motion.span>
+    )}
+  </Link>
 
-                    <Link href="/billing/billing" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-                      <FaFileInvoiceDollar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-                      <span className="font-medium">Billing</span>
-                    </Link>
+  <Link
+    href="/quotation/home"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaFileContract className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Quotation
+      </motion.span>
+    )}
+  </Link>
 
-                    <Link href="/expense/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-                      <FaMoneyBillWave className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-                      <span className="font-medium">Expenses</span>
-                    </Link>
+  <Link
+    href="/billing/billing"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaFileInvoiceDollar className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Billing
+      </motion.span>
+    )}
+  </Link>
 
-                    <Link href="/crm/reminders" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
-                      <FaCalendar className="w-5 h-5 mr-3 text-cyan-400 group-hover:text-white transition-colors" />
-                      <span className="font-medium">Reminders</span>
-                    </Link>
-                  </nav>
-                </div>
+  <Link
+    href="/expense/home"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaMoneyBillWave className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Expense
+      </motion.span>
+    )}
+  </Link>
 
-                {/* User Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-black">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center">
-                      <FaUser className="text-gray-300" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-cyan-400 truncate">{userData?.name || 'User'}</p>
-                      <p className="text-xs text-cyan-400 truncate">{userData?.email || 'user@example.com'}</p>
-                    </div>
-                    <button onClick={handleLogout} className="p-1.5 text-red-600 hover:text-white transition-colors">
-                      <FaSignOutAlt />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+  <Link
+    href="/crm/reminders"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaCalendar className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Reminders
+      </motion.span>
+    )}
+  </Link>
+</nav>
 
-              {/* Overlay */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-                onClick={() => setIsSidebarOpen(false)}
-              />
-            </>
-          )}
-        </AnimatePresence>
 
+    {/* User Profile */}
+    <div className="p-4 border-t border-gray-700">
+      <div className="flex items-center">
+        <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
+          <FaUser className="text-gray-300" />
+        </div>
+        {isSidebarOpen && (
+          <motion.span
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="ml-3 text-sm text-gray-200 truncate"
+          >
+            {userData?.name || 'User'}
+          </motion.span>
+        )}
+      </div>
+    </div>
+  </motion.div>
+</AnimatePresence>
 
         {/* Main Content Area */}
-        <main className="p-6">
+        <main
+  className={`transition-all duration-300 ease-in-out ${
+    isSidebarOpen ? "lg:ml-52" : "lg:ml-16"
+  } p-6`}
+>
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
             {statsData.map((stat, index) => (
