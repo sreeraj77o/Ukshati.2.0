@@ -448,7 +448,7 @@ CREATE TABLE `project` (
   `cid` int DEFAULT NULL,
   `start_date` date DEFAULT NULL,
   `end_date` date NULL,
-  `status` enum('Ongoing','Completed','On Hold') DEFAULT 'Ongoing',
+  `status` enum('Ongoing','Completed','On Hold','Pending') DEFAULT 'Pending',
   `cname` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`pid`),
   KEY `cid` (`cid`),
@@ -956,29 +956,6 @@ CREATE TABLE `vendors` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `projects` (alias for project table)
---
-DROP TABLE IF EXISTS `projects`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `projects` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) NOT NULL,
-  `customer_id` int DEFAULT NULL,
-  `start_date` date DEFAULT NULL,
-  `end_date` date DEFAULT NULL,
-  `status` enum('Ongoing','Completed','On Hold') DEFAULT 'Ongoing',
-  `description` text,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `customer_id` (`customer_id`),
-  KEY `status` (`status`),
-  CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customer` (`cid`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `employees` (alias for employee table)
 --
 DROP TABLE IF EXISTS `employees`;
@@ -1058,7 +1035,7 @@ CREATE TABLE `purchase_orders` (
   KEY `status` (`status`),
   KEY `order_date` (`order_date`),
   CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE RESTRICT,
-  CONSTRAINT `purchase_orders_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE RESTRICT,
+  CONSTRAINT `purchase_orders_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `project` (`pid`) ON DELETE RESTRICT,
   CONSTRAINT `purchase_orders_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `employees` (`id`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
