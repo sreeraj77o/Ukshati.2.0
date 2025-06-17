@@ -4,6 +4,7 @@ import Papa from "papaparse";
 import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
 import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
+import * as XLSX from "xlsx";
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -18,6 +19,8 @@ export default function Customers() {
   const [csvFile, setCsvFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState("");
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -40,7 +43,6 @@ export default function Customers() {
     try {
       const res = await fetch("/api/customers");
 
-      // Handle HTTP errors first
       if (!res.ok) {
         const errorText = await res.text();
         throw new Error(`Request failed: ${res.status} - ${errorText}`);
@@ -48,7 +50,6 @@ export default function Customers() {
 
       const data = await res.json();
 
-      // Ensure data is in correct format
       if (!Array.isArray(data.customers)) {
         throw new Error("Invalid data format from API");
       }
@@ -65,7 +66,7 @@ export default function Customers() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !phone) {
+    if (!name.trim() || !phone.trim()) {
       alert("Please enter both name and phone number.");
       return;
     }
@@ -78,11 +79,11 @@ export default function Customers() {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cname: name,
-          cphone: phone,
-          alternate_phone: altPhone,
+          cname: name.trim(),
+          cphone: phone.trim(),
+          alternate_phone: altPhone.trim() || null,
           status: status,
-          remark: remark
+          remark: remark.trim() || null
         }),
       });
 
@@ -93,6 +94,7 @@ export default function Customers() {
 
       await fetchCustomers();
       resetForm();
+      alert(editId ? "Customer updated successfully!" : "Customer added successfully!");
     } catch (error) {
       console.error("Submission error:", error);
       alert(error.message);
@@ -128,7 +130,6 @@ export default function Customers() {
         method: "DELETE"
       });
 
-      // Parse the response data
       const data = await res.json();
 
       if (!res.ok) {
@@ -137,7 +138,6 @@ export default function Customers() {
 
       await fetchCustomers();
 
-      // Show more detailed success message if invoices were also deleted
       if (data.deletedInvoices > 0) {
         alert(`Customer deleted successfully. ${data.deletedInvoices} related invoice(s) were also deleted.`);
       } else {
@@ -197,65 +197,212 @@ export default function Customers() {
     }
   };
 
-  // Handle CSV upload
-  const handleCsvUpload = (e) => {
-    setCsvFile(e.target.files[0]);
+  // Normalize column names for better compatibility
+  const normalizeHeaders = (data) => {
+    return data.map(row => {
+      const normalizedRow = {};
+      Object.keys(row).forEach(key => {
+        const normalizedKey = key.toLowerCase().trim();
+        if (normalizedKey.includes('name') || normalizedKey === 'cname') {
+          normalizedRow.name = row[key];
+        } else if (normalizedKey.includes('phone') && !normalizedKey.includes('alt')) {
+          normalizedRow.phone = row[key];
+        } else if (normalizedKey.includes('alt') || normalizedKey.includes('alternate')) {
+          normalizedRow.alternate_phone = row[key];
+        } else if (normalizedKey.includes('status')) {
+          normalizedRow.status = row[key];
+        } else if (normalizedKey.includes('remark') || normalizedKey.includes('note')) {
+          normalizedRow.remark = row[key];
+        } else {
+          // Keep original key if no match found
+          normalizedRow[key] = row[key];
+        }
+      });
+      return normalizedRow;
+    });
   };
 
-  // Update handleCsvImport function
-  const handleCsvImport = async () => {
-    if (!csvFile) {
-      alert("Please upload a CSV file first.");
+  const processRows = async (rows) => {
+    if (!rows || rows.length === 0) {
+      alert("No data found in the file.");
       return;
     }
 
-    Papa.parse(csvFile, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          const importResults = await Promise.all(
-            results.data.map(async (row) => {
-              // Validate and map CSV fields
-              const customerData = {
-                cname: row.name || row.cname || '',
-                cphone: row.phone || row.cphone || '',
-                alternate_phone: row.alternate_phone || row.alt_phone || null,
-                status: row.status || 'lead',
-                remark: row.remark || row.notes || null
-              };
+    setImporting(true);
+    let successCount = 0;
+    let errorCount = 0;
+    const errors = [];
 
-              // Validate required fields
-              if (!customerData.cname || !customerData.cphone) {
-                throw new Error(`Missing required fields in row: ${JSON.stringify(row)}`);
-              }
+    try {
+      const normalizedRows = normalizeHeaders(rows);
+      
+      for (let i = 0; i < normalizedRows.length; i++) {
+        const row = normalizedRows[i];
+        setImportProgress(`Processing row ${i + 1} of ${normalizedRows.length}...`);
 
-              const res = await fetch("/api/customers", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(customerData),
-              });
+        // Extract and clean data - only name and phone are required
+        const cname = (row.name || row.cname || "").toString().trim();
+        const cphone = (row.phone || row.cphone || "").toString().trim();
+        const alternate_phone = (row.alternate_phone || "").toString().trim() || null;
+        const status = (row.status || "lead").toString().trim().toLowerCase();
+        const remark = (row.remark || row.note || "").toString().trim() || null;
 
-              if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || "CSV import failed");
-              }
-              return res.json();
-            })
-          );
-
-          await fetchCustomers();
-          alert(`Successfully imported ${importResults.length} customers!`);
-        } catch (error) {
-          console.error("Import error:", error);
-          alert(`Import failed: ${error.message}`);
+        // Validate required fields
+        if (!cname || !cphone) {
+          errorCount++;
+          errors.push(`Row ${i + 1}: Missing required fields (name: "${cname}", phone: "${cphone}")`);
+          continue;
         }
-      },
-      error: (error) => {
-        console.error("CSV parsing error:", error);
-        alert("Failed to process CSV file. Please check the format.");
+
+        // Validate status
+        const validStatus = ['lead', 'customer'].includes(status) ? status : 'lead';
+
+        const customerData = {
+          cname,
+          cphone,
+          alternate_phone,
+          status: validStatus,
+          remark,
+        };
+
+        try {
+          const res = await fetch("/api/customers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(customerData),
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || `API error for row ${i + 1}`);
+          }
+
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          errors.push(`Row ${i + 1} (${cname}): ${error.message}`);
+        }
       }
-    });
+
+      await fetchCustomers();
+      
+      // Show detailed results
+      let message = `Import completed!\n`;
+      message += `✅ Successfully imported: ${successCount} customers\n`;
+      if (errorCount > 0) {
+        message += `❌ Failed: ${errorCount} rows\n\n`;
+        if (errors.length > 0) {
+          message += `Errors:\n${errors.slice(0, 5).join('\n')}`;
+          if (errors.length > 5) {
+            message += `\n... and ${errors.length - 5} more errors`;
+          }
+        }
+      }
+      
+      alert(message);
+      
+    } catch (error) {
+      console.error("Import error:", error);
+      alert(`Import failed: ${error.message}`);
+    } finally {
+      setImporting(false);
+      setImportProgress("");
+      setCsvFile(null);
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = '';
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const fileName = file.name.toLowerCase();
+    const validExtensions = ['.csv', '.xlsx', '.xls'];
+    const isValidFile = validExtensions.some(ext => fileName.endsWith(ext));
+
+    if (!isValidFile) {
+      alert("Please upload a valid CSV or Excel file (.csv, .xlsx, .xls)");
+      e.target.value = '';
+      return;
+    }
+
+    setCsvFile(file);
+  };
+
+  // Handle file import
+  const handleFileImport = async () => {
+    if (!csvFile) {
+      alert("Please select a file first.");
+      return;
+    }
+
+    const fileName = csvFile.name.toLowerCase();
+
+    if (fileName.endsWith(".csv")) {
+      // Handle CSV files
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target.result;
+          Papa.parse(text, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (header) => header.trim(),
+            complete: (results) => {
+              if (results.errors.length > 0) {
+                console.warn("CSV parsing warnings:", results.errors);
+              }
+              processRows(results.data);
+            },
+            error: (error) => {
+              console.error("CSV parsing error:", error);
+              alert("Failed to parse CSV file. Please check the file format.");
+            },
+          });
+        } catch (error) {
+          console.error("File reading error:", error);
+          alert("Failed to read the CSV file.");
+        }
+      };
+      reader.onerror = () => alert("Failed to read the file.");
+      reader.readAsText(csvFile, 'UTF-8');
+    } 
+    else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
+      // Handle Excel files
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          
+          if (workbook.SheetNames.length === 0) {
+            throw new Error("No sheets found in the Excel file.");
+          }
+
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
+            defval: "",
+            raw: false // This ensures dates and numbers are converted to strings
+          });
+
+          if (jsonData.length === 0) {
+            throw new Error("No data found in the Excel sheet.");
+          }
+
+          await processRows(jsonData);
+        } catch (error) {
+          console.error("Excel processing error:", error);
+          alert(`Failed to process Excel file: ${error.message}`);
+        }
+      };
+      reader.onerror = () => alert("Failed to read the Excel file.");
+      reader.readAsArrayBuffer(csvFile);
+    }
   };
 
   // Handle CSV export
@@ -265,7 +412,6 @@ export default function Customers() {
       return;
     }
 
-    // Prepare data for export
     const exportData = customers.map(customer => ({
       id: customer.cid,
       name: customer.cname,
@@ -275,10 +421,7 @@ export default function Customers() {
       remark: customer.remark || ''
     }));
 
-    // Convert to CSV
     const csv = Papa.unparse(exportData);
-
-    // Create and download file
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -293,7 +436,8 @@ export default function Customers() {
   // Filter customers based on search term
   const filteredCustomers = Array.isArray(customers)
     ? customers.filter((customer) =>
-      customer.cname.toLowerCase().includes(searchTerm.toLowerCase())
+      customer.cname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.cphone.includes(searchTerm)
     )
     : [];
 
@@ -317,26 +461,64 @@ export default function Customers() {
           <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <button
               onClick={handleCsvExport}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!customers || customers.length === 0}
             >
               <span className="text-green-200">📤</span>
               <span>Export CSV</span>
             </button>
+            
             <label className="flex items-center gap-2 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 hover:border-blue-500 transition-colors cursor-pointer">
-              <input type="file" accept=".csv" onChange={handleCsvUpload} className="hidden" />
+              <input 
+                type="file" 
+                accept=".csv,.xlsx,.xls" 
+                onChange={handleFileUpload} 
+                className="hidden" 
+                disabled={importing}
+              />
               <span className="text-blue-400">📁</span>
-              <span className="text-white">Import CSV</span>
+              <span className="text-white">
+                {csvFile ? csvFile.name.substring(0, 20) + (csvFile.name.length > 20 ? '...' : '') : 'Import File'}
+              </span>
             </label>
+            
             <button
-              onClick={handleCsvImport}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
-              disabled={!csvFile}
+              onClick={handleFileImport}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={!csvFile || importing}
             >
-              Process Import
+              {importing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <span>Process Import</span>
+              )}
             </button>
           </div>
         </header>
+
+        {/* Import Progress */}
+        {importing && importProgress && (
+          <div className="mb-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-400 border-t-transparent"></div>
+              <span className="text-blue-300">{importProgress}</span>
+            </div>
+          </div>
+        )}
+
+        {/* File Format Help */}
+        <div className="mb-6 p-4 bg-gray-900/50 border border-gray-700 rounded-lg">
+          <h3 className="text-lg font-semibold text-white mb-2">📋 Import File Format</h3>
+          <div className="text-gray-300 text-sm space-y-1">
+            <p><strong>Required columns:</strong> <span className="text-green-400">name</span>, <span className="text-green-400">phone</span></p>
+            <p><strong>Optional columns:</strong> alternate_phone, status (lead/customer), remark</p>
+            <p><strong>Supported formats:</strong> CSV, Excel (.xlsx, .xls)</p>
+            <p><strong>Note:</strong> Column names are case-insensitive and flexible (e.g., "Name", "Customer Name", "cname" all work)</p>
+          </div>
+        </div>
 
         {/* Customer Form Card */}
         <div className="backdrop-blur-sm rounded-xl border border-gray-700 p-6 mb-8">
@@ -350,24 +532,30 @@ export default function Customers() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">Customer Name</label>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Customer Name <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
                     required
+                    placeholder="Enter customer name"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-300">Phone Number</label>
+                  <label className="block text-sm font-medium text-gray-300">
+                    Phone Number <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
                     required
+                    placeholder="Enter phone number"
                   />
                 </div>
 
@@ -378,6 +566,7 @@ export default function Customers() {
                     value={altPhone}
                     onChange={(e) => setAltPhone(e.target.value)}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                    placeholder="Optional"
                   />
                 </div>
 
@@ -401,15 +590,28 @@ export default function Customers() {
                   value={remark}
                   onChange={(e) => setRemark(e.target.value)}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white"
+                  placeholder="Optional notes or remarks"
                 />
               </div>
 
-              <button
-                type="submit"
-                className="mt-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg text-white font-medium hover:from-blue-700 hover:to-blue-600 transition-all"
-              >
-                {editId ? "Update Customer" : "Add Customer"}
-              </button>
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg text-white font-medium hover:from-blue-700 hover:to-blue-600 transition-all"
+                >
+                  {editId ? "Update Customer" : "Add Customer"}
+                </button>
+                
+                {editId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </form>
           )}
         </div>
@@ -425,7 +627,7 @@ export default function Customers() {
               </div>
               <input
                 type="text"
-                placeholder="Search customers..."
+                placeholder="Search by name or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -462,7 +664,7 @@ export default function Customers() {
                 ) : filteredCustomers.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="px-6 py-4 text-center text-gray-400">
-                      No customers found
+                      {searchTerm ? "No customers found matching your search" : "No customers found"}
                     </td>
                   </tr>
                 ) : (
@@ -504,6 +706,18 @@ export default function Customers() {
                             >
                               Save
                             </button>
+                            <button
+                              onClick={() =>
+                                setEditingRemarks((prev) => {
+                                  const newState = { ...prev };
+                                  delete newState[customer.cid];
+                                  return newState;
+                                })
+                              }
+                              className="text-xs px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-white"
+                            >
+                              Cancel
+                            </button>
                           </div>
                         ) : (
                           <span
@@ -514,6 +728,7 @@ export default function Customers() {
                               }))
                             }
                             className="cursor-pointer hover:text-white transition-colors"
+                            title="Click to edit"
                           >
                             {customer.remark || "-"}
                           </span>
@@ -524,12 +739,14 @@ export default function Customers() {
                           <button
                             onClick={() => handleEdit(customer)}
                             className="text-blue-400 hover:text-blue-300 transition-colors"
+                            title="Edit customer"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDelete(customer.cid)}
                             className="text-red-400 hover:text-red-300 transition-colors"
+                            title="Delete customer"
                           >
                             Delete
                           </button>
@@ -541,6 +758,24 @@ export default function Customers() {
               </tbody>
             </table>
           </div>
+          
+          {/* Results Summary */}
+          {!loading && !error && (
+            <div className="mt-4 text-sm text-gray-400">
+              Showing {filteredCustomers.length} of {customers.length} customers
+              {searchTerm && (
+                <span className="ml-2">
+                  (filtered by "{searchTerm}")
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="ml-2 text-blue-400 hover:text-blue-300"
+                  >
+                    Clear
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
