@@ -740,7 +740,7 @@ useEffect(() => {
               <span className="font-medium">Reminders</span>
             </Link>
 
-            <Link href="/crm/purhcase-order/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+            <Link href="/purhcase-order/home" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
               <FaFileInvoice className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
               <span className="font-medium">Purchase Order</span>
             </Link>
@@ -917,6 +917,24 @@ useEffect(() => {
         className="ml-3 text-sm text-gray-200 whitespace-nowrap"
       >
         Expense
+      </motion.span>
+    )}
+  </Link>
+
+  <Link
+    href="/purchase-order/home"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaFileInvoice className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Purchase Order
       </motion.span>
     )}
   </Link>
