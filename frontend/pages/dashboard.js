@@ -296,7 +296,7 @@ export default function Dashboard() {
           fetch('/api/customers'),
           fetch('/api/stocks?count=true'),
           fetch('/api/fetch'),
-          fetch('/api/invoices'),
+          fetch('/api/invoices/'),
           fetch('/api/allProjects'),
           fetch('api/tasks'),
           fetch('/api/reminders')
@@ -899,7 +899,7 @@ export default function Dashboard() {
     {/* Navigation Links */}
     <nav className="flex-1 px-2 space-y-2">
   <Link
-    href="/dashboard/home"
+    href="/dashboard"
     className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
   >
     <span className="text-cyan-400 group-hover:text-white transition-colors">

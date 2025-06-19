@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /home/Ukshati/ukshati2.0
-/usr/local/bin/docker-compose up --build -d
+cd /home/sreeraj/Ukshati.2.0
+docker compose up --build -d
