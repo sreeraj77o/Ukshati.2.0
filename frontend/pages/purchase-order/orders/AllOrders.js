@@ -9,12 +9,15 @@ import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
 import { TableSkeleton } from "@/components/skeleton";
 import { motion } from "framer-motion";
+import generatePurchaseOrderPDF from "@/components/purchase/PurchaseOrderPDF";
 
 export default function AllPurchaseOrders() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -26,14 +29,14 @@ export default function AllPurchaseOrders() {
   const [loadingItems, setLoadingItems] = useState({});
 
   useEffect(() => {
-    fetchOrders();
+    fetchData();
   }, []);
 
   useEffect(() => {
     applyFilters();
   }, [searchTerm, filterStatus, orders, sortBy, sortOrder]);
 
-  const fetchOrders = async () => {
+  const fetchData = async () => {
     setLoading(true);
     setError(null);
 
@@ -42,35 +45,50 @@ export default function AllPurchaseOrders() {
       if (!token) {
         setError('Authentication required. Please log in again.');
         setLoading(false);
+        router.push("/");
         return;
       }
 
-      const response = await fetch('/api/purchase/orders', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      // Fetch orders, vendors, and projects concurrently
+      const [ordersRes, vendorsRes, projectsRes] = await Promise.all([
+        fetch('/api/purchase/orders', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }),
+        fetch('/api/purchase/vendors', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch('/api/projects', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expired. Please log in again.');
-          // Optionally redirect to login
-          // router.push('/login');
-          return;
-        }
-        throw new Error(`Failed to fetch orders: ${response.status} ${response.statusText}`);
+      if (!ordersRes.ok || !vendorsRes.ok || !projectsRes.ok) {
+        throw new Error(`Failed to fetch data: Orders (${ordersRes.status}), Vendors (${vendorsRes.status}), Projects (${projectsRes.status})`);
       }
 
-      const data = await response.json();
-      console.log('Fetched purchase orders:', data);
+      const ordersData = await ordersRes.json();
+      const vendorsData = await vendorsRes.json();
+      const projectData = await projectsRes.json();
+
+      // Normalize project data
+      const normalizedProjects = projectData.map(project => ({
+        ...project,
+        id: project.pid || project.id,
+        name: project.pname || project.name
+      }));
+
+      setVendors(vendorsData);
+      setProjects(normalizedProjects);
 
       // Fetch items for each order
-      const ordersWithItems = await Promise.all(
-        data.map(async (order) => {
+      const ordersWithDetails = await Promise.all(
+        ordersData.map(async (order) => {
           try {
-            const itemsResponse = await fetch(`/api/purchase/orders?id=${order.id}`, {
+            const itemsRes = await fetch(`/api/purchase/orders?id=${order.id}`, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${token}`,
@@ -78,16 +96,40 @@ export default function AllPurchaseOrders() {
               },
             });
 
-            if (itemsResponse.ok) {
-              const orderDetails = await itemsResponse.json();
+            // Find vendor and project
+            const vendor = vendorsData.find(v => v.id === order.vendor_id) || {
+              name: "Unknown Vendor",
+              address: "N/A",
+              contact_person: "N/A",
+              phone: "N/A"
+            };
+            const project = normalizedProjects.find(p => p.id === order.project_id || p.pid === order.project_id) || {
+              name: "Unknown Project"
+            };
+
+            if (itemsRes.ok) {
+              const orderDetails = await itemsRes.json();
               return {
                 ...order,
-                items: orderDetails.items || []
+                vendor_name: vendor.name,
+                project_name: project.name,
+                vendor_address: vendor.address,
+                vendor_contact: vendor.contact_person || vendor.phone,
+                items: orderDetails.items.map(item => ({
+                  ...item,
+                  quantity: Number(item.quantity),
+                  unit_price: Number(item.unit_price),
+                  total_price: Number(item.quantity) * Number(item.unit_price)
+                })) || []
               };
             } else {
               console.warn(`Failed to fetch items for order ${order.id}`);
               return {
                 ...order,
+                vendor_name: vendor.name,
+                project_name: project.name,
+                vendor_address: vendor.address,
+                vendor_contact: vendor.contact_person || vendor.phone,
                 items: []
               };
             }
@@ -95,17 +137,22 @@ export default function AllPurchaseOrders() {
             console.error(`Error fetching items for order ${order.id}:`, error);
             return {
               ...order,
+              vendor_name: "Unknown Vendor",
+              project_name: "Unknown Project",
+              vendor_address: "N/A",
+              vendor_contact: "N/A",
               items: []
             };
           }
         })
       );
 
-      setOrders(ordersWithItems);
-      setFilteredOrders(ordersWithItems);
+      console.log("Processed orders with details:", ordersWithDetails);
+      setOrders(ordersWithDetails);
+      setFilteredOrders(ordersWithDetails);
       setError(null);
     } catch (error) {
-      console.error("Error fetching orders:", error);
+      console.error("Error fetching data:", error);
       setError(error.message || 'Failed to load purchase orders. Please try again.');
       setOrders([]);
       setFilteredOrders([]);
@@ -120,9 +167,9 @@ export default function AllPurchaseOrders() {
     // Apply search filter
     if (searchTerm) {
       result = result.filter(order => 
-        order.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.vendor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.project_name.toLowerCase().includes(searchTerm.toLowerCase())
+        order.po_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.vendor_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.project_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -143,10 +190,10 @@ export default function AllPurchaseOrders() {
           comparison = a.total_amount - b.total_amount;
           break;
         case "po_number":
-          comparison = a.po_number.localeCompare(b.po_number);
+          comparison = a.po_number?.localeCompare(b.po_number || "");
           break;
         case "vendor":
-          comparison = a.vendor_name.localeCompare(b.vendor_name);
+          comparison = a.vendor_name?.localeCompare(b.vendor_name || "");
           break;
         default:
           comparison = 0;
@@ -232,24 +279,76 @@ export default function AllPurchaseOrders() {
 
   const handleDelete = async (orderId) => {
     try {
-      // Replace with actual API call
-      // await fetch(`/api/purchase/orders/${orderId}`, {
-      //   method: 'DELETE'
-      // });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Update state
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Authentication required. Please log in again.');
+        router.push("/");
+        return;
+      }
+
+      const response = await fetch(`/api/purchase/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete order: ${response.status}`);
+      }
+
       setOrders(orders.filter(order => order.id !== orderId));
+      setFilteredOrders(filteredOrders.filter(order => order.id !== orderId));
       setConfirmDelete(null);
     } catch (error) {
       console.error("Error deleting order:", error);
+      setError('Failed to delete order. Please try again.');
     }
   };
 
   const handleCancelDelete = () => {
     setConfirmDelete(null);
+  };
+
+  const handleDownloadPDF = (order) => {
+    // Find vendor and project for additional details
+    const vendor = vendors.find(v => v.id === order.vendor_id) || {
+      name: order.vendor_name || "Unknown Vendor",
+      address: order.vendor_address || "N/A",
+      contact_person: order.vendor_contact || "N/A",
+      phone: order.vendor_contact || "N/A"
+    };
+    const project = projects.find(p => p.id === order.project_id || p.pid === order.project_id) || {
+      name: order.project_name || "Unknown Project"
+    };
+
+    const poData = {
+      po_number: order.po_number || "PO-" + order.id,
+      vendor_name: vendor.name,
+      project_name: project.name,
+      order_date: order.order_date || new Date().toISOString().split('T')[0],
+      vendor_address: vendor.address || "N/A",
+      vendor_contact: vendor.contact_person || vendor.phone || "N/A",
+      items: order.items.map(item => ({
+        item_name: item.item_name || "N/A",
+        description: item.description || "",
+        quantity: Number(item.quantity) || 0,
+        unit: item.unit || "pcs",
+        unit_price: Number(item.unit_price) || 0,
+        total_price: Number(item.quantity) * Number(item.unit_price) || 0
+      })),
+      subtotal: Number(order.subtotal) || 0,
+      tax_amount: Number(order.tax_amount) || 0,
+      total_amount: Number(order.total_amount) || 0,
+      expected_delivery_date: order.expected_delivery_date || "",
+      shipping_address: order.shipping_address || "N/A",
+      payment_terms: order.payment_terms || "Net 30 days",
+      notes: order.notes || ""
+    };
+
+    console.log("PO Data for PDF:", poData);
+    generatePurchaseOrderPDF(poData);
   };
 
   return (
@@ -366,7 +465,7 @@ export default function AllPurchaseOrders() {
                 </div>
               </div>
               <button
-                onClick={fetchOrders}
+                onClick={fetchData}
                 className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm"
               >
                 Retry
@@ -400,7 +499,7 @@ export default function AllPurchaseOrders() {
                       </span>
                     </div>
                     <p className="text-gray-400 mt-1">
-                      Vendor: {order.vendor_name} | Project: {order.project_name}
+                      Vendor: {order.vendor_name || "Unknown"} | Project: {order.project_name || "Unknown"}
                     </p>
                     <p className="text-gray-400 text-sm">
                       Ordered: {order.order_date} | Expected: {order.expected_delivery_date}
@@ -432,6 +531,16 @@ export default function AllPurchaseOrders() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          handleDownloadPDF(order);
+                        }}
+                        className="p-2 text-green-400 hover:bg-green-500/20 rounded-full"
+                        title="Download PDF"
+                      >
+                        <FiDownload />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           handleDeleteConfirm(order.id);
                         }}
                         className="p-2 text-red-400 hover:bg-red-500/20 rounded-full"
@@ -447,6 +556,29 @@ export default function AllPurchaseOrders() {
                     )}
                   </div>
                 </div>
+
+                {/* Confirm Delete Dialog */}
+                {confirmDelete === order.id && (
+                  <div className="bg-gray-900/80 border-t border-gray-700 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-red-400">Are you sure you want to delete {order.po_number}?</p>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleCancelDelete}
+                          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleDelete(order.id)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-500"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Order Items */}
                 {expandedOrder === order.id && (

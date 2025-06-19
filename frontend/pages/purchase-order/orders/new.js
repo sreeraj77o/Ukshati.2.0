@@ -9,6 +9,7 @@ import {
 import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
 import { FormSkeleton } from "@/components/skeleton";
+import generatePurchaseOrderPDF from "@/components/purchase/PurchaseOrderPDF";
 
 export default function NewPurchaseOrder() {
   const router = useRouter();
@@ -31,44 +32,57 @@ export default function NewPurchaseOrder() {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      // Check authentication first
-      const token = localStorage.getItem("token");
-      const user = localStorage.getItem("user");
+    const fetchData = async () => {
+      try {
+        // Check authentication
+        const token = localStorage.getItem("token");
+        const user = localStorage.getItem("user");
 
-      if (!token || !user) {
-        console.log("No authentication found, redirecting to login");
-        router.push("/");
-        return;
+        if (!token || !user) {
+          console.error("No authentication found, redirecting to login");
+          router.push("/");
+          return;
+        }
+
+        setLoading(true);
+        const [projectRes, vendorsRes] = await Promise.all([
+          fetch('/api/projects', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch('/api/purchase/vendors', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          })
+        ]);
+
+        if (!projectRes.ok || !vendorsRes.ok) {
+          throw new Error(`Failed to fetch data: Projects (${projectRes.status}), Vendors (${vendorsRes.status})`);
+        }
+
+        const projectData = await projectRes.json();
+        const vendorsData = await vendorsRes.json();
+
+        // Normalize project data to ensure consistent keys (pid)
+        const normalizedProjects = projectData.map(project => ({
+          ...project,
+          id: project.pid || project.id, // Ensure id is set to pid
+          name: project.pname || project.name
+        }));
+
+        console.log("Normalized Projects:", normalizedProjects);
+        console.log("Vendors:", vendorsData);
+
+        setProjects(normalizedProjects);
+        setVendors(vendorsData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setErrors({ form: "Failed to load projects or vendors. Please try again." });
+        setLoading(false);
       }
+    };
 
-      setLoading(true);
-      const [projectRes, vendorsRes] = await Promise.all([
-        fetch('/api/projects'),
-        fetch('/api/purchase/vendors')
-      ]);
-
-      if (!projectRes.ok) {
-        throw new Error('Failed to fetch data');
-      }
-
-      const projectData = await projectRes.json();
-      console.log("Projects loaded:", projectData);
-      const vendorsData = await vendorsRes.json();
-      console.log("Vendors loaded:", vendorsData);
-
-      setProjects(projectData);
-      setVendors(vendorsData);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [router]);
+    fetchData();
+  }, [router]);
 
   // Calculate totals whenever items change
   useEffect(() => {
@@ -77,15 +91,15 @@ export default function NewPurchaseOrder() {
       const price = Number(item.unit_price) || 0;
       return sum + (quantity * price);
     }, 0);
-    
+
     const taxAmount = subtotal * 0.18; // Assuming 18% tax
     const totalAmount = subtotal + taxAmount;
-    
+
     setFormData(prev => ({
       ...prev,
-      subtotal,
-      tax_amount: taxAmount,
-      total_amount: totalAmount
+      subtotal: Number(subtotal.toFixed(2)),
+      tax_amount: Number(taxAmount.toFixed(2)),
+      total_amount: Number(totalAmount.toFixed(2))
     }));
   }, [formData.items]);
 
@@ -154,19 +168,18 @@ export default function NewPurchaseOrder() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log("Validation errors:", errors);
+      return;
+    }
 
     setSubmitting(true);
-    setErrors({}); // Clear previous errors
+    setErrors({});
 
     try {
-      // Get authentication token from localStorage
       const token = localStorage.getItem("token");
       if (!token) {
-        setErrors(prev => ({
-          ...prev,
-          form: "Authentication required. Please log in again."
-        }));
+        setErrors({ form: "Authentication required. Please log in again." });
         setSubmitting(false);
         router.push("/");
         return;
@@ -187,12 +200,8 @@ export default function NewPurchaseOrder() {
       console.log("API response:", data);
 
       if (!response.ok) {
-        // Handle authentication errors
         if (response.status === 401) {
-          setErrors(prev => ({
-            ...prev,
-            form: "Session expired. Please log in again."
-          }));
+          setErrors({ form: "Session expired. Please log in again." });
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           localStorage.removeItem("userRole");
@@ -201,26 +210,59 @@ export default function NewPurchaseOrder() {
           return;
         }
 
-        // Handle validation errors
-        if (data.details && Array.isArray(data.details)) {
-          setErrors(prev => ({ ...prev, form: data.details.join(', ') }));
-        } else {
-          setErrors(prev => ({ ...prev, form: data.error || data.message || "Failed to create purchase order" }));
-        }
+        setErrors({ form: data.error || data.message || "Failed to create purchase order" });
         setSubmitting(false);
         return;
       }
 
-      // Success - redirect to purchase order home page
+      // Find vendor and project with fallback values
+      const selectedVendor = vendors.find(v => v.id === parseInt(formData.vendor_id)) || {
+        name: "Unknown Vendor",
+        address: "N/A",
+        contact_person: "N/A",
+        phone: "N/A"
+      };
+      const selectedProject = projects.find(p => p.id === parseInt(formData.project_id) || p.pid === parseInt(formData.project_id)) || {
+        name: "Unknown Project",
+        pname: "Unknown Project"
+      };
+
+      // Prepare data for PDF
+      const poData = {
+        po_number: data.po_number || "PO-" + Date.now(),
+        vendor_name: selectedVendor.name,
+        project_name: selectedProject.name || selectedProject.pname,
+        order_date: new Date().toISOString().split('T')[0],
+        vendor_address: selectedVendor.address || "N/A",
+        vendor_contact: selectedVendor.contact_person || selectedVendor.phone || "N/A",
+        items: formData.items.map(item => ({
+          item_name: item.item_name || "N/A",
+          description: item.description || "",
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit || "pcs",
+          unit_price: Number(item.unit_price) || 0,
+          total_price: Number(item.quantity) * Number(item.unit_price) || 0
+        })),
+        subtotal: formData.subtotal,
+        tax_amount: formData.tax_amount,
+        total_amount: formData.total_amount,
+        expected_delivery_date: formData.expected_delivery_date,
+        shipping_address: formData.shipping_address || "N/A",
+        payment_terms: formData.payment_terms,
+        notes: formData.notes || ""
+      };
+
+      console.log("PO Data for PDF:", poData);
+
+      // Generate PDF
+      generatePurchaseOrderPDF(poData);
+
       console.log("Purchase order created successfully:", data.po_number);
       router.push("/purchase-order/home");
 
     } catch (error) {
       console.error("Error submitting purchase order:", error);
-      setErrors(prev => ({
-        ...prev,
-        form: "Network error: Failed to submit purchase order. Please check your connection and try again."
-      }));
+      setErrors({ form: "Network error: Failed to submit purchase order. Please check your connection and try again." });
       setSubmitting(false);
     }
   };
@@ -270,7 +312,7 @@ export default function NewPurchaseOrder() {
               >
                 <option value="">Select a project</option>
                 {projects.map(project => (
-                  <option key={project.id || project.pid} value={project.id || project.pid}>
+                  <option key={project.id} value={project.id}>
                     {project.name || project.pname}
                   </option>
                 ))}
