@@ -2,6 +2,7 @@
   "dependencies": {
     "@tanstack/react-query": "^5.80.6",
     "bcryptjs": "^3.0.2",
+    "i": "^0.3.7",
     "react-query": "^3.39.3"
   }
 }

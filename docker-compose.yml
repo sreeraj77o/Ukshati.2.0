@@ -2,7 +2,7 @@ services:
   nextjs:
     build: .
     ports:
-      - "3001:3002"
+      - "3000:3000"
     env_file:
       - .env
     volumes:
@@ -11,29 +11,46 @@ services:
     environment:
       - NODE_ENV=development
       - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=root
+      - DB_USER=company
+      - DB_PASSWORD=Ukshati@123
       - DB_NAME=company_db
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
   db:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.mysql
+    image: custom-mysql:8.0
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: company_db
+      MYSQL_USER: company
+      MYSQL_PASSWORD: Ukshati@123
     volumes:
       - mysql-data:/var/lib/mysql
       - ./db:/docker-entrypoint-initdb.d
-    ports:
-      - "3306:3306"
+      - ./backup.sh:/backup.sh
+      - ./restore.sh:/restore.sh
+      - ./backups:/backups
+    networks:
+      - app-network
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -u company --password=$$MYSQL_PASSWORD" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
 volumes:
   mysql-data:
+  backups:
+
 
 networks:
   app-network:
