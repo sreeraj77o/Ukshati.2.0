@@ -116,9 +116,9 @@ export default function PurchaseReports() {
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Total Spend: ₹${formatCurrency(reportData.totalSpend)}`, 14, 55);
+      doc.text(`Total Spend: ${formatCurrency(reportData.totalSpend)}`, 14, 55);
       doc.text(`Total Orders: ${reportData.totalOrders}`, 14, 62);
-      doc.text(`Average Order Value: ₹${formatCurrency(reportData.avgOrderValue)}`, 14, 69);
+      doc.text(`Average Order Value: ${formatCurrency(reportData.avgOrderValue)}`, 14, 69);
       
       // Add top vendors
       doc.setFontSize(14);
@@ -127,7 +127,7 @@ export default function PurchaseReports() {
       
       const vendorData = reportData.topVendors.map(vendor => [
         vendor.name,
-        `₹${formatCurrency(vendor.spend)}`,
+        `${formatCurrency(vendor.spend)}`,
         vendor.orders.toString()
       ]);
       
@@ -151,7 +151,7 @@ export default function PurchaseReports() {
         order.po_number,
         order.vendor_name,
         formatDate(order.date),
-        `₹${formatCurrency(order.amount)}`,
+        `${formatCurrency(order.amount)}`,
         capitalizeFirstLetter(order.status)
       ]);
       
@@ -261,7 +261,7 @@ export default function PurchaseReports() {
                   <h3 className="text-lg font-medium text-gray-300">Total Spend</h3>
                   <FiDollarSign className="text-blue-400 text-xl" />
                 </div>
-                <p className="text-3xl font-bold mt-2">₹{(reportData.totalSpend/100000).toFixed(2)}L</p>
+                <p className="text-3xl font-bold mt-2">{(reportData.totalSpend/100000).toFixed(2)}L</p>
                 <p className="text-sm text-gray-400 mt-1">{reportData.totalOrders} orders</p>
               </motion.div>
               
@@ -276,7 +276,7 @@ export default function PurchaseReports() {
                   <FiShoppingBag className="text-green-400 text-xl" />
                 </div>
                 <p className="text-3xl font-bold mt-2">{reportData.totalOrders}</p>
-                <p className="text-sm text-gray-400 mt-1">Avg. ₹{(reportData.avgOrderValue/1000).toFixed(1)}K per order</p>
+                <p className="text-sm text-gray-400 mt-1">Avg. {(reportData.avgOrderValue/1000).toFixed(1)}K per order</p>
               </motion.div>
               
               <motion.div 
@@ -290,7 +290,7 @@ export default function PurchaseReports() {
                   <FiUsers className="text-purple-400 text-xl" />
                 </div>
                 <p className="text-3xl font-bold mt-2">{reportData.topVendors[0]?.name || "N/A"}</p>
-                <p className="text-sm text-gray-400 mt-1">₹{reportData.topVendors[0] ? (reportData.topVendors[0].spend/100000).toFixed(2) : 0}L total spend</p>
+                <p className="text-sm text-gray-400 mt-1">{reportData.topVendors[0] ? (reportData.topVendors[0].spend/100000).toFixed(2) : 0}L total spend</p>
               </motion.div>
               
               <motion.div 
@@ -421,7 +421,7 @@ export default function PurchaseReports() {
                             <div className="font-medium">{vendor.name}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            ₹{vendor.spend}
+                            {vendor.spend}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {vendor.orders}
@@ -455,7 +455,7 @@ export default function PurchaseReports() {
                             <div className="font-medium">{category.category}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            ₹{category.spend}
+                            {category.spend}
                           </td>
                         </tr>
                       ))}
@@ -501,7 +501,7 @@ export default function PurchaseReports() {
                             {order.date}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            ₹{order.amount}
+                            {order.amount}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {order.status}

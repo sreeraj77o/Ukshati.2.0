@@ -83,8 +83,8 @@ export default function generatePurchaseOrderPDF(poData) {
       item.description || "",
       (item.quantity ?? 0).toString(),
       item.unit || "pcs",
-      `₹${(item.unit_price ?? 0).toFixed(2)}`,
-      `₹${(item.total_price ?? 0).toFixed(2)}`,
+      `${(item.unit_price ?? 0).toFixed(2)}`,
+      `${(item.total_price ?? 0).toFixed(2)}`,
     ];
   });
 
@@ -141,10 +141,10 @@ export default function generatePurchaseOrderPDF(poData) {
   doc.text("Total:", 150, finalY + 10);
 
   doc.setFont("helvetica", "normal");
-  doc.text(`₹${(poData.subtotal ?? 0).toFixed(2)}`, 190, finalY, { align: "right" });
-  doc.text(`₹${(poData.tax_amount ?? 0).toFixed(2)}`, 190, finalY + 5, { align: "right" });
+  doc.text(`${(poData.subtotal ?? 0).toFixed(2)}`, 190, finalY, { align: "right" });
+  doc.text(`${(poData.tax_amount ?? 0).toFixed(2)}`, 190, finalY + 5, { align: "right" });
   doc.setFont("helvetica", "bold");
-  doc.text(`₹${(poData.total_amount ?? 0).toFixed(2)}`, 190, finalY + 10, { align: "right" });
+  doc.text(`${(poData.total_amount ?? 0).toFixed(2)}`, 190, finalY + 10, { align: "right" });
 
   // Terms and notes (left side)
   doc.setFont("helvetica", "bold");

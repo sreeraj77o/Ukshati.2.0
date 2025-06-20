@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import { authenticate } from "@/lib/auth";
+// import { connectToDB } from "@/lib/db";
 import {
   FiShoppingBag, FiFileText, FiTruck, FiUsers, FiPlus,
   FiClipboard, FiBarChart2, FiSearch, FiFilter
@@ -11,6 +13,8 @@ import { CardSkeleton, TableSkeleton } from "@/components/skeleton";
 import ScrollToTopButton from "@/components/scrollup";
 
 export default function PurchaseDashboard() {
+  
+
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -19,20 +23,21 @@ export default function PurchaseDashboard() {
     totalSpend: 0,
     activeVendors: 0
   });
-
+  
   useEffect(() => {
     // Simulate data loading
     const fetchData = async () => {
       try {
         // Replace with actual API call
-        // const response = await fetch('/api/purchase/dashboard');
-        // const data = await response.json();
-        // setStats(data);
+        const response = await fetch('/api/purchase/orders');
+        const data = await response.json();
+        setStats(data);
+        console.log(data);
         
         // Simulated data
         setTimeout(() => {
           setStats({
-            totalPOs: 24,
+            totalPOs: 2,
             pendingDeliveries: 8,
             totalSpend: 1250000,
             activeVendors: 15
@@ -125,20 +130,20 @@ export default function PurchaseDashboard() {
         main: stats.totalPOs,
         secondary: "Orders"
       },
-      filedBy: "All Teams"
+      filedBy: "Procurement Teams"
     },
     {
       id:7,
-      title:"Aprove Requisitions",
-      Icon: FiFilter,
-      description: "Filter orders by status",
+      title:"View All Requisitions",
+      Icon: FiFileText,
+      description: "Browse and manage all purchase orders",
       gradient: "bg-gradient-to-r from-orange-400/30 to-orange-500/40",
-      route: "/purchase-order/requisition/approve",
+      route: "/purchase-order/requisition/AllRequisitions",
       stats: {
-        main: "Filter",
-        secondary: "Orders"
+        main: stats.totalPOs,
+        secondary: "Requisitions"
       },
-      filedBy: "All Teams"
+      filedBy: "Project Teams"
     }
   ];
 

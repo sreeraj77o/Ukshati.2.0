@@ -76,7 +76,7 @@ export default async function handler(req, res) {
           let order = [];
           try {
             [order] = await db.execute(
-              `SELECT po.*, p.name as project_name, v.name as vendor_name,
+              `SELECT po.*, po.count(*) as orders_count, p.name as project_name, v.name as vendor_name,
                       e.name as created_by_name
                FROM purchase_orders po
                JOIN projects p ON po.project_id = p.id

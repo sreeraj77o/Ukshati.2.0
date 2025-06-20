@@ -16,7 +16,7 @@ export default function NewRequisition() {
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
 
-  // Add to your initial formData state
+  // initial formData state
 const [formData, setFormData] = useState({
     project_id: "",
     required_by: "",
@@ -102,33 +102,62 @@ const [formData, setFormData] = useState({
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+//  console.log("Items:", formData.items);
+  const transformedItems = formData.items.map(item => ({
+  name: item.name,
+  description: item.description,
+  quantity: Number(item.quantity),
+  unit: item.unit,
+  estimated_price: Number(item.estimated_price)
+}));
+console.log("Transformed Items:", transformedItems);
+  // ✅ Gather form data correctly
+  const payload = {
+    project_id: formData.project_id,
+    required_by: formData.required_by,
+    notes: formData.notes,
+    items: transformedItems
+  };
     
+  console.log("Payload:", payload);
     if (!validateForm()) return;
     
     setSubmitting(true);
     
     try {
-      console.log("Submitting form data:", formData); // Add logging
-      
-      const response = await fetch('/api/purchase/requisitions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit requisition');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setErrors({ form: "You are not logged in. Please login and try again." });
+        setSubmitting(false);
+        return;
       }
-      
-      const data = await response.json();
-      console.log("Response data:", data); // Add logging
+    console.log("Form Data:", payload);
+      const res = await fetch('/api/purchase/requisitions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(payload), // assuming payload is your form data
+  });
+
+  if (!res.ok) {
+    setErrors({ form: `Server error: ${res.status}. Please try again later.` });
+    const text = await res.text(); // fallback to raw text if not JSON
+    console.error("❌ Server returned error HTML or non-JSON:", text);
+    throw new Error(`Request failed with status ${res.status}`);
+  }
+
+  const data = await res.json();
+  console.log("✅ Requisition submitted:", data);
       
       // Redirect to requisition list or detail page
-      router.push(`/purchase-order/requisition/detail/${data.id}`);
+      // router.push(`/purchase-order/requisition/detail/${data.id}`);
+      router.push(`/purchase-order/home`);
+
     } catch (error) {
-      console.error("Error submitting requisition:", error);
+      console.error("🚨 Error submitting requisition:", error.message);
       setErrors(prev => ({ ...prev, form: error.message || "Failed to submit requisition. Please try again." }));
     } finally {
       setSubmitting(false);

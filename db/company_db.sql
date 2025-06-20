@@ -1017,6 +1017,40 @@ CREATE TABLE `stock_transactions` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `purchase_requisitions`
+--
+CREATE TABLE purchase_requisitions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  requisition_number VARCHAR(20) UNIQUE NOT NULL,
+  project_id INT NOT NULL,
+  requested_by INT NOT NULL,
+  status ENUM('draft', 'pending', 'approved', 'rejected', 'converted') NOT NULL DEFAULT 'draft',
+  required_by DATE,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (project_id) REFERENCES project(pid),
+  FOREIGN KEY (requested_by) REFERENCES employee(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- =============================================
+-- Requisition Items
+-- =============================================
+CREATE TABLE requisition_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  requisition_id INT NOT NULL,
+  item_name VARCHAR(255) NOT NULL,
+  description TEXT,
+  quantity DECIMAL(10,2) NOT NULL CHECK (quantity >= 0),
+  unit VARCHAR(50),
+  estimated_price DECIMAL(10,2) CHECK (estimated_price >= 0),
+  stock_id INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (requisition_id) REFERENCES purchase_requisitions(id) ON DELETE CASCADE,
+  FOREIGN KEY (stock_id) REFERENCES inventory_items(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+--
 -- Table structure for table `purchase_orders`
 --
 DROP TABLE IF EXISTS `purchase_orders`;
@@ -1029,7 +1063,7 @@ CREATE TABLE `purchase_orders` (
   `vendor_id` int NOT NULL,
   `project_id` int NOT NULL,
   `created_by` int NOT NULL,
-  `order_date` date NOT NULL,
+  `required_by` date NOT NULL,
   `expected_delivery_date` date DEFAULT NULL,
   `shipping_address` text,
   `payment_terms` varchar(100) DEFAULT 'Net 30 days',
@@ -1046,7 +1080,7 @@ CREATE TABLE `purchase_orders` (
   KEY `project_id` (`project_id`),
   KEY `created_by` (`created_by`),
   KEY `status` (`status`),
-  KEY `order_date` (`order_date`),
+  KEY `required_by` (`required_by`),
   CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `purchase_orders_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `project` (`pid`) ON DELETE RESTRICT,
   CONSTRAINT `purchase_orders_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `employee` (`id`) ON DELETE RESTRICT
@@ -1090,17 +1124,6 @@ LOCK TABLES `stock_transactions` WRITE;
 /*!40000 ALTER TABLE `stock_transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Insert sample data for vendors
---
-LOCK TABLES `vendors` WRITE;
-/*!40000 ALTER TABLE `vendors` DISABLE KEYS */;
-INSERT INTO `vendors` (`name`, `contact_person`, `email`, `phone`, `address`, `city`, `state`, `postal_code`, `payment_terms`, `status`) VALUES
-('ABC Suppliers Ltd', 'John Smith', 'john@abcsuppliers.com', '9876543210', '123 Industrial Area', 'Mumbai', 'Maharashtra', '400001', 'Net 30 days', 'active'),
-('XYZ Electronics', 'Sarah Johnson', 'sarah@xyzelec.com', '9876543211', '456 Tech Park', 'Bangalore', 'Karnataka', '560001', 'Net 15 days', 'active'),
-('PQR Tools & Hardware', 'Mike Wilson', 'mike@pqrtools.com', '9876543212', '789 Market Street', 'Delhi', 'Delhi', '110001', 'Net 45 days', 'active');
-/*!40000 ALTER TABLE `vendors` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Insert sample data for projects
@@ -1129,7 +1152,7 @@ UNLOCK TABLES;
 LOCK TABLES `purchase_orders` WRITE;
 /*!40000 ALTER TABLE `purchase_orders` DISABLE KEYS */;
 INSERT INTO `purchase_orders` (
-    `po_number`, `vendor_id`, `project_id`, `created_by`, `order_date`,
+    `po_number`, `vendor_id`, `project_id`, `created_by`, `required_by`,
     `expected_delivery_date`, `shipping_address`, `payment_terms`,
     `subtotal`, `tax_amount`, `total_amount`, `notes`, `status`
 ) 
