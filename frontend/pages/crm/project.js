@@ -130,21 +130,76 @@ export default function Projects() {
     setEndDate(project.end_date === "TBD" ? "" : formatDate(project.end_date)); // Handle "TBD" for editing
     setStatus(project.status);
     setCustomerId(project.cid);
-  };
-
+  };  
+  
   const handleDelete = async (pid) => {
     if (!window.confirm("Are you sure you want to delete this project?")) return;
 
     try {
+      // First, try to delete without cascade
       const response = await fetch(`/api/tasks?pid=${pid}`, {
         method: "DELETE",
       });
+
+      // Handle special case for related records
+      if (response.status === 409) {
+        const errorData = await response.json();
+          if (errorData.type === "related_records_exist") {
+          let confirmMessage = `This project has ${errorData.relatedRecords} related stock transaction(s).`;
+          
+          // Add spending information if available
+          if (errorData.hasSpending) {
+            confirmMessage += `\n\nWARNING: This project has ${errorData.spendingRecords} inventory spending record(s). Deleting this project will delete all spending history.`;
+          }
+          
+          confirmMessage += "\n\nDo you want to delete the project and all related records?";
+          
+          const confirmCascade = window.confirm(confirmMessage);
+          
+          if (confirmCascade) {
+            try {
+              // Show loading state (optional)
+              setLoading(true);
+              
+              // User confirmed cascade delete
+              const cascadeResponse = await fetch(`/api/tasks?pid=${pid}&cascade=true`, {
+                method: "DELETE",
+              });
+                if (!cascadeResponse.ok) {
+                const cascadeError = await cascadeResponse.json();
+                throw new Error(cascadeError.error || "Failed to delete project and related records");
+              }
+              
+              // Success message
+              let successMessage = "Project and related records deleted successfully.";
+              if (errorData.hasSpending) {
+                successMessage += "\nInventory spending records have also been deleted.";
+              }
+              alert(successMessage);
+              fetchProjects();
+            } catch (cascadeError) {
+              console.error("Error during cascade delete:", cascadeError);
+              alert(cascadeError.message || "Failed to delete project and related records");
+            } finally {
+              setLoading(false);
+            }
+            return;
+          } else {
+            // User canceled the cascade delete
+            return;
+          }
+        } else {
+          // Other 409 errors
+          throw new Error(errorData.error || "Failed to delete project");
+        }
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to delete project");
       }
 
+      alert("Project deleted successfully");
       fetchProjects();
     } catch (error) {
       console.error("Error deleting project:", error);

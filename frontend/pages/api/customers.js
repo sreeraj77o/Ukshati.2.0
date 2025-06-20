@@ -10,12 +10,30 @@ export default async function handler(req, res) {
   });
 
   try {
-    // GET all customers
+    // GET all customers or single customer by ID
     if (req.method === "GET") {
-      const [rows] = await connection.execute(
-        "SELECT cid, cname, cphone, alternate_phone, status, remark FROM customer"
-      );
-      return res.status(200).json({ customers: rows });
+      // Check if id is provided in query params
+      const { id } = req.query;
+      
+      if (id) {
+        // Get single customer by ID
+        const [rows] = await connection.execute(
+          "SELECT cid, cname, cphone, alternate_phone, status, remark FROM customer WHERE cid = ?",
+          [id]
+        );
+        
+        if (rows.length === 0) {
+          return res.status(404).json({ error: "Customer not found" });
+        }
+        
+        return res.status(200).json(rows[0]);
+      } else {
+        // Get all customers (existing behavior)
+        const [rows] = await connection.execute(
+          "SELECT cid, cname, cphone, alternate_phone, status, remark FROM customer"
+        );
+        return res.status(200).json({ customers: rows });
+      }
     }
 
     // POST new customer
