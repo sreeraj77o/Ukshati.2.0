@@ -51,7 +51,7 @@ export default function ExpenseDetails({ projectId, setExpenseData }) {
 
               // Fetch additional customer details if needed
               if (project.cid) {
-                return fetch(`/api/customer/${project.cid}`)
+                return fetch(`/api/customers?id=${project.cid}`)
                   .then((res) => res.json())
                   .then((customerData) => {
                     setCustomer(customerData);

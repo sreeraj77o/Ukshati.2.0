@@ -530,7 +530,7 @@ DROP TABLE IF EXISTS `rates`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `rates` (
-  `rate_id` int NOT NULL ,
+  `rate_id` int AUTO_INCREMENT,
   `item_id` int DEFAULT NULL,
   `rate_type` varchar(50) DEFAULT NULL,
   `item_name` varchar(50) DEFAULT NULL,
