@@ -11,9 +11,6 @@ function validateRequisitionItems(items) {
     if (!item.quantity || item.quantity <= 0) {
       errors.push(`Item ${index + 1}: Valid quantity is required`);
     }
-    if (!item.unit || item.unit.trim() === "") {
-      errors.push(`Item ${index + 1}: Unit is required`);
-    }
   });
   return errors;
 }
