@@ -7,63 +7,107 @@ import {
   FiShoppingBag, FiFileText, FiTruck, FiUsers, FiPlus,
   FiClipboard, FiBarChart2, FiSearch, FiFilter
 } from "react-icons/fi";
+import { FaFileCirclePlus, FaFileInvoice } from "react-icons/fa6";
 import { motion } from "framer-motion";
 import BackButton from "@/components/BackButton";
 import { CardSkeleton, TableSkeleton } from "@/components/skeleton";
 import ScrollToTopButton from "@/components/scrollup";
 
 export default function PurchaseDashboard() {
-  
-
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalPOs: 0,
+    totalPRs: 0,
+    activeVendors: 0,
     pendingDeliveries: 0,
     totalSpend: 0,
     activeVendors: 0
   });
+  const [errors, setErrors] = useState({});
   
   useEffect(() => {
-    // Simulate data loading
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setErrors({ form: "You are not logged in. Please login and try again." });
+      setLoading(false);
+      router.push('/login');
+      return;
+    }
+
+    // Helper to fetch with auth and handle 401
+    const fetchWithAuth = async (url) => {
+      console.log("Fetching from: " + url);
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.status === 401) {
+        setErrors({ form: "Session expired. Please login again." });
+        router.push('/login');
+        throw new Error("Unauthorized");
+      }
+      return response.json();
+    };
+
     const fetchData = async () => {
       try {
-        // Replace with actual API call
-        const response = await fetch('/api/purchase/orders');
-        const data = await response.json();
-        setStats(data);
-        console.log(data);
-        
-        // Simulated data
-        setTimeout(() => {
-          setStats({
-            totalPOs: 2,
-            pendingDeliveries: 8,
-            totalSpend: 1250000,
-            activeVendors: 15
-          });
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        // Fetch vendors
+        const vendorsData = await fetchWithAuth('/api/purchase/vendors');
+        console.log("VEndors",vendorsData.length);
+
+        // Fetch requisitions
+        const requisitionsData = await fetchWithAuth('/api/purchase/requisitions');
+        console.log("Requisitions",requisitionsData.length);
+
+        // Fetch orders
+        const ordersData = await fetchWithAuth('/api/purchase/orders');
+        console.log("Orders",ordersData[0]);
+
+        // Calculate stats
+        const totalPRs = requisitionsData.length;
+        console.log("Total PRs",totalPRs);
+        const totalPOs = ordersData.length;
+        console.log("Total POs",totalPOs);
+        const pendingDeliveries = ordersData.filter(ordersData => ordersData.status === 'pending').length;
+        console.log("Pending Deliveries",pendingDeliveries);
+        const totalSpend = ordersData.reduce((sum, order) => sum + (order.amount || 3), 0);
+        console.log("Total Spend",totalSpend);
+        const activeVendors = vendorsData.length;
+        console.log("Active Vendors",activeVendors);
+
+        setStats({
+          totalPOs,
+          totalPRs,
+          activeVendors,
+          ordersData, 
+          pendingDeliveries,
+          totalSpend,
+          activeVendors
+        });
+        console.log(stats.totalPOs);
         setLoading(false);
+      } catch (error) {
+        if (error.message !== "Unauthorized") {
+          setErrors({ form: "Failed to load dashboard data." });
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, []);
+  }, [router]);
 
   const purchaseCards = [
     {
       id: 1,
       title: "Create Requisition",
-      Icon: FiClipboard,
+      Icon: FaFileCirclePlus,
       description: "Request items for your project",
       gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40",
       route: "/purchase-order/requisition/new",
       stats: {
         main: "New",
-        secondary: "Request"
+        secondary: "PR"
       },
       filedBy: "Project Team"
     },
@@ -120,9 +164,21 @@ export default function PurchaseDashboard() {
       filedBy: "Finance Team"
     },
     {
-      id: 6,
-      title: "View All Orders",
+      id:6,
+      title:"View All Requisitions",
       Icon: FiFileText,
+      description: "Browse and manage all purchase orders",
+      gradient: "bg-gradient-to-r from-orange-400/30 to-orange-500/40",
+      route: "/purchase-order/requisition/AllRequisitions",
+      stats: {
+        main: stats.totalPRs,
+        secondary: "Requisitions"
+      },
+      filedBy: "Project Teams"
+    },{
+      id: 7,
+      title: "View All Orders",
+      Icon: FaFileInvoice,
       description: "Browse and manage all purchase orders",
       gradient: "bg-gradient-to-r from-cyan-400/30 to-teal-500/40",
       route: "/purchase-order/orders/AllOrders",
@@ -131,19 +187,6 @@ export default function PurchaseDashboard() {
         secondary: "Orders"
       },
       filedBy: "Procurement Teams"
-    },
-    {
-      id:7,
-      title:"View All Requisitions",
-      Icon: FiFileText,
-      description: "Browse and manage all purchase orders",
-      gradient: "bg-gradient-to-r from-orange-400/30 to-orange-500/40",
-      route: "/purchase-order/requisition/AllRequisitions",
-      stats: {
-        main: stats.totalPOs,
-        secondary: "Requisitions"
-      },
-      filedBy: "Project Teams"
     }
   ];
 
@@ -159,7 +202,7 @@ export default function PurchaseDashboard() {
         <h1 className="text-4xl font-bold mb-16 mt-8 text-center">Purchase Order Management</h1>
 
         {/* Quick Search */}
-        <div className="w-full max-w-md mb-12">
+        {/* <div className="w-full max-w-md mb-12">
           <div className="relative">
             <input
               type="text"
@@ -168,7 +211,7 @@ export default function PurchaseDashboard() {
             />
             <FiSearch className="absolute left-3 top-3.5 text-gray-400" />
           </div>
-        </div>
+        </div> */}
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">

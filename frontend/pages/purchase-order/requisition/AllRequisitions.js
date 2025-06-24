@@ -130,17 +130,39 @@ export default function AllRequisitions() {
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`/api/purchase/requisitions/${id}`, {
+      const res = await fetch(`/api/purchase/requisition-approval?id=${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Delete failed");
-      const updated = requisitions.filter((r) => r.id !== id);
-      setRequisitions(updated);
-      setFilteredRequisitions(updated);
+      await fetchData(); // Refresh data from backend after delete
       setConfirmDelete(null);
     } catch (err) {
       setError("Failed to delete requisition.");
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    const token = localStorage.getItem("token");
+    console.log("Token:", token);
+    const user = localStorage.getItem("user");
+    const approvedBy = user ? JSON.parse(user).id : "Unknown";
+    console.log("Approved by:", approvedBy);
+    try {
+      const res = await fetch(`/api/purchase/requisition-approval?id=${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id, status: newStatus, approved_by: approvedBy }),
+      });
+      console.log("Status update response:", res);
+      if (!res.ok) throw new Error("Status update failed");
+      await fetchData(); // Refresh requisitions after status change
+    } catch (err) {
+      console.error("Status update error:", err);
+      setError(`Failed to ${newStatus} requisition.`);
     }
   };
 
@@ -198,9 +220,10 @@ export default function AllRequisitions() {
           >
             <option value="all">All Statuses</option>
             <option value="draft">Draft</option>
-            <option value="submitted">Submitted</option>
+            <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+            <option value="converted">Converted</option>
           </select>
           <select
             value={sortBy}
@@ -253,6 +276,25 @@ export default function AllRequisitions() {
                   <p className="text-sm text-gray-400">
                     Project: {req.project_name} | Required By: {req.required_by}
                   </p>
+                </div>
+                <div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      req.status === "draft"
+                        ? "bg-gray-600 text-white"
+                        : req.status === "pending"
+                        ? "bg-yellow-600 text-white"
+                        : req.status === "submitted"
+                        ? "bg-blue-600 text-white"
+                        : req.status === "approved"
+                        ? "bg-yellow-600 text-white"
+                        : req.status === "converted"
+                        ? "bg-orange-600 text-white"
+                        : "bg-red-600 text-white"
+                    }`}
+                    >
+                    {req.status}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -327,6 +369,23 @@ export default function AllRequisitions() {
                       ))}
                     </tbody>
                   </table>
+                  {/* Approval/Reject buttons, only if status is pending */}
+                  {req.status === "pending" && (
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        onClick={() => handleStatusChange(req.id, "rejected")}
+                        className="px-3 py-1 bg-gray-700 rounded"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(req.id, "approved")}
+                        className="px-3 py-1 bg-green-600 rounded"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

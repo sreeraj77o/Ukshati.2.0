@@ -53,78 +53,25 @@ export default function ManageVendors() {
   const fetchVendors = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/purchase/vendors');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      const response = await fetch('/api/purchase/vendors', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.status === 401) {
+        router.push('/login');
+        return;
+      }
       const vendorsData = await response.json();
       setVendors(Array.isArray(vendorsData) ? vendorsData : []);
       setFilteredVendors(Array.isArray(vendorsData) ? vendorsData : []);
-      // Simulated data
-      // setTimeout(() => {
-      //   const mockVendors = [
-      //     {
-      //       id: 1,
-      //       name: "ABC Suppliers Ltd.",
-      //       contact_person: "John Smith",
-      //       email: "john@abcsuppliers.com",
-      //       phone: "+91 9876543210",
-      //       address: "123 Industrial Area, Mumbai, Maharashtra",
-      //       category: "Electronics",
-      //       payment_terms: "Net 30 days",
-      //       status: "active",
-      //       created_at: "2023-05-15"
-      //     },
-      //     {
-      //       id: 2,
-      //       name: "XYZ Industrial Equipment",
-      //       contact_person: "Priya Sharma",
-      //       email: "priya@xyzindustrial.com",
-      //       phone: "+91 8765432109",
-      //       address: "456 Tech Park, Bangalore, Karnataka",
-      //       category: "Machinery",
-      //       payment_terms: "Net 45 days",
-      //       status: "active",
-      //       created_at: "2023-06-22"
-      //     },
-      //     {
-      //       id: 3,
-      //       name: "Global Tech Solutions",
-      //       contact_person: "Rahul Verma",
-      //       email: "rahul@globaltech.com",
-      //       phone: "+91 7654321098",
-      //       address: "789 Business Hub, Delhi, NCR",
-      //       category: "IT Equipment",
-      //       payment_terms: "Net 15 days",
-      //       status: "active",
-      //       created_at: "2023-07-10"
-      //     },
-      //     {
-      //       id: 4,
-      //       name: "Precision Tools Co.",
-      //       contact_person: "Ananya Patel",
-      //       email: "ananya@precisiontools.com",
-      //       phone: "+91 6543210987",
-      //       address: "234 Manufacturing Zone, Chennai, Tamil Nadu",
-      //       category: "Tools",
-      //       payment_terms: "Net 30 days",
-      //       status: "inactive",
-      //       created_at: "2023-04-05"
-      //     },
-      //     {
-      //       id: 5,
-      //       name: "Eco Friendly Materials",
-      //       contact_person: "Vikram Singh",
-      //       email: "vikram@ecofriendly.com",
-      //       phone: "+91 5432109876",
-      //       address: "567 Green Park, Pune, Maharashtra",
-      //       category: "Construction Materials",
-      //       payment_terms: "Net 60 days",
-      //       status: "active",
-      //       created_at: "2023-08-18"
-      //     }
-      //   ];
-        setLoading(false);
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching vendors:", error);
-      setVendors([]); // Set to empty array on error
+      setVendors([]);
       setFilteredVendors([]);
       setLoading(false);
     }
@@ -153,16 +100,23 @@ export default function ManageVendors() {
     setShowModal(true);
   };
 
+  useEffect(() => {
+    if (editId !== null) {
+      console.log("editId changed:", editId);
+    }
+  }, [editId]);
+
   const openEditModal = (vendor) => {
     setFormData({
-      name: vendor.name,
-      contact_person: vendor.contact_person,
-      email: vendor.email,
-      phone: vendor.phone,
-      address: vendor.address,
-      category: vendor.category,
-      payment_terms: vendor.payment_terms,
-      status: vendor.status
+      id: vendor.id,
+      name: vendor.name || "",
+      contact_person: vendor.contact_person || "",
+      email: vendor.email || "",
+      phone: vendor.phone || "",
+      address: vendor.address || "",
+      category: vendor.category || "",
+      payment_terms: vendor.payment_terms || "",
+      status: vendor.status || "active"
     });
     setEditId(vendor.id);
     setShowModal(true);
@@ -183,44 +137,39 @@ export default function ManageVendors() {
     setFormSubmitting(true);
 
     try {
-      // Replace with actual API call
-      const url = editId ? `/api/purchase/vendors/${editId}` : '/api/purchase/vendors';
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
+      const url = editId ? `/api/purchase/vendors?id=${editId}` : '/api/purchase/vendors';
       const method = editId ? 'PUT' : 'POST';
+
+      // Remove id from payload for PUT/POST
+      const { id, ...payload } = formData;
+
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
       });
-      const data = await response.json();
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      if (editId) {
-        // Update existing vendor in the state
-        setVendors(prev => 
-          Array.isArray(prev) 
-            ? prev.map(vendor => vendor.id === editId ? { ...vendor, ...formData } : vendor)
-            : []
-        );
-        setNotification({
-          type: "success",
-          message: "Vendor updated successfully!"
-        });
-      } else {
-        // Add new vendor to the state
-        const newVendor = {
-          id: vendors.length + 1,
-          ...formData,
-          created_at: new Date().toISOString().split('T')[0]
-        };
-        setVendors(prev => [...prev, newVendor]);
-        setNotification({
-          type: "success",
-          message: "Vendor added successfully!"
-        });
+      if (response.status === 401) {
+        router.push('/login');
+        return;
       }
-      
+      const data = await response.json();
+
+      // Instead of updating local state, re-fetch from backend:
+      await fetchVendors();
+
+      setNotification({
+        type: "success",
+        message: editId ? "Vendor updated successfully!" : "Vendor added successfully!"
+      });
+
       closeModal();
     } catch (error) {
       console.error("Error saving vendor:", error);
@@ -243,9 +192,14 @@ export default function ManageVendors() {
 
   const deleteVendor = async (id) => {
     try {
-      // Replace with actual API call
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/login');
+        return;
+      }
       await fetch(`/api/purchase/vendors/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       // Simulate API call

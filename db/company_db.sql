@@ -946,6 +946,7 @@ CREATE TABLE `vendors` (
   `country` varchar(100) DEFAULT 'India',
   `tax_id` varchar(50) DEFAULT NULL,
   `payment_terms` varchar(100) DEFAULT 'Net 30 days',
+  `category` varchar(100) DEFAULT NULL,
   `status` enum('active','inactive') DEFAULT 'active',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1024,13 +1025,17 @@ CREATE TABLE purchase_requisitions (
   requisition_number VARCHAR(20) UNIQUE NOT NULL,
   project_id INT NOT NULL,
   requested_by INT NOT NULL,
+  approved_by INT,
+  approval_notes TEXT,
+  approved_date DATE,
   status ENUM('draft', 'pending', 'approved', 'rejected', 'converted') NOT NULL DEFAULT 'draft',
   required_by DATE,
   notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (project_id) REFERENCES project(pid),
-  FOREIGN KEY (requested_by) REFERENCES employee(id)
+  FOREIGN KEY (requested_by) REFERENCES employee(id),
+  FOREIGN KEY (approved_by) REFERENCES employee(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- =============================================
@@ -1063,7 +1068,7 @@ CREATE TABLE `purchase_orders` (
   `vendor_id` int NOT NULL,
   `project_id` int NOT NULL,
   `created_by` int NOT NULL,
-  `required_by` date NOT NULL,
+  -- `required_by` date NOT NULL,
   `expected_delivery_date` date DEFAULT NULL,
   `shipping_address` text,
   `payment_terms` varchar(100) DEFAULT 'Net 30 days',
@@ -1080,7 +1085,7 @@ CREATE TABLE `purchase_orders` (
   KEY `project_id` (`project_id`),
   KEY `created_by` (`created_by`),
   KEY `status` (`status`),
-  KEY `required_by` (`required_by`),
+  -- KEY `required_by` (`required_by`),
   CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendors` (`id`) ON DELETE RESTRICT,
   CONSTRAINT `purchase_orders_ibfk_2` FOREIGN KEY (`project_id`) REFERENCES `project` (`pid`) ON DELETE RESTRICT,
   CONSTRAINT `purchase_orders_ibfk_3` FOREIGN KEY (`created_by`) REFERENCES `employee` (`id`) ON DELETE RESTRICT
@@ -1124,18 +1129,6 @@ LOCK TABLES `stock_transactions` WRITE;
 /*!40000 ALTER TABLE `stock_transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
-
---
--- Insert sample data for projects
---
-LOCK TABLES `projects` WRITE;
-/*!40000 ALTER TABLE `projects` DISABLE KEYS */;
-INSERT INTO `projects` (`name`, `customer_id`, `start_date`, `status`, `description`) VALUES
-('Sample Project 1', 1, '2024-01-01', 'Ongoing', 'Sample project for testing'),
-('Sample Project 2', 2, '2024-02-01', 'Ongoing', 'Another sample project');
-/*!40000 ALTER TABLE `projects` ENABLE KEYS */;
-UNLOCK TABLES;
-
 --
 -- Insert sample data for employees
 --
@@ -1145,32 +1138,6 @@ INSERT INTO `employees` (`name`, `email`, `phone`, `password`, `role`) VALUES
 ('Ukshati', 'ukshati365@gmail.com', '7259439998', '$2b$10$VFW3dVy6O91qYShoi6vEDemc8TMb7DP4SBplGWNm9snPtffVGGu5u', 'Admin');
 /*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Insert sample purchase orders for testing
---
-LOCK TABLES `purchase_orders` WRITE;
-/*!40000 ALTER TABLE `purchase_orders` DISABLE KEYS */;
-INSERT INTO `purchase_orders` (
-    `po_number`, `vendor_id`, `project_id`, `created_by`, `required_by`,
-    `expected_delivery_date`, `shipping_address`, `payment_terms`,
-    `subtotal`, `tax_amount`, `total_amount`, `notes`, `status`
-) 
-/*!40000 ALTER TABLE `purchase_orders` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Insert sample purchase order items
---
-LOCK TABLES `po_items` WRITE;
-/*!40000 ALTER TABLE `po_items` DISABLE KEYS */;
-INSERT INTO `po_items` (
-    `po_id`, `item_name`, `description`, `quantity`, `unit`,
-    `unit_price`, `total_price`, `stock_id`, `quantity_received`
-) 
-/*!40000 ALTER TABLE `po_items` ENABLE KEYS */;
-UNLOCK TABLES;
-
 --
 -- Triggers for stock tracking
 --

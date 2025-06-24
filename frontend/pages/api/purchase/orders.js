@@ -342,10 +342,10 @@ export default async function handler(req, res) {
           console.log("🔄 Executing purchase order insertion...");
           const [result] = await db.execute(
             `INSERT INTO purchase_orders
-             (po_number, requisition_id, vendor_id, project_id, created_by,
-              order_date, expected_delivery_date, shipping_address,
+             (po_number, requisition_id, vendor_id, project_id, created_by
+             , expected_delivery_date, shipping_address,
               payment_terms, subtotal, tax_amount, total_amount, notes, status)
-             VALUES (?, ?, ?, ?, ?, CURDATE(), ?, ?, ?, ?, ?, ?, ?, 'draft')`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft')`,
             insertValues
           );
 

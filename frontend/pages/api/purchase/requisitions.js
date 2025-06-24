@@ -17,7 +17,6 @@ function validateRequisitionItems(items) {
 
 export default async function handler(req, res) {
   const session = await authenticate(req);
-  console.log("🧑 Session userId:", session.userId);
 
   // updated for JWT-only auth
 
