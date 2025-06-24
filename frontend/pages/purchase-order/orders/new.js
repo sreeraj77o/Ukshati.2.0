@@ -367,7 +367,6 @@ export default function NewPurchaseOrder() {
                   min={new Date().toISOString().split('T')[0]}
                   disabled={submitting}
                 />
-                <FiCalendar className="absolute right-3 top-3.5 text-gray-400" />
               </div>
               {errors.expected_delivery_date && (
                 <p className="text-red-500 text-sm mt-1">{errors.expected_delivery_date}</p>
