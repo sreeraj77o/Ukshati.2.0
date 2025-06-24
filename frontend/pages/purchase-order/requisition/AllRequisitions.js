@@ -223,7 +223,6 @@ export default function AllRequisitions() {
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-            <option value="converted">Converted</option>
           </select>
           <select
             value={sortBy}
@@ -287,9 +286,7 @@ export default function AllRequisitions() {
                         : req.status === "submitted"
                         ? "bg-blue-600 text-white"
                         : req.status === "approved"
-                        ? "bg-yellow-600 text-white"
-                        : req.status === "converted"
-                        ? "bg-orange-600 text-white"
+                        ? "bg-green-600 text-white"
                         : "bg-red-600 text-white"
                     }`}
                     >

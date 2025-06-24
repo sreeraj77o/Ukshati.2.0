@@ -1027,7 +1027,7 @@ CREATE TABLE purchase_requisitions (
   requested_by INT NOT NULL,
   approved_by INT,
   approval_notes TEXT,
-  approved_date DATE,
+  approval_date DATE,
   status ENUM('draft', 'pending', 'approved', 'rejected', 'converted') NOT NULL DEFAULT 'draft',
   required_by DATE,
   notes TEXT,
