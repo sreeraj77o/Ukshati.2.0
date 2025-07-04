@@ -511,7 +511,7 @@ export default function AllPurchaseOrders() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/purchase/orders/${order.id}`);
+                          router.push(`/purchase-order/orders/${order.id}`);
                         }}
                         className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-full"
                         title="View Details"
@@ -521,7 +521,7 @@ export default function AllPurchaseOrders() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/purchase/orders/${order.id}/edit`);
+                          router.push(`/purchase-order/orders/${order.id}/edit`);
                         }}
                         className="p-2 text-yellow-400 hover:bg-yellow-500/20 rounded-full"
                         title="Edit Order"

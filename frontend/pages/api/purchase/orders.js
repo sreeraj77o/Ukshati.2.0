@@ -412,9 +412,139 @@ export default async function handler(req, res) {
           console.log("Transaction rolled back");
           throw insertError;
         }
-        
+      case 'PUT':
+        // Update existing purchase order
+        const orderId = req.query.id;
+        if (!orderId) {
+          return res.status(400).json({ error: "Order ID is required for update" });
+        }
+
+        const {
+          vendor_id: updateVendorId,
+          project_id: updateProjectId,
+          items: updateItems,
+          expected_delivery_date: updateExpectedDeliveryDate,
+          shipping_address: updateShippingAddress,
+          payment_terms: updatePaymentTerms,
+          subtotal: updateSubtotal,
+          tax_amount: updateTaxAmount,
+          total_amount: updateTotalAmount,
+          notes: updateNotes
+        } = req.body;
+
+        console.log("Updating purchase order with ID:", orderId);
+        console.log("Update data:", {
+          vendor_id: updateVendorId,
+          project_id: updateProjectId,
+          items_count: updateItems?.length,
+          total_amount: updateTotalAmount
+        });
+
+        // Validate required fields
+        if (!updateVendorId || !updateProjectId || !updateItems || updateItems.length === 0) {
+          return res.status(400).json({
+            error: "Missing required fields: vendor_id, project_id, and items are required"
+          });
+        }
+
+        // Validate items
+        for (let i = 0; i < updateItems.length; i++) {
+          const item = updateItems[i];
+          if (!item.item_name || !item.quantity || !item.unit_price) {
+            return res.status(400).json({
+              error: `Item ${i + 1} is missing required fields: item_name, quantity, and unit_price are required`
+            });
+          }
+        }
+
+        // User is already authenticated via JWT token, so allow the update
+        console.log("Authenticated user updating purchase order:", user.userId);
+
+        // Start transaction for update
+        await db.beginTransaction();
+        console.log("Transaction started for update");
+
+        try {
+          // Check if purchase order exists
+          const [existingOrder] = await db.execute(
+            'SELECT * FROM purchase_orders WHERE id = ?',
+            [orderId]
+          );
+
+          if (existingOrder.length === 0) {
+            await db.rollback();
+            return res.status(404).json({ error: "Purchase order not found" });
+          }
+
+          // Update purchase order
+          await db.execute(
+            `UPDATE purchase_orders SET
+             vendor_id = ?, project_id = ?, expected_delivery_date = ?,
+             shipping_address = ?, payment_terms = ?, subtotal = ?,
+             tax_amount = ?, total_amount = ?, notes = ?,
+             updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?`,
+            [
+              updateVendorId,
+              updateProjectId,
+              updateExpectedDeliveryDate,
+              updateShippingAddress,
+              updatePaymentTerms,
+              updateSubtotal,
+              updateTaxAmount || 0,
+              updateTotalAmount,
+              updateNotes || null,
+              orderId
+            ]
+          );
+
+          console.log(" Purchase order updated successfully");
+
+          // Delete existing items
+          await db.execute('DELETE FROM po_items WHERE po_id = ?', [orderId]);
+          console.log(" Existing items deleted");
+
+          // Insert updated items
+          for (const item of updateItems) {
+            const totalPrice = Number(item.quantity) * Number(item.unit_price);
+            await db.execute(
+              `INSERT INTO po_items
+               (po_id, item_name, description, quantity, unit, unit_price, total_price)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [
+                orderId,
+                item.item_name,
+                item.description || null,
+                Number(item.quantity),
+                item.unit || 'pcs',
+                Number(item.unit_price),
+                totalPrice
+              ]
+            );
+          }
+
+          console.log(" Updated items inserted successfully");
+
+          // Commit transaction
+          await db.commit();
+          console.log(" Transaction committed successfully");
+
+          return res.status(200).json({
+            success: true,
+            id: orderId,
+            po_number: existingOrder[0].po_number,
+            message: "Purchase order updated successfully"
+          });
+
+        } catch (updateError) {
+          console.error("Error during purchase order update:", updateError);
+          await db.rollback();
+          console.log("Transaction rolled back");
+          throw updateError;
+        }
+
       default:
-        res.setHeader('Allow', ['GET', 'POST']);
+        res.setHeader('Allow', ['GET', 'POST', 'PUT']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
