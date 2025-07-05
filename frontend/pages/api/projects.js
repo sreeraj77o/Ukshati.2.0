@@ -8,7 +8,19 @@ export default async function handler(req, res) {
   let db;
   try {
     db = await connectToDB();
-    const [results] = await db.query("SELECT * FROM project"); // Fetch all project details
+
+    const [results] = await db.query(`
+  SELECT
+    pid,
+    pname,
+    cid,
+    start_date,
+    end_date,
+    status,
+    cname
+  FROM project
+`);
+
     res.status(200).json(results);
   } catch (error) {
     console.error("Database error:", error);
