@@ -9,9 +9,11 @@ import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
 import { TableSkeleton } from "@/components/skeleton";
 import { motion } from "framer-motion";
+import { useUserSession } from "@/src/hooks/useDashboard";
 
 export default function AllRequisitions() {
   const router = useRouter();
+  const { userRole } = useUserSession();
   const [loading, setLoading] = useState(true);
   const [requisitions, setRequisitions] = useState([]);
   const [filteredRequisitions, setFilteredRequisitions] = useState([]);
@@ -200,13 +202,18 @@ export default function AllRequisitions() {
             <FiFilter className="inline-block mr-2" />
             Filters
           </button>
-          <button
-            className="bg-blue-600 px-4 py-2 rounded-lg"
-            onClick={() => router.push("/purchase-order/requisition/new")}
-          >
-            <FiPlus className="inline-block mr-2" />
-            New Requisition
-          </button>
+          {/* Admin can create both PR and PO directly */}
+          {userRole === "admin" && (
+            <>
+              <button
+                className="bg-blue-600 px-4 py-2 rounded-lg"
+                onClick={() => router.push("/purchase-order/requisition/new")}
+              >
+                <FiPlus className="inline-block mr-2" />
+                New Requisition
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -303,24 +310,39 @@ export default function AllRequisitions() {
                   >
                     <FiEye />
                   </button>
-                  <button
-                    className="text-yellow-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      router.push(`/purchase-requisition/requisitions/${req.id}/edit`);
-                    }}
-                  >
-                    <FiEdit />
-                  </button>
-                  <button
-                    className="text-red-400"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDelete(req.id);
-                    }}
-                  >
-                    <FiTrash2 />
-                  </button>
+                  {userRole === "admin" && req.status === "pending" && (
+                    <>
+                      <button
+                        className="text-yellow-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/purchase-requisition/requisitions/${req.id}/edit`);
+                        }}
+                      >
+                        <FiEdit />
+                      </button>
+                      <button
+                        className="text-red-400"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDelete(req.id);
+                        }}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </>
+                  )}
+                  {userRole === "admin" && req.status === "approved" && (
+                    <button
+                      className="text-green-400"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/purchase-order/orders/new?requisition_id=${req.id}`);
+                      }}
+                    >
+                      Create PO
+                    </button>
+                  )}
                   {expandedReq === req.id ? <FiChevronUp /> : <FiChevronDown />}
                 </div>
               </div>
@@ -367,7 +389,7 @@ export default function AllRequisitions() {
                     </tbody>
                   </table>
                   {/* Approval/Reject buttons, only if status is pending */}
-                  {req.status === "pending" && (
+                  {userRole === "admin" && req.status === "pending" && (
                     <div className="mt-3 flex justify-end gap-2">
                       <button
                         onClick={() => handleStatusChange(req.id, "rejected")}

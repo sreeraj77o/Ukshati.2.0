@@ -14,12 +14,12 @@ export default async function handler(req, res) {
     // GET - Get all employees (without passwords)
     if (req.method === "GET") {
       const [rows] = await connection.execute(
-        "SELECT id, name, email, phone, role FROM employee"
+        "SELECT id, name, email, phone, role FROM employees"
       );
       return res.status(200).json({ employees: rows });
     }
 
-    // POST - Create new employee
+    // POST - Create new employees
     if (req.method === "POST") {
       const { name, email, phone, role, password } = req.body;
 
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
       // Insert into database
       const [result] = await connection.execute(
-        `INSERT INTO employee 
+        `INSERT INTO employees 
          (name, email, phone, role, password) 
          VALUES (?, ?, ?, ?, ?)`,
         [name, email, phone, role, hashedPassword]
@@ -49,12 +49,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // DELETE - Remove employee
+    // DELETE - Remove employees
     if (req.method === "DELETE") {
       const { id } = req.body;
       if (!id) return res.status(400).json({ error: "Employee ID required" });
 
-      await connection.execute("DELETE FROM employee WHERE id = ?", [id]);
+      await connection.execute("DELETE FROM employees WHERE id = ?", [id]);
       return res.status(200).json({ message: "Employee deleted successfully" });
     }
 
