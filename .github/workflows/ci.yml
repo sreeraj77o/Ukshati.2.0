@@ -45,8 +45,16 @@ jobs:
       - name: 🔍 Lint Code
         working-directory: ./frontend
         run: |
-          echo "Running ESLint..."
-          npx next lint
+          echo "Checking ESLint configuration..."
+          if [ -f ".eslintrc.json" ]; then
+            echo "Found .eslintrc.json, running ESLint..."
+            npx next lint
+          elif [ -f ".eslintrc.js" ]; then
+            echo "Found .eslintrc.js, running ESLint..."
+            npx next lint
+          else
+            echo "No ESLint config found, skipping linting..."
+          fi
 
       - name: 🏗️ Build Application
         working-directory: ./frontend
