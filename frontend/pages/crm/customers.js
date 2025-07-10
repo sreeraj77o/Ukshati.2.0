@@ -12,9 +12,9 @@ import BackButton from "@/components/BackButton";
 import ScrollToTopButton from "@/components/scrollup";
 
 // Import reusable components
-import { Card, Table, Button, Modal, SearchInput } from '../../src/components/ui';
-import { CustomerForm, ImportExport } from '../../src/components/crm';
-import { useCustomers } from '../../src/hooks/useCRM';
+import { Card, Table, Button, Modal, SearchInput } from '@/components/ui';
+import { CustomerForm, ImportExport } from '@/components/crm';
+import { useCustomers } from '@/hooks/useCRM';
 
 export default function Customers() {
   // Custom hook for customer data management

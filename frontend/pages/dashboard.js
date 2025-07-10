@@ -7,106 +7,34 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   FaUsers,
   FaBoxOpen,
   FaMoneyBillWave,
   FaFileInvoiceDollar,
   FaFileContract,
-  FaUserPlus,
   FaCheck,
 } from "react-icons/fa";
 
 // Import reusable components
-import { Button, Card, Modal, LoadingSpinner } from '../src/components/ui';
-import {
-  StatsCard,
-  FeatureCard,
-  ProjectCard,
-  Sidebar,
+import { Button, Card } from '@/components/ui/index';
+import { 
   Header,
-  TabNavigation
-} from '../src/components/dashboard';
+  Sidebar,
+  TabNavigation,
+  DashboardFeatures,
+  DashboardStats,
+  EmployeeManagement,
+  ProjectCard
+} from '@/components/dashboard/index';
 
 // Import hooks
-import { useDashboardData, useUserSession } from '../src/hooks/useDashboard';
+import { useDashboardData, useUserSession } from '@/hooks/useDashboard';
 
 // Import skeletons
-import { DashboardSkeleton } from "@/components/skeleton";
+import { DashboardSkeleton } from "@/components/skeleton/index";
 
-// Employee Modal Component
-const EmployeeModal = ({ isOpen, onClose, onSubmit, formData, setFormData, loading }) => (
-  <Modal isOpen={isOpen} onClose={onClose} title="Add Employee" size="medium">
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Name</label>
-        <input
-          type="text"
-          value={formData.name}
-          onChange={(e) => setFormData({...formData, name: e.target.value})}
-          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-          required
-        />
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-        <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => setFormData({...formData, email: e.target.value})}
-          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
-        <input
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => setFormData({...formData, phone: e.target.value})}
-          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Role</label>
-        <select
-          value={formData.role}
-          onChange={(e) => setFormData({...formData, role: e.target.value})}
-          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-          required
-        >
-          <option value="">Select Role</option>
-          <option value="admin">Admin</option>
-          <option value="employee">Employee</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Password</label>
-        <input
-          type="password"
-          value={formData.password}
-          onChange={(e) => setFormData({...formData, password: e.target.value})}
-          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
-          required
-        />
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-4">
-        <Button variant="secondary" onClick={onClose} disabled={loading}>
-          Cancel
-        </Button>
-        <Button type="submit" loading={loading}>
-          Add Employee
-        </Button>
-      </div>
-    </form>
-  </Modal>
-);
 
 // Dashboard Main Component
 export default function Dashboard() {
@@ -122,19 +50,7 @@ export default function Dashboard() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [flipped, setFlipped] = useState([]);
 
-  // Employee Management State
-  const [employees, setEmployees] = useState([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
-  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
-  const [formSubmitting, setFormSubmitting] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    role: "",
-    password: ""
-  });
+
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
@@ -207,49 +123,7 @@ export default function Dashboard() {
     }
   ];
 
-  // Stats data configuration
-  const statsData = [
-    {
-      title: "Total Customers",
-      value: dashboardData.customers,
-      change: 12,
-      isPositive: true,
-      icon: <FaUsers className="text-white" />,
-      bgColor: "bg-gradient-to-r from-blue-600 via-blue-800 to-blue-950"
-    },
-    {
-      title: "Inventory Items",
-      value: dashboardData.stocks,
-      change: 5,
-      isPositive: true,
-      icon: <FaBoxOpen className="text-white" />,
-      bgColor: "bg-gradient-to-r from-emerald-600 via-emerald-800 to-teal-950"
-    },
-    {
-      title: "Total Quotations",
-      value: dashboardData.lastQuoteId,
-      change: 16,
-      isPositive: true,
-      icon: <FaFileContract className="text-white" />,
-      bgColor: "bg-gradient-to-r from-violet-600 via-indigo-800 to-purple-950"
-    },
-    {
-      title: "Revenue",
-      value: `₹${dashboardData.stats.revenue?.toLocaleString() || '0'}`,
-      change: 23,
-      isPositive: true,
-      icon: <FaMoneyBillWave className="text-white" />,
-      bgColor: "bg-gradient-to-r from-green-600 via-green-800 to-green-950"
-    },
-    {
-      title: "Expenses",
-      value: `₹${dashboardData.stats.expenses?.toLocaleString() || '0'}`,
-      change: 5,
-      isPositive: false,
-      icon: <FaFileInvoiceDollar className="text-white" />,
-      bgColor: "bg-gradient-to-r from-purple-600 via-indigo-700 to-rose-1000"
-    }
-  ];
+
 
   // Tab configuration
   const tabs = [
@@ -278,58 +152,7 @@ export default function Dashboard() {
     router.push("/");
   };
 
-  // Employee management functions
-  const fetchEmployees = async () => {
-    try {
-      setLoadingEmployees(true);
-      const response = await fetch('/api/employees');
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      if (!Array.isArray(data.employees)) {
-        throw new Error('Invalid employee data format');
-      }
-
-      setEmployees(data.employees);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setEmployees([]);
-    } finally {
-      setLoadingEmployees(false);
-    }
-  };
-
-  const handleAddEmployee = async (e) => {
-    e.preventDefault();
-    setFormSubmitting(true);
-    try {
-      const response = await fetch('/api/employees', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create employee');
-      }
-
-      const newEmployee = await response.json();
-      setEmployees(prev => [...prev, newEmployee]);
-      setShowSuccessMessage(true);
-      setTimeout(() => setShowSuccessMessage(false), 3000);
-      setFormData({ name: "", email: "", phone: "", role: "", password: "" });
-      setShowEmployeeModal(false);
-    } catch (error) {
-      console.error('Add employee error:', error);
-    } finally {
-      setFormSubmitting(false);
-    }
-  };
 
   // Loading state
   if (loading) {
@@ -382,19 +205,7 @@ export default function Dashboard() {
         isSidebarOpen ? "lg:ml-52" : "lg:ml-16"
       } p-6`}>
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
-          {statsData.map((stat, index) => (
-            <StatsCard
-              key={index}
-              icon={stat.icon}
-              title={stat.title}
-              value={stat.value}
-              change={stat.change}
-              isPositive={stat.isPositive}
-              bgColor={stat.bgColor}
-            />
-          ))}
-        </div>
+        <DashboardStats dashboardData={dashboardData} />
 
         {/* Tab Navigation */}
         <TabNavigation
@@ -407,17 +218,12 @@ export default function Dashboard() {
         <div className="space-y-6">
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature, index) => (
-                <FeatureCard
-                  key={index}
-                  feature={feature}
-                  index={index}
-                  flipped={flipped}
-                  onFlip={handleFlip}
-                />
-              ))}
-            </div>
+            <DashboardFeatures
+              features={features}
+              flipped={flipped}
+              onFlip={handleFlip}
+              isMobile={isMobile}
+            />
           )}
 
           {/* Projects Tab */}
@@ -507,79 +313,8 @@ export default function Dashboard() {
           )}
 
           {/* Employees Tab */}
-          {activeTab === 'employees' && userRole === 'admin' && (
-            <Card
-              title="Employee Management"
-              actions={
-                <Button
-                  icon={<FaUserPlus />}
-                  onClick={() => setShowEmployeeModal(true)}
-                >
-                  Add Employee
-                </Button>
-              }
-            >
-              {showSuccessMessage && (
-                <div className="mb-4 p-3 bg-green-600/20 text-green-300 rounded-lg text-sm">
-                  Employee added successfully!
-                </div>
-              )}
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left text-gray-400 border-b border-gray-700">
-                      <th className="pb-3">Name</th>
-                      <th className="pb-3">Email</th>
-                      <th className="pb-3">Role</th>
-                      <th className="pb-3">Status</th>
-                      <th className="pb-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loadingEmployees ? (
-                      <tr>
-                        <td colSpan="5" className="py-8 text-center text-gray-400">
-                          <LoadingSpinner /> Loading employees...
-                        </td>
-                      </tr>
-                    ) : employees.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="py-8 text-center text-gray-400">
-                          No employees found
-                        </td>
-                      </tr>
-                    ) : (
-                      employees.map((employee, index) => (
-                        <tr key={index} className="border-b border-gray-700/50">
-                          <td className="py-3 text-white">{employee.name}</td>
-                          <td className="py-3 text-gray-300">{employee.email}</td>
-                          <td className="py-3">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              employee.role === 'admin'
-                                ? 'bg-purple-100 text-purple-600'
-                                : 'bg-blue-100 text-blue-600'
-                            }`}>
-                              {employee.role}
-                            </span>
-                          </td>
-                          <td className="py-3">
-                            <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-600">
-                              Active
-                            </span>
-                          </td>
-                          <td className="py-3 text-right">
-                            <Button size="small" variant="danger">
-                              Delete
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+          {activeTab === 'employees' && (
+            <EmployeeManagement userRole={userRole} />
           )}
 
           {/* Analytics Tab */}
@@ -593,15 +328,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Employee Modal */}
-      <EmployeeModal
-        isOpen={showEmployeeModal}
-        onClose={() => setShowEmployeeModal(false)}
-        onSubmit={handleAddEmployee}
-        formData={formData}
-        setFormData={setFormData}
-        loading={formSubmitting}
-      />
+
     </div>
   );
 }

@@ -6,7 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:api": "node scripts/test-apis.js",
+    "test:performance": "node scripts/performance-monitor.js",
+    "test:docker": "node scripts/docker-test.js",
+    "test:components": "node scripts/test-components.js",
+    "test:dashboard": "node scripts/test-dashboard-imports.js",
+    "test:pages": "node scripts/test-all-pages.js",
+    "test:all": "npm run test:api && npm run test:performance && npm run test:components && npm run test:dashboard && npm run test:pages"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

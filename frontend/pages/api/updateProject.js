@@ -1,4 +1,4 @@
-import mysql from "mysql2/promise";
+import { connectToDB } from "../lib/db";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -15,13 +15,7 @@ export default async function handler(req, res) {
   let db;
   try {
     console.log("🔍 Connecting to database...");
-
-    db = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-    });
+    db = await connectToDB();
 
     console.log("✅ Connected to database.");
 
@@ -87,8 +81,8 @@ export default async function handler(req, res) {
     res.status(500).json({ error: error.message });
   } finally {
     if (db) {
-      await db.end();
-      console.log("🔌 Database connection closed.");
+      db.release();
+      console.log("🔌 Database connection released.");
     }
   }
 }

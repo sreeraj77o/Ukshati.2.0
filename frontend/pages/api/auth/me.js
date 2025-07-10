@@ -1,31 +1,34 @@
 import jwt from "jsonwebtoken";
-import mysql from "mysql2/promise";
+import { connectToDB } from "../../lib/db";
 
 export default async function handler(req, res) {
   const token = req.headers.authorization?.split(' ')[1];
-  
+  let db;
+
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: process.env.MYSQL_PORT || 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME
-    });
+    db = await connectToDB();
 
-    const [rows] = await connection.execute(
+    const [rows] = await db.execute(
       "SELECT id, name, email, phone, role FROM employee WHERE id = ?",
       [decoded.id]
     );
 
-    connection.end();
-    res.status(200).json({ user: rows[0] });
+    if (rows.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: rows[0]
+    });
 
   } catch (error) {
     console.error("Auth error:", error);
     res.status(401).json({ error: "Invalid token" });
+  } finally {
+    if (db) db.release();
   }
 }

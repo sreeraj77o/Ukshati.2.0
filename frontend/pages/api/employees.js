@@ -1,22 +1,18 @@
-import mysql from "mysql2/promise";
+import { connectToDB } from "../../lib/db";
 import bcrypt from "bcryptjs"; // Import bcryptjs directly
 
 export default async function handler(req, res) {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST,
-    port: process.env.MYSQL_PORT || 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-  });
+  let db;
 
   try {
+    db = await connectToDB();
+
     // GET - Get all employees (without passwords)
     if (req.method === "GET") {
-      const [rows] = await connection.execute(
+      const [rows] = await db.query(
         "SELECT id, name, email, phone, role FROM employee"
       );
-      return res.status(200).json({ employees: rows });
+      return res.status(200).json({ success: true, data: rows });
     }
 
     // POST - Create new employee
@@ -33,19 +29,23 @@ export default async function handler(req, res) {
       const hashedPassword = await bcrypt.hash(password, salt);
 
       // Insert into database
-      const [result] = await connection.execute(
-        `INSERT INTO employee 
-         (name, email, phone, role, password) 
+      const [result] = await db.query(
+        `INSERT INTO employee
+         (name, email, phone, role, password)
          VALUES (?, ?, ?, ?, ?)`,
         [name, email, phone, role, hashedPassword]
       );
 
       return res.status(201).json({
-        id: result.insertId,
-        name,
-        email,
-        phone,
-        role
+        success: true,
+        message: "Employee created successfully",
+        data: {
+          id: result.insertId,
+          name,
+          email,
+          phone,
+          role
+        }
       });
     }
 
@@ -54,23 +54,28 @@ export default async function handler(req, res) {
       const { id } = req.body;
       if (!id) return res.status(400).json({ error: "Employee ID required" });
 
-      await connection.execute("DELETE FROM employee WHERE id = ?", [id]);
-      return res.status(200).json({ message: "Employee deleted successfully" });
+      await db.query("DELETE FROM employee WHERE id = ?", [id]);
+      return res.status(200).json({
+        success: true,
+        message: "Employee deleted successfully"
+      });
     }
+
+    return res.status(405).json({ error: "Method Not Allowed" });
 
   } catch (error) {
     console.error("Database error:", error);
-    
+
     if (error.code === "ER_DUP_ENTRY") {
       return res.status(409).json({ error: "Email already exists" });
     }
-    
-    return res.status(500).json({ 
+
+    return res.status(500).json({
       error: "Internal server error",
-      ...(process.env.NODE_ENV === "development" && { details: error.message })
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
     });
-    
+
   } finally {
-    await connection.end();
+    if (db) db.release();
   }
 }
