@@ -4,10 +4,10 @@ import { useRouter } from "next/router";
 import { FiLogOut, FiAlertTriangle } from "react-icons/fi";
 import { motion } from "framer-motion";
 import BackButton from "@/components/BackButton";
-import { CardSkeleton, TableSkeleton, ChartSkeleton } from "@/components/skeleton";
+import { CardSkeleton, TableSkeleton, ChartSkeleton } from "../../src/components/skeleton";
 import ScrollToTopButton from "@/components/scrollup";
-import { IMSStats, IMSChart, IMSActions } from "@/components/ims";
-import { useCachedStocks, useCachedCategories } from "@/hooks/useCache";
+import { IMSStats, IMSChart, IMSActions } from "../../src/components/ims";
+import { useCachedStocks, useCachedCategories } from "../../src/hooks/useCache";
 
 export default function Dashboard() {
   const router = useRouter();

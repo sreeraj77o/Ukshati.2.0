@@ -17,8 +17,8 @@ import {
 } from "react-icons/fa";
 
 // Import reusable components
-import { Button, Card } from '@/components/ui/index';
-import { 
+import { Button, Card } from '../src/components/ui/index';
+import {
   Header,
   Sidebar,
   TabNavigation,
@@ -26,13 +26,13 @@ import {
   DashboardStats,
   EmployeeManagement,
   ProjectCard
-} from '@/components/dashboard/index';
+} from '../src/components/dashboard/index';
 
 // Import hooks
-import { useDashboardData, useUserSession } from '@/hooks/useDashboard';
+import { useDashboardData, useUserSession } from '../src/hooks/useDashboard';
 
 // Import skeletons
-import { DashboardSkeleton } from "@/components/skeleton/index";
+import { DashboardSkeleton } from "../src/components/skeleton/index";
 
 
 

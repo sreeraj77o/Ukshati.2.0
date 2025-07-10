@@ -13,6 +13,7 @@
     "test:components": "node scripts/test-components.js",
     "test:dashboard": "node scripts/test-dashboard-imports.js",
     "test:pages": "node scripts/test-all-pages.js",
+    "test:docker-imports": "node scripts/test-docker-imports.js",
     "test:all": "npm run test:api && npm run test:performance && npm run test:components && npm run test:dashboard && npm run test:pages"
   },
   "dependencies": {

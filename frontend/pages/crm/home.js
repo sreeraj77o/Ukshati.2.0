@@ -14,8 +14,8 @@ import BackButton from "@/components/BackButton";
 import Tilt from 'react-parallax-tilt';
 
 // Import reusable components
-import { Card, MetricCard, SearchInput, Table, Button, Tabs, TabPanel } from '@/components/ui';
-import { useCustomers, useProjects, useReminders } from '@/hooks/useCRM';
+import { Card, MetricCard, SearchInput, Table, Button, Tabs, TabPanel } from '../../src/components/ui';
+import { useCustomers, useProjects, useReminders } from '../../src/hooks/useCRM';
 
 const CRMDashboardVisualizations = dynamic(
   () => import("@/components/CRMdash"),
