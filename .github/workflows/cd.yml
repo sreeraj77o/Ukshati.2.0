@@ -4,13 +4,12 @@ on:
   workflow_run:
     workflows: ["🔄 CI Pipeline"]
     types: [completed]
-    branches: [github-actions]
 
 jobs:
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'github-actions'
 
     steps:
       - name: 📥 Checkout
