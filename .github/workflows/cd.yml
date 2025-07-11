@@ -4,18 +4,18 @@ on:
   workflow_run:
     workflows: ["🔄 CI Pipeline"]
     types: [completed]
+    branches: [github-actions]
 
 jobs:
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'github-actions'
-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: � Setup Docker Buildx
+      - name: 🔧 Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: 🔐 Login to Docker Hub

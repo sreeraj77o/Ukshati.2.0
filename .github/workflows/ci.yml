@@ -2,9 +2,9 @@ name: 🔄 CI Pipeline
 
 on:
   push:
-    branches: [ github-actions ]
+    branches: [github-actions]
   pull_request:
-    branches: [ github-actions ]
+    branches: [github-actions]
 
 env:
   NODE_VERSION: '20'
