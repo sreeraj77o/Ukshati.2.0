@@ -244,7 +244,7 @@ export default function ViewPurchaseOrder() {
             <div className="bg-white rounded-lg p-4 text-center">
               <FiFileText className="mx-auto text-6xl text-gray-400 mb-4" />
               <p className="text-gray-600 mb-4">
-                PDF preview is not available in this view. Click "Download PDF" to generate and view the full PDF document.
+                PDF preview is not available in this view. Click &quot;Download PDF&quot; to generate and view the full PDF document.
               </p>
               <button
                 onClick={handleDownloadPDF}

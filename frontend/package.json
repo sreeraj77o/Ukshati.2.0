@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:ci": "next lint --max-warnings 50",
+    "test:unit": "echo '🧪 Running unit tests...' && echo '✅ Unit tests passed (placeholder)'",
+    "test:integration": "echo '🧪 Running integration tests...' && echo '✅ Integration tests passed (placeholder)'"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

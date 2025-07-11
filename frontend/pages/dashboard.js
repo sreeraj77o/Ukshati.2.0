@@ -40,7 +40,7 @@ import {
 
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import Footer from "@/components/Footer";
-import { DashboardSkeleton, CardSkeleton, TableSkeleton, FormSkeleton, ChartSkeleton } from "@/components/skeleton";
+import { DashboardSkeleton, CardSkeleton, TableSkeleton, FormSkeleton, ChartSkeleton, ProjectCardSkeleton, EmployeeTableSkeleton, AnalyticsSkeleton } from "@/components/skeleton";
 
 ChartJS.register(
   CategoryScale,
@@ -1458,7 +1458,7 @@ useEffect(() => {
               <h2 className="text-2xl font-bold text-white mb-4">About Ukshati</h2>
               <div className="prose prose-invert max-w-none">
   <p className="text-gray-200 mb-4">
-    Ukshati Technologies Pvt. Ltd. (उक्षति – "sprinkle water") is an innovative company focused on automating the process of watering plants to reduce water wastage and promote sustainability. We've developed a smart, internet-connected watering platform designed to serve households, balconies, gardens, and agricultural fields with precision and ease.
+    Ukshati Technologies Pvt. Ltd. (उक्षति – &quot;sprinkle water&quot;) is an innovative company focused on automating the process of watering plants to reduce water wastage and promote sustainability. We&apos;ve developed a smart, internet-connected watering platform designed to serve households, balconies, gardens, and agricultural fields with precision and ease.
   </p>
 
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">

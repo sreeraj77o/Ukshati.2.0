@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function ErrorPage({ statusCode }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -7,7 +9,7 @@ export default function ErrorPage({ statusCode }) {
             ? `An error occurred on the server (${statusCode})`
             : "An error occurred on the client."}
         </p>
-        <a href="/" className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">Go Home</a>
+        <Link href="/" className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">Go Home</Link>
       </div>
     );
   }
