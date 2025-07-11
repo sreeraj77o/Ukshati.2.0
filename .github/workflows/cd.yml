@@ -3,16 +3,19 @@ name: 🚀 CD Pipeline
 on:
   workflow_run:
     workflows: ["🔄 CI Pipeline"]
-    types: [completed]
-    branches: [github-actions]
+    types:
+      - completed
+    branches:
+      - main  # ✅ Runs only when CI succeeds on the main branch
 
 jobs:
   deploy:
     name: 🚀 Deploy
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}  # ✅ Only runs if CI passed
+
     steps:
-      - name: 📥 Checkout
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
       - name: 🔧 Setup Docker Buildx
@@ -26,23 +29,29 @@ jobs:
 
       - name: 🏗️ Build and Push Docker Images
         run: |
-          # Build and tag images using your existing Dockerfiles
+          echo "🐳 Building frontend image..."
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ukshati-frontend:${{ github.sha }} .
+
+          echo "🐳 Building MySQL image..."
           docker build -f Dockerfile.mysql -t ${{ secrets.DOCKERHUB_USERNAME }}/ukshati-database:${{ github.sha }} .
-          # Push images to Docker Hub
+
+          echo "📤 Pushing frontend image..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/ukshati-frontend:${{ github.sha }}
+
+          echo "📤 Pushing MySQL image..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/ukshati-database:${{ github.sha }}
 
       - name: 🚀 Simulate Deployment
         run: |
           echo "🧪 Simulating deployment..."
-          echo "✅ Docker images would be deployed to a server here"
-          echo "✅ Deployment simulation completed"
+          echo "✅ Docker images deployed to server (simulated)"
+          echo "Frontend: ${{ secrets.DOCKERHUB_USERNAME }}/ukshati-frontend:${{ github.sha }}"
+          echo "Database: ${{ secrets.DOCKERHUB_USERNAME }}/ukshati-database:${{ github.sha }}"
 
       - name: 📢 Notify Success
         if: success()
-        run: echo "🎉 Successfully completed CD pipeline!"
+        run: echo "🎉 Deployment completed successfully!"
 
       - name: 📢 Notify Failure
         if: failure()
-        run: echo "❌ CD pipeline failed!"
+        run: echo "❌ Deployment failed!"
