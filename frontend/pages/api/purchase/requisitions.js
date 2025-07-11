@@ -163,6 +163,30 @@ export default async function handler(req, res) {
           throw err;
         }
       }
+      case "PUT": {
+        const { id, status, notes, items, required_by, project_id, } = req.body;
+
+        if (!id) {
+          return res.status(400).json({ error: "Requisition ID is required" });
+        }
+        if (!status) {
+          return res.status(400).json({ error: "Status is required" });
+        }
+
+        await db.beginTransaction();
+        try {
+          await db.execute(
+            `UPDATE purchase_requisitions SET status = ?, notes = ?, required_by = ?, project_id = ?, items = ? WHERE id = ?`,
+            [status, notes,  required_by, project_id, items, id]
+          );
+
+          await db.commit();
+          return res.status(200).json({ message: "Requisition updated successfully" });
+        } catch (err) {
+          await db.rollback();
+          throw err;
+        }
+      }
 
       default:
         res.setHeader("Allow", ["GET", "POST"]);

@@ -6,18 +6,17 @@ import {
   FiShoppingBag, FiFileText, FiTruck, FiUsers, FiPlus,
   FiClipboard, FiBarChart2, FiSearch, FiFilter
 } from "react-icons/fi";
-import { FaFileCirclePlus, FaFileInvoice, FaChevronDown,} from "react-icons/fa6";
-import {FaSignOutAlt } from "react-icons/fa";
+import { FaFileCirclePlus, FaFileInvoice, FaChevronDown, } from "react-icons/fa6";
+import { FaSignOutAlt } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import BackButton from "@/components/BackButton";
 import { CardSkeleton, TableSkeleton } from "@/components/skeleton";
 import ScrollToTopButton from "@/components/scrollup";
-import { useUserSession } from "@/src/hooks/useDashboard";
 
 export default function PurchaseDashboard() {
   const router = useRouter();
-  const { userData, userRole, logout } = useUserSession();
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState({});
   const [stats, setStats] = useState({
     totalPOs: 0,
     totalPRs: 0,
@@ -30,12 +29,17 @@ export default function PurchaseDashboard() {
 
   const onDropdownToggle = () => setIsDropdownOpen(!isDropdownOpen);
   const onLogout = () => {
-    logout();
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
     router.push("/");
   };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    const parsedUser = storedUser ? JSON.parse(storedUser) : {};
+
     if (!token) {
       setErrors({ form: "You are not logged in. Please login and try again." });
       setLoading(false);
@@ -43,9 +47,14 @@ export default function PurchaseDashboard() {
       return;
     }
 
-    // Helper to fetch with auth and handle 401
+    setUserData({
+      name: parsedUser.name,
+      email: parsedUser.email,
+      phone: parsedUser.phone || 'N/A',
+      role: parsedUser.role || 'N/A',
+    });
+
     const fetchWithAuth = async (url) => {
-      console.log("Fetching from: " + url);
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -59,39 +68,27 @@ export default function PurchaseDashboard() {
 
     const fetchData = async () => {
       try {
-        // Fetch vendors
         const vendorsData = await fetchWithAuth('/api/purchase/vendors');
-        console.log("VEndors",vendorsData.length);
-
-        // Fetch requisitions
         const requisitionsData = await fetchWithAuth('/api/purchase/requisitions');
-        console.log("Requisitions",requisitionsData.length);
-
-        // Fetch orders
         const ordersData = await fetchWithAuth('/api/purchase/orders');
-        console.log("Orders",ordersData[0]);
 
-        // Calculate stats
-        const totalPRs = requisitionsData.length;
-        console.log("Total PRs",totalPRs);
-        const totalPOs = ordersData.length;
-        console.log("Total POs",totalPOs);
-        const pendingDeliveries = ordersData.filter(ordersData => ordersData.status === 'pending').length;
-        console.log("Pending Deliveries",pendingDeliveries);
-        const totalSpend = ordersData.reduce((sum, order) => sum + (order.amount || 3), 0);
-        console.log("Total Spend",totalSpend);
-        const activeVendors = vendorsData.length;
-        console.log("Active Vendors",activeVendors);
+        const totalPRs = Array.isArray(requisitionsData) ? requisitionsData.length : 0;
+        const totalPOs = Array.isArray(ordersData) ? ordersData.length : 0;
+        const pendingDeliveries = Array.isArray(ordersData)
+          ? ordersData.filter(order => order.status === 'pending').length
+          : 0;
+        const totalSpend = Array.isArray(ordersData)
+          ? ordersData.reduce((sum, order) => sum + parseFloat(order.amount || 0), 0)
+          : 0;
+        const activeVendors = Array.isArray(vendorsData) ? vendorsData.length : 0;
 
         setStats({
           totalPOs,
           totalPRs,
           activeVendors,
-          ordersData, 
           pendingDeliveries,
           totalSpend,
         });
-        console.log(stats.totalPOs);
         setLoading(false);
       } catch (error) {
         if (error.message !== "Unauthorized") {
@@ -165,14 +162,14 @@ export default function PurchaseDashboard() {
       gradient: "bg-gradient-to-r from-red-400/30 to-rose-500/40",
       route: "/purchase-order/reports",
       stats: {
-        main: "₹" + (stats.totalSpend/100000).toFixed(1) + "L",
+        main: "₹" + (stats.totalSpend / 100000).toFixed(1) + "L",
         secondary: "Spend"
       },
       filedBy: "Finance Team"
     },
     {
-      id:6,
-      title:"View All Requisitions",
+      id: 6,
+      title: "View All Requisitions",
       Icon: FiFileText,
       description: "Browse and manage all purchase orders",
       gradient: "bg-gradient-to-r from-orange-400/30 to-orange-500/40",
@@ -200,7 +197,7 @@ export default function PurchaseDashboard() {
 
   // Role-based card filtering
   let filteredCards = purchaseCards;
-  if (userRole === "employee") {
+  if (userData.role === "employee") {
     filteredCards = purchaseCards.filter(card =>
       ["Create Requisition", "View All Requisitions", "Receive Goods"].includes(card.title)
     );
@@ -238,7 +235,7 @@ export default function PurchaseDashboard() {
                   <div className="p-4 border-b border-gray-700">
                     <p className="text-sm font-medium text-cyan-400">{userData?.name}</p>
                     <p className="text-xs text-cyan-400 truncate">{userData?.email}</p>
-                    <p className="text-xs text-cyan-400 mt-1">Role: {userRole}</p>
+                    <p className="text-xs text-cyan-400 mt-1">Role: {userData?.role}</p>
                   </div>
                   <div className="py-1">
                     <button
@@ -261,8 +258,8 @@ export default function PurchaseDashboard() {
       <ScrollToTopButton />
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center flex-grow p-6 py-20">
-        <h1 className="text-4xl font-bold mb-16 mt-8 text-center">Purchase Order Management</h1>
+      <div className="flex flex-col items-center justify-center flex-grow p-6 py-8">
+        <h1 className="text-4xl font-bold mb-16 mt-2 text-center">Purchase Order Management</h1>
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">

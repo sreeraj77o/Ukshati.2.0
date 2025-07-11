@@ -1,12 +1,14 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export default function generatePurchaseOrderPDF(poData) {
+export default function generatePurchaseOrderPDF(poData, options = {}) {
   // Validate poData
   if (!poData || !poData.po_number || !poData.items) {
     console.error("Invalid poData:", poData);
     throw new Error("Invalid purchase order data provided.");
   }
+
+  const { returnBlob = false } = options;
 
   const doc = new jsPDF({
     orientation: "portrait",
@@ -23,9 +25,12 @@ export default function generatePurchaseOrderPDF(poData) {
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
   doc.text("Ukshati Technologies", 15, 30);
-  doc.text("123 Business Street", 15, 35);
-  doc.text("Mumbai, India", 15, 40);
-  doc.text("Phone: +91 1234567890", 15, 45);
+  doc.text("II Floor, Pramod Towers,", 15, 35);
+  doc.text("KRR Road, above Pramod Automobiles,", 15, 40);
+  doc.text("opposite AJ Grand Hotel, Boloor,", 15, 45);
+  doc.text("Kodailbail, Mangaluru,", 15, 50);
+  doc.text("Karnataka 575002", 15, 55);
+  doc.text("Phone: +91 88615 67365", 15, 60);
 
   // PO details (right side)
   doc.setFont("helvetica", "bold");
@@ -56,20 +61,23 @@ export default function generatePurchaseOrderPDF(poData) {
 
   // Vendor info (left side, below company)
   doc.setFont("helvetica", "bold");
-  doc.text("Vendor:", 15, 55);
+  doc.text("Vendor:", 15, 70);
   doc.setFont("helvetica", "normal");
   const vendorLines = (poData.vendor_name || "N/A").split("\n");
-  vendorLines.forEach((line, index) => doc.text(line, 15, 60 + index * 5));
+  vendorLines.forEach((line, index) => doc.text(line, 30, 70 + index * 5));
   const vendorAddressLines = (poData.vendor_address || "N/A").split("\n");
-  vendorAddressLines.forEach((line, index) => doc.text(line, 15, 65 + index * 5));
-  doc.text(poData.vendor_contact || "N/A", 15, 70 + vendorAddressLines.length * 5);
+  vendorAddressLines.forEach((line, index) => doc.text(line, 30, 70 + index * 5 + vendorLines.length * 5));
+  doc.setFont("helvetica", "bold");
+  doc.text("Contact Person:", 15, 70 + vendorAddressLines.length * 5 + vendorLines.length * 6);
+  doc.setFont("helvetica", "normal");
+  doc.text(poData.vendor_contact || "N/A", 45, 70 + vendorAddressLines.length * 5 + vendorLines.length * 6);
 
   // Shipping info (right side, below PO details)
   doc.setFont("helvetica", "bold");
-  doc.text("Ship To:", 130, 55);
+  doc.text("Ship To:", 130, 70);
   doc.setFont("helvetica", "normal");
   const shippingLines = (poData.shipping_address || "N/A").split("\n");
-  shippingLines.forEach((line, index) => doc.text(line, 130, 60 + index * 5));
+  shippingLines.forEach((line, index) => doc.text(line, 145, 70 + index * 5));
 
   // Items table
   const tableColumn = ["Item", "Description", "Qty", "Unit", "Unit Price", "Total"];
@@ -165,8 +173,11 @@ export default function generatePurchaseOrderPDF(poData) {
   doc.line(15, finalY + 45, 80, finalY + 45); 
   doc.line(150, finalY + 45, 190, finalY + 45); 
 
-  // Save the PDF
-  doc.save(`PO-${poData.po_number || "UNKNOWN"}.pdf`);
-
-  return doc;
+  // Return blob for email or save the PDF
+  if (returnBlob) {
+    return doc.output('blob');
+  } else {
+    doc.save(`PO-${poData.po_number || "UNKNOWN"}.pdf`);
+    return doc;
+  }
 }

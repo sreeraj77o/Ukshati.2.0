@@ -25,9 +25,9 @@ export default function NewPurchaseOrder() {
     vendor_id: "",
     expected_delivery_date: "",
     shipping_address: "",
-    payment_terms: "Net 30 days",
+    payment_terms: "",
     notes: "",
-    items: [{ item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }],
+    items: [{ item_name: "", description: "", quantity: "", unit_price: "" }],
     subtotal: 0,
     tax_amount: 0,
     total_amount: 0
@@ -93,13 +93,13 @@ export default function NewPurchaseOrder() {
                 item_name: item.item_name,
                 description: item.description,
                 quantity: item.quantity,
-                unit: item.unit,
                 unit_price: item.estimated_price || ""
               }))
             }));
             // Fetch stock for each item
             const stockRes = await fetch('/api/stocks');
             const stockData = stockRes.ok ? await stockRes.json() : [];
+            console.log("Stock Data:", stockData);
             setStockData(stockData);
           }
         }
@@ -132,21 +132,58 @@ export default function NewPurchaseOrder() {
     }));
   }, [formData.items]);
 
+  // Fetch latest stock data whenever items change
+useEffect(() => {
+  const fetchStock = async () => {
+    try {
+      const stockRes = await fetch('/api/stocks');
+      const stockData = stockRes.ok ? await stockRes.json() : [];
+      setStockData(stockData);
+    } catch (err) {
+      console.error('Error fetching stock:', err);
+    }
+  };
+  fetchStock();
+}, [formData.items]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // If vendor_id changes, update payment_terms from vendor data
+    if (name === "vendor_id") {
+      const selectedVendor = vendors.find(v => v.id === parseInt(value));
+      setFormData(prev => ({
+        ...prev,
+        vendor_id: value,
+        payment_terms: selectedVendor?.payment_terms || ""
+      }));
+      if (errors["vendor_id"]) {
+        setErrors(prev => ({ ...prev, ["vendor_id"]: null }));
+      }
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
-    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleItemChange = (index, e) => {
+  const handleItemChange = async (index, e) => {
     const { name, value } = e.target;
     const newItems = [...formData.items];
     newItems[index][name] = value;
+
+    // If item_name changes, fetch stock and autofill unit_price if available
+    if (name === "item_name") {
+      const stock = stockData.find(s => s.item_name.toLowerCase() === value.toLowerCase());
+      if (stock) {
+        newItems[index].unit_price = stock.price_pu || "";
+        newItems[index].category_name = stock.category_name || "";
+      } else {
+        newItems[index].unit_price = "";
+        newItems[index].category_name = "";
+      }
+    }
     setFormData(prev => ({ ...prev, items: newItems }));
-    
     if (errors[`items.${index}.${name}`]) {
       setErrors(prev => ({ ...prev, [`items.${index}.${name}`]: null }));
     }
@@ -155,7 +192,7 @@ export default function NewPurchaseOrder() {
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }]
+      items: [...prev.items, { item_name: "", description: "", quantity: "", unit_price: "" }]
     }));
   };
 
@@ -196,15 +233,12 @@ export default function NewPurchaseOrder() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) {
       console.log("Validation errors:", errors);
       return;
     }
-
     setSubmitting(true);
     setErrors({});
-
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -213,92 +247,102 @@ export default function NewPurchaseOrder() {
         router.push("/");
         return;
       }
-
-      // Attach requisition_id if present
-      const payload = { ...formData };
-      if (requisitionId) payload.requisition_id = requisitionId;
-
-      console.log("Submitting purchase order:", payload);
-
-      const response = await fetch('/api/purchase/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await response.json();
-      console.log("API response:", data);
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          setErrors({ form: "Session expired. Please log in again." });
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          localStorage.removeItem("userRole");
-          setTimeout(() => router.push("/"), 2000);
+      // Check stock for each item
+      const fulfillFromStock = [];
+      const fulfillFromPO = [];
+      for (const item of formData.items) {
+        const stock = stockData.find(s => s.item_name.toLowerCase() === item.item_name.toLowerCase());
+        const availableQty = stock ? stock.quantity : 0;
+        const requestedQty = Number(item.quantity);
+        if (availableQty >= requestedQty) {
+          fulfillFromStock.push({ ...item, quantity: requestedQty });
+        } else if (availableQty > 0) {
+          fulfillFromStock.push({ ...item, quantity: availableQty });
+          fulfillFromPO.push({ ...item, quantity: requestedQty - availableQty });
+        } else {
+          fulfillFromPO.push({ ...item, quantity: requestedQty });
+        }
+      }
+      // Fulfill from stock
+      for (const item of fulfillFromStock) {
+        await fetch('/api/stocks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            category_name: item.category_name || '',
+            productName: item.item_name,
+            quantity: -Math.abs(item.quantity),
+            price: item.unit_price || 0
+          })
+        });
+        // Update local stockData
+        setStockData(prev => prev.map(s =>
+          s.item_name.toLowerCase() === item.item_name.toLowerCase()
+            ? { ...s, quantity: s.quantity - item.quantity }
+            : s
+        ));
+      }
+      // If there are items to order, create PO for shortfall
+      let poCreated = false;
+      if (fulfillFromPO.length > 0) {
+        const payload = { ...formData, items: fulfillFromPO };
+        const response = await fetch('/api/purchase/orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          setErrors({ form: data.error || data.message || "Failed to create purchase order for shortfall" });
           setSubmitting(false);
           return;
         }
-
-        setErrors({ form: data.error || data.message || "Failed to create purchase order" });
-        setSubmitting(false);
-        return;
+        poCreated = true;
       }
-
-      // Find vendor and project with fallback values
-      const selectedVendor = vendors.find(v => v.id === parseInt(formData.vendor_id)) || {
-        name: "Unknown Vendor",
-        address: "N/A",
-        contact_person: "N/A",
-        phone: "N/A"
-      };
-      const selectedProject = projects.find(p => p.id === parseInt(formData.project_id) || p.pid === parseInt(formData.project_id)) || {
-        name: "Unknown Project",
-        pname: "Unknown Project"
-      };
-
-      // Prepare data for PDF
-      const poData = {
-        po_number: data.po_number || "PO-" + Date.now(),
-        vendor_name: selectedVendor.name,
-        project_name: selectedProject.name || selectedProject.pname,
-        order_date: new Date().toISOString().split('T')[0],
-        vendor_address: selectedVendor.address || "N/A",
-        vendor_contact: selectedVendor.contact_person || selectedVendor.phone || "N/A",
-        items: formData.items.map(item => ({
-          item_name: item.item_name || "N/A",
-          description: item.description || "",
-          quantity: Number(item.quantity) || 0,
-          unit: item.unit || "pcs",
-          unit_price: Number(item.unit_price) || 0,
-          total_price: Number(item.quantity) * Number(item.unit_price) || 0
-        })),
-        subtotal: formData.subtotal,
-        tax_amount: formData.tax_amount,
-        total_amount: formData.total_amount,
-        expected_delivery_date: formData.expected_delivery_date,
-        shipping_address: formData.shipping_address || "N/A",
-        payment_terms: formData.payment_terms,
-        notes: formData.notes || ""
-      };
-
-      console.log("PO Data for PDF:", poData);
-
-      // Generate PDF
-      generatePurchaseOrderPDF(poData);
-
-      console.log("Purchase order created successfully:", data.po_number);
+      // Update requisition status if PO is created or fulfilled from stock
+      if (requisitionId) {
+        let status = '';
+        if (fulfillFromPO.length > 0 && fulfillFromStock.length > 0) status = 'partially-fulfilled';
+        else if (fulfillFromPO.length > 0) status = 'converted-to-po';
+        else status = 'fulfilled-from-stock';
+        await updateRequisitionStatus(requisitionId, status);
+      }
+      if (fulfillFromStock.length > 0) {
+        alert('Requested items fulfilled from stock!');
+      }
+      if (poCreated) {
+        alert('PO created for shortfall items!');
+      }
       router.push("/purchase-order/home");
-
     } catch (error) {
-      console.error("Error submitting purchase order:", error);
-      setErrors({ form: "Network error: Failed to submit purchase order. Please check your connection and try again." });
+      console.error("Error processing request:", error);
+      setErrors({ form: "Network error: Failed to process request. Please check your connection and try again." });
       setSubmitting(false);
     }
   };
+
+  // Handler to update requisition status via API (fixes backend error)
+const updateRequisitionStatus = async (requisitionId, status) => {
+  const token = localStorage.getItem("token");
+  const user = localStorage.getItem("user");
+  const approvedBy = user ? JSON.parse(user).id : "Unknown";
+  try {
+    const res = await fetch(`/api/purchase/requisition-approval?id=${requisitionId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ id: requisitionId, status, approved_by: approvedBy, approval_notes: "PO created from order form" }),
+    });
+    if (!res.ok) throw new Error("Status update failed");
+  } catch (err) {
+    console.error("Status update error:", err);
+  }
+};
 
   // Helper to get available stock for an item
   const getAvailableStock = (itemName) => {
@@ -344,11 +388,7 @@ export default function NewPurchaseOrder() {
       }
       // Update requisition status to 'fulfilled-from-stock'
       if (requisitionId) {
-        await fetch(`/api/purchase/requisition-approval?id=${requisitionId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ id: requisitionId, status: 'fulfilled-from-stock' })
-        });
+        await updateRequisitionStatus(requisitionId, 'fulfilled-from-stock');
       }
       // Show success and redirect
       alert('Requisition fulfilled from stock!');
@@ -382,11 +422,7 @@ export default function NewPurchaseOrder() {
         body: JSON.stringify(payload)
       });
       if (requisitionId) {
-        await fetch(`/api/purchase/requisition-approval?id=${requisitionId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ id: requisitionId, status: 'converted' })
-        });
+        await updateRequisitionStatus(requisitionId, 'converted');
       }
       alert('PO created for shortfall!');
       router.push("/purchase-order/home");
@@ -512,7 +548,7 @@ export default function NewPurchaseOrder() {
                 value={formData.payment_terms}
                 onChange={handleChange}
                 className="w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Net 30 days"
+                placeholder="Net 30 days"
                 disabled={submitting}
               />
             </div>
@@ -615,7 +651,7 @@ export default function NewPurchaseOrder() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Quantity */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium">
@@ -626,9 +662,7 @@ export default function NewPurchaseOrder() {
                       name="quantity"
                       value={item.quantity}
                       onChange={(e) => handleItemChange(index, e)}
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${
-                        errors[`items.${index}.quantity`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
-                      }`} 
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${errors[`items.${index}.quantity`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
                       min="1"
                       disabled={submitting}
                     />
@@ -636,22 +670,7 @@ export default function NewPurchaseOrder() {
                       <p className="text-red-500 text-sm">{errors[`items.${index}.quantity`]}</p>
                     )}
                   </div>
-                  
-                  {/* Unit */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium">Unit</label>
-                    <input
-                      type="text"
-                      name="unit"
-                      value={item.unit}
-                      onChange={(e) => handleItemChange(index, e)}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Nos."
-                      disabled={submitting}
-                    />
-                  </div>
-                  
-                  {/* Unit Price */}
+                  {/* Unit Price (read-only if from stock) */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium">
                       Unit Price <span className="text-red-500">*</span>
@@ -661,12 +680,10 @@ export default function NewPurchaseOrder() {
                       name="unit_price"
                       value={item.unit_price}
                       onChange={(e) => handleItemChange(index, e)}
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${
-                        errors[`items.${index}.unit_price`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
-                      }`}
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${errors[`items.${index}.unit_price`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
                       min="0"
                       step="0.01"
-                      disabled={submitting}
+                      disabled={submitting || !!stockData.find(s => s.item_name.toLowerCase() === item.item_name.toLowerCase())}
                     />
                     {errors[`items.${index}.unit_price`] && (
                       <p className="text-red-500 text-sm">{errors[`items.${index}.unit_price`]}</p>
@@ -676,51 +693,14 @@ export default function NewPurchaseOrder() {
 
                 {/* Stock Fulfillment */}
                 <div className="mt-4">
-                  <div className="flex justify-left items-center space-x-2">
+                  <div className="flex flex-col md:flex-row gap-2 items-center">
                     <span className="text-sm text-gray-400">Available Stock:</span>
-                    <span className="text-sm font-semibold text-gray-400">
-                      {getAvailableStock(item.item_name)} {item.unit}
-                    </span>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="number"
-                      min="0"
-                      max={getAvailableStock(item.item_name)}
-                      value={fulfillment[item.item_name]?.fromStock || 0}
-                      onChange={(e) => {
-                        const val = Math.max(0, Math.min(Number(e.target.value), getAvailableStock(item.item_name), Number(item.quantity)));
-                        setFulfillment({
-                          ...fulfillment,
-                          [item.item_name]: {
-                            fromStock: val,
-                            fromPO: Math.max(0, Number(item.quantity) - val)
-                          }
-                        });
-                      }}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Fulfill from stock"
-                      disabled={submitting}
-                    />
-                    <input
-                      type="number"
-                      min="0"
-                      max={item.quantity}
-                      value={fulfillment[item.item_name]?.fromPO || item.quantity}
-                      onChange={(e) => {
-                        const val = Math.max(0, Math.min(Number(e.target.value), Number(item.quantity)));
-                        setFulfillment({
-                          ...fulfillment,
-                          [item.item_name]: {
-                            fromStock: Math.max(0, Number(item.quantity) - val),
-                            fromPO: val
-                          }
-                        });
-                      }}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Shortfall to PO"
-                      disabled={submitting}
-                    />
+                    <span className="text-sm font-semibold text-gray-400">{getAvailableStock(item.item_name)}</span>
+                    {Number(item.quantity) > getAvailableStock(item.item_name) ? (
+                      <span className="text-sm text-red-400 ml-2">Shortfall: {Number(item.quantity) - getAvailableStock(item.item_name)}</span>
+                    ) : (
+                      <span className="text-sm text-green-400 ml-2">In Stock</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -730,24 +710,15 @@ export default function NewPurchaseOrder() {
           {/* Fulfillment Actions */}
           {requisitionId && (
             <div className="flex gap-4 mt-6">
-              {canFulfillAllFromStock ? (
-                <button
-                  type="button"
-                  className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white p-3 rounded-md font-semibold transition-all hover:from-green-700 hover:to-green-600"
-                  onClick={handleFulfillFromStock}
-                  disabled={submitting}
-                >
-                  Fulfill Entirely from Stock
-                </button>
+              {/* Remove separate buttons, just show info */}
+              {getShortfallItems().length > 0 ? (
+                <div className="w-full bg-blue-900/20 text-blue-300 p-3 rounded-md font-semibold text-center mb-2">
+                  Some items have insufficient stock. The system will fulfill available items from stock and create a PO for the shortfall automatically.
+                </div>
               ) : (
-                <button
-                  type="button"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white p-3 rounded-md font-semibold transition-all hover:from-blue-700 hover:to-blue-600"
-                  onClick={handleSubmitWithShortfall}
-                  disabled={submitting}
-                >
-                  Create PO for Shortfall
-                </button>
+                <div className="w-full bg-green-900/20 text-green-300 p-3 rounded-md font-semibold text-center mb-2">
+                  All items can be fulfilled from stock.
+                </div>
               )}
             </div>
           )}

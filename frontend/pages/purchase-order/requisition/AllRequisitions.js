@@ -305,7 +305,7 @@ export default function AllRequisitions() {
                     className="text-blue-400"
                     onClick={(e) => {
                       e.stopPropagation();
-                      router.push(`/purchase-requisition/requisitions/${req.id}`);
+                      router.push(`/purchase-order/requisition/${req.id}`);
                     }}
                   >
                     <FiEye />
@@ -334,13 +334,14 @@ export default function AllRequisitions() {
                   )}
                   {userRole === "admin" && req.status === "approved" && (
                     <button
-                      className="text-green-400"
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push(`/purchase-order/orders/new?requisition_id=${req.id}`);
                       }}
                     >
+                      <div className="flex items-center gap-2 bg-green-600 px-2 py-2 rounded-md text-white text-sm">
                       Create PO
+                      </div>
                     </button>
                   )}
                   {expandedReq === req.id ? <FiChevronUp /> : <FiChevronDown />}
@@ -403,6 +404,46 @@ export default function AllRequisitions() {
                       >
                         Approve
                       </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Expanded Details - Fulfillment Types & Shortfall Items */}
+              {expandedReq === req.id && (
+                <div className="mt-4">
+                  {/* Fulfillment Type Badge */}
+                  {req.status === "fulfilled-from-stock" && (
+                    <span className="inline-block bg-green-700 text-white px-3 py-1 rounded-full text-xs font-semibold mb-2">Fulfilled from Stock</span>
+                  )}
+                  {req.status === "converted-to-po" && (
+                    <span className="inline-block bg-blue-700 text-white px-3 py-1 rounded-full text-xs font-semibold mb-2">Shortfall PO Created</span>
+                  )}
+                  {req.status === "partially-fulfilled" && (
+                    <span className="inline-block bg-yellow-700 text-white px-3 py-1 rounded-full text-xs font-semibold mb-2">Partially Fulfilled (Stock + PO)</span>
+                  )}
+                  {/* Shortfall Items Table */}
+                  {req.shortfall_items && req.shortfall_items.length > 0 && (
+                    <div className="mt-2">
+                      <h4 className="text-sm font-bold mb-1 text-blue-300">Shortfall Items</h4>
+                      <table className="w-full text-xs text-left mb-2">
+                        <thead>
+                          <tr className="bg-blue-900 text-white">
+                            <th className="p-2">Item</th>
+                            <th className="p-2">Description</th>
+                            <th className="p-2 text-right">Qty</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {req.shortfall_items.map((item, idx) => (
+                            <tr key={idx} className="border-b border-blue-700">
+                              <td className="p-2">{item.item_name}</td>
+                              <td className="p-2 text-blue-200">{item.description}</td>
+                              <td className="p-2 text-right">{item.quantity}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
