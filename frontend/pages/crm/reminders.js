@@ -98,7 +98,10 @@ const ReminderMaintenance = () => {
           text: `${reminder.message} for ${reminder.cname}`,
           background: '#1a1a2e',
           color: '#fff',
-          confirmButtonColor: '#4f46e5',
+          confirmButtonColor: '#4f46e5',,
+          confirmButtonText: 'OK'
+        }).then(() => {
+          console.log('Alert closed');
         });
       }
     };

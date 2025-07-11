@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
-# Install mysql-client for debugging
-RUN apk add --no-cache mysql-client
+# Install MariaDB client and jq for debugging and testing
+RUN apk add --no-cache mysql-client jq
 
 WORKDIR /app
 COPY frontend/package*.json ./

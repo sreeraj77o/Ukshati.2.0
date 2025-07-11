@@ -106,7 +106,11 @@ const ReminderMaintenance = () => {
         title: 'Reminder Added!',
         text: 'Notification will appear at scheduled time',
         background: '#1f2937',
-        color: '#fff',
+        color: '#fff',,
+        confirmButtonColor: '#4f46e5',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        console.log('Alert closed');
       });
     } catch (error) {
       Swal.fire({

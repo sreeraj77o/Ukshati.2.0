@@ -27,7 +27,12 @@ const NotificationHandler = () => {
         icon: 'info',
         background: '#1a1a2e',
         color: '#fff',
-        confirmButtonColor: '#4f46e5',
+        confirmButtonColor: '#4f46e5',,
+        confirmButtonText: 'OK'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          console.log('Alert closed');
+        }
       });
 
       // Show system notification if permitted
