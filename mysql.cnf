@@ -1,0 +1,27 @@
+[mysqld]
+# Use mysql_native_password for compatibility with MariaDB clients
+default-authentication-plugin=mysql_native_password
+
+# Disable SSL for local development
+skip-ssl
+
+# Allow connections from any host (for Docker)
+bind-address=0.0.0.0
+
+# Increase connection timeout
+wait_timeout=28800
+interactive_timeout=28800
+
+# Character set configuration
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+
+# Performance tuning for development
+innodb_buffer_pool_size=256M
+max_connections=200
+
+[mysql]
+default-character-set=utf8mb4
+
+[client]
+default-character-set=utf8mb4
