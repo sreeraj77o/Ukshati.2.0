@@ -516,7 +516,7 @@ export default function Customers() {
             <p><strong>Required columns:</strong> <span className="text-green-400">name</span>, <span className="text-green-400">phone</span></p>
             <p><strong>Optional columns:</strong> alternate_phone, status (lead/customer), remark</p>
             <p><strong>Supported formats:</strong> CSV, Excel (.xlsx, .xls)</p>
-            <p><strong>Note:</strong> Column names are case-insensitive and flexible (e.g., "Name", "Customer Name", "cname" all work)</p>
+            <p><strong>Note:</strong> Column names are case-insensitive and flexible (e.g., &quot;Name&quot;, &quot;Customer Name&quot;, &quot;cname&quot; all work)</p>
           </div>
         </div>
 
@@ -765,7 +765,7 @@ export default function Customers() {
               Showing {filteredCustomers.length} of {customers.length} customers
               {searchTerm && (
                 <span className="ml-2">
-                  (filtered by "{searchTerm}")
+                  (filtered by &quot;{searchTerm}&quot;)
                   <button
                     onClick={() => setSearchTerm("")}
                     className="ml-2 text-blue-400 hover:text-blue-300"

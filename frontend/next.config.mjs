@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
+    eslint: {
+      // This allows warnings but fails on errors during build
+      ignoreDuringBuilds: false,
+    },
     images: {
       domains: [
         'www.mishainfotech.com',
