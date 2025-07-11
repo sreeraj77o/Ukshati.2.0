@@ -10,9 +10,31 @@ env:
   NODE_VERSION: '20'
 
 jobs:
+  check-merge-conflicts:
+    name: 🚫 Check Merge Conflicts
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: 🔀 Try merging with base branch
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git checkout -b temp-merge
+          git merge origin/${{ github.base_ref }} --no-commit --no-ff || {
+            echo "❌ Merge conflict detected!"
+            exit 1
+          }
+          echo "✅ No merge conflicts."
+
   test-build:
     name: 🧪 Test & Build
     runs-on: ubuntu-latest
+    needs: check-merge-conflicts
 
     services:
       mysql:
@@ -44,9 +66,9 @@ jobs:
       - name: 🔍 Linting and Code Quality Check
         working-directory: ./frontend
         run: |
-          echo "Running ESLint..."
+          echo "🔍 Running ESLint..."
           npm run lint:ci
-          echo "✅ Linting and code quality check completed"
+          echo "✅ ESLint check completed."
 
       - name: 🧪 Run Unit Tests
         working-directory: ./frontend
@@ -56,12 +78,24 @@ jobs:
         working-directory: ./frontend
         run: npm run test:integration
 
+      - name: 🛠️ Check Unused Dependencies
+        working-directory: ./frontend
+        run: |
+          echo "🔎 Checking for unused dependencies..."
+          npx depcheck || echo "⚠️ Depcheck finished with warnings or unused dependencies."
+
       - name: 🏗️ Build Application
         working-directory: ./frontend
         run: npm run build
 
-      - name: 🔐 Security Scans
+      - name: 📤 Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
+
+      - name: 🔐 Security Scan
         working-directory: ./frontend
         run: |
-          echo "Running security audit..."
-          npm audit --audit-level=critical || echo "Non-critical vulnerabilities found, continuing..."
+          echo "🔒 Running npm audit..."
+          npm audit --audit-level=critical || echo "⚠️ Non-critical vulnerabilities found."
