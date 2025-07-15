@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { Wallet, Briefcase, Pause, Check, Menu, Info } from 'lucide-react';
+import { Wallet, Briefcase, Pause, Check, Menu, Info, DollarSign } from 'lucide-react';
 import { motion } from "framer-motion";
 import Tilt from "react-parallax-tilt";
 import BackButton from "@/components/BackButton";
@@ -112,6 +112,16 @@ export default function Home() {
       team: "Across all departments",
       route: "/all-projects"
     },
+    {
+      title: "Wallet",
+      description: "Monitor all employee wallet balances",
+      icon: <DollarSign size={24} className="text-white" />,
+      gradient: "bg-gradient-to-r from-cyan-400/30 to-teal-500/40", // NEW COLOR
+      value: "20",
+      label: "total balance",
+      team: "Across all Employees",
+      route: "/wallet"
+    },
   ];
 
   // Employee modal submit handler
@@ -153,7 +163,7 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl">
           {loading ? (
-            <CardSkeleton count={5} />
+            <CardSkeleton count={6} />
           ) : (
             expenseCards.map((card, index) => (
               <Tilt key={index} tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={true} glareMaxOpacity={0.1}>
