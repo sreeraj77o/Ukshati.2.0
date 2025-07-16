@@ -49,8 +49,53 @@ export default async function handler(req, res) {
       // Don't fail the authentication process if sync fails
     }
 
-    // Redirect back to backup settings with success
-    res.redirect('/backup/settings?success=google_connected');
+    // Trigger backup sync to discover existing backups
+    try {
+      console.log('Triggering backup sync after Google Drive connection...');
+
+      // Wait a moment for Google Drive authentication to fully settle
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const { connectToDB } = await import('@/lib/db');
+      const db = await connectToDB();
+
+      // Ensure backup tables exist
+      await backupService.ensureBackupTables(db);
+      console.log('Backup tables ensured');
+
+      // Force sync with Google Drive
+      await backupService.syncGoogleDriveBackups(db);
+      console.log('Backup sync completed successfully');
+
+      // Verify sync worked by checking if any backups were found
+      const [rows] = await db.execute('SELECT COUNT(*) as count FROM backup_history');
+      console.log(`Found ${rows[0].count} backup records after sync`);
+
+      db.release();
+    } catch (syncError) {
+      console.error('Failed to sync backups after Google Drive connection:', syncError);
+      // Don't fail the authentication process if sync fails
+    }
+
+    // Sync existing Google Drive backups after successful authentication
+    try {
+      console.log('Syncing existing Google Drive backups...');
+      const syncResult = await backupService.syncGoogleDriveBackups();
+      console.log('Backup sync result:', syncResult);
+
+      // Redirect with sync information
+      const syncParams = new URLSearchParams({
+        success: 'google_connected',
+        synced: syncResult.synced.toString(),
+        skipped: syncResult.skipped.toString()
+      });
+
+      res.redirect(`/backup/settings?${syncParams.toString()}`);
+    } catch (syncError) {
+      console.error('Failed to sync backups after OAuth:', syncError);
+      // Still redirect with success, but without sync info
+      res.redirect('/backup/settings?success=google_connected&sync_error=true');
+    }
   } catch (error) {
     console.error('Failed to handle Google OAuth callback:', error);
     res.redirect('/backup/settings?error=auth_failed');
