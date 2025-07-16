@@ -185,23 +185,49 @@ class GoogleDriveOAuthService {
     }
 
     try {
-      const fileMetadata = {
-        name: fileName,
-        parents: folderId ? [folderId] : undefined
-      };
+      // Check if backup file already exists in the folder
+      let existingFileId = null;
+      if (folderId) {
+        const existingFiles = await this.drive.files.list({
+          q: `'${folderId}' in parents and name='${fileName}' and trashed=false`,
+          fields: 'files(id,name)'
+        });
+
+        if (existingFiles.data.files.length > 0) {
+          existingFileId = existingFiles.data.files[0].id;
+          console.log('Found existing backup file, will update:', existingFileId);
+        }
+      }
 
       const media = {
         mimeType: 'application/sql',
         body: fs.createReadStream(filePath)
       };
 
-      const response = await this.drive.files.create({
-        resource: fileMetadata,
-        media: media,
-        fields: 'id,name,size,createdTime'
-      });
+      let response;
+      if (existingFileId) {
+        // Update existing file
+        response = await this.drive.files.update({
+          fileId: existingFileId,
+          media: media,
+          fields: 'id,name,size,modifiedTime'
+        });
+        console.log('Backup updated successfully:', response.data);
+      } else {
+        // Create new file
+        const fileMetadata = {
+          name: fileName,
+          parents: folderId ? [folderId] : undefined
+        };
 
-      console.log('Backup uploaded successfully:', response.data);
+        response = await this.drive.files.create({
+          resource: fileMetadata,
+          media: media,
+          fields: 'id,name,size,createdTime'
+        });
+        console.log('Backup uploaded successfully:', response.data);
+      }
+
       return response.data;
     } catch (error) {
       console.error('Failed to upload backup:', error);
@@ -211,21 +237,96 @@ class GoogleDriveOAuthService {
 
   async listBackups(folderId = null) {
     if (!this.isInitialized || !this.drive) {
+      console.log('Google Drive not initialized, returning empty backup list');
       return [];
     }
 
     try {
-      const query = folderId 
-        ? `'${folderId}' in parents and name contains 'backup_' and trashed=false`
-        : `name contains 'backup_' and trashed=false`;
+      console.log(`Searching for backups in folder: ${folderId || 'global'}`);
 
-      const response = await this.drive.files.list({
-        q: query,
-        fields: 'files(id,name,size,createdTime,modifiedTime)',
-        orderBy: 'createdTime desc'
+      // First, let's see ALL files in the backup folder to understand what's there
+      if (folderId) {
+        console.log('Listing ALL files in backup folder for debugging...');
+        const allFilesResponse = await this.drive.files.list({
+          q: `'${folderId}' in parents and trashed=false`,
+          fields: 'files(id,name,size,createdTime,modifiedTime,mimeType)',
+          orderBy: 'modifiedTime desc'
+        });
+
+        const allFiles = allFilesResponse.data.files || [];
+        console.log(`Found ${allFiles.length} total files in backup folder:`);
+        allFiles.forEach(file => {
+          console.log(`  - ${file.name} (${file.size} bytes, ${file.mimeType})`);
+        });
+      }
+
+      // Try multiple search patterns to find backup files
+      const searchQueries = [];
+
+      if (folderId) {
+        // Search in specific folder - be very broad to catch any backup files
+        searchQueries.push(
+          // Exact match for new backups
+          `'${folderId}' in parents and name='database_backup.sql' and trashed=false`,
+          // Files containing 'backup' and .sql
+          `'${folderId}' in parents and name contains 'backup' and name contains '.sql' and trashed=false`,
+          // Files containing 'database' and .sql
+          `'${folderId}' in parents and name contains 'database' and name contains '.sql' and trashed=false`,
+          // Any .sql files in the backup folder (very broad)
+          `'${folderId}' in parents and name contains '.sql' and trashed=false`,
+          // Files ending with .sql
+          `'${folderId}' in parents and name contains 'sql' and trashed=false`,
+          // Any files that might be backups (very broad fallback)
+          `'${folderId}' in parents and (name contains 'backup' or name contains 'database' or name contains 'dump' or name contains 'export') and trashed=false`
+        );
+      } else {
+        // Search globally
+        searchQueries.push(
+          `name='database_backup.sql' and trashed=false`,
+          `name contains 'backup' and name contains '.sql' and trashed=false`,
+          `name contains 'database' and name contains '.sql' and trashed=false`,
+          `name contains '.sql' and trashed=false`
+        );
+      }
+
+      let allBackups = [];
+      const seenFileIds = new Set();
+
+      for (let i = 0; i < searchQueries.length; i++) {
+        const query = searchQueries[i];
+        try {
+          console.log(`Search ${i + 1}/${searchQueries.length}: ${query}`);
+          const response = await this.drive.files.list({
+            q: query,
+            fields: 'files(id,name,size,createdTime,modifiedTime)',
+            orderBy: 'modifiedTime desc'
+          });
+
+          const files = response.data.files || [];
+          console.log(`  → Found ${files.length} files:`, files.map(f => `${f.name} (${f.size}b)`));
+
+          // Add unique files to results
+          for (const file of files) {
+            if (!seenFileIds.has(file.id)) {
+              seenFileIds.add(file.id);
+              allBackups.push(file);
+              console.log(`    ✓ Added: ${file.name}`);
+            } else {
+              console.log(`    - Duplicate: ${file.name}`);
+            }
+          }
+        } catch (queryError) {
+          console.error(`Search query ${i + 1} failed:`, queryError.message);
+          // Continue with other queries
+        }
+      }
+
+      console.log(`🎯 FINAL RESULT: Found ${allBackups.length} unique backup files`);
+      allBackups.forEach((file, index) => {
+        console.log(`  ${index + 1}. ${file.name} (ID: ${file.id}, Size: ${file.size}b)`);
       });
 
-      return response.data.files;
+      return allBackups.sort((a, b) => new Date(b.modifiedTime) - new Date(a.modifiedTime));
     } catch (error) {
       console.error('Failed to list backups:', error);
       return [];
@@ -280,7 +381,7 @@ class GoogleDriveOAuthService {
     }
   }
 
-  async createBackupFolder(folderName = 'Ukshati_Backups') {
+  async createBackupFolder(folderName = 'ukshati backup') {
     if (!this.isInitialized || !this.drive) {
       throw new Error('Google Drive not authenticated');
     }

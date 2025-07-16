@@ -25,6 +25,8 @@ const BackupSettings = () => {
   const [saving, setSaving] = useState(false);
   const [backupStatus, setBackupStatus] = useState(null);
   const [googleAuthStatus, setGoogleAuthStatus] = useState(null);
+  const [currentBackupFile, setCurrentBackupFile] = useState(null);
+  const [loadingBackupFile, setLoadingBackupFile] = useState(false);
   const [settings, setSettings] = useState({
     userEmail: '',
     frequency: 'weekly',
@@ -176,9 +178,33 @@ const BackupSettings = () => {
 
       if (data.success) {
         setGoogleAuthStatus(data.data);
+
+        // If Google Drive is connected, fetch the current backup file
+        if (data.data.authenticated) {
+          fetchCurrentBackupFile();
+        }
       }
     } catch (error) {
       console.error('Failed to fetch Google auth status:', error);
+    }
+  };
+
+  const fetchCurrentBackupFile = async () => {
+    try {
+      setLoadingBackupFile(true);
+      const response = await fetch('/api/backup/list?limit=1');
+      const data = await response.json();
+
+      if (data.success && data.data.backups.length > 0) {
+        setCurrentBackupFile(data.data.backups[0]);
+      } else {
+        setCurrentBackupFile(null);
+      }
+    } catch (error) {
+      console.error('Failed to fetch current backup file:', error);
+      setCurrentBackupFile(null);
+    } finally {
+      setLoadingBackupFile(false);
     }
   };
 
@@ -300,13 +326,14 @@ const BackupSettings = () => {
           const details = {
             fileName: data.data.fileName,
             fileSize: Math.round(data.data.fileSize / 1024) + ' KB',
-            status: data.data.fileId ? 'Uploaded to Google Drive' : 'Created locally (Google Drive not configured)'
+            status: data.data.fileId ? 'Uploaded to "ukshati backup" folder in Google Drive' : 'Created locally (Google Drive not configured)'
           };
 
           showSuccessModal('Backup Created', 'Your database backup has been created successfully', details);
 
-          // Refresh status
+          // Refresh status and current backup file
           await refreshBackupStatus();
+          await fetchCurrentBackupFile();
         } else {
           throw new Error(data.message || 'Failed to create backup');
         }
@@ -333,6 +360,97 @@ const BackupSettings = () => {
     }));
   };
 
+  const handleRestoreBackup = async () => {
+    if (!currentBackupFile) return;
+
+    showConfirmModal(
+      'Restore Database',
+      `Are you sure you want to restore the database from "${currentBackupFile.file_name}"? This will replace all current data and cannot be undone.`,
+      async () => {
+        try {
+          showLoadingModal('Restoring Database...', 'Please wait while we restore your database from the backup');
+
+          const response = await fetch('/api/backup/restore', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              fileId: currentBackupFile.file_id
+            })
+          });
+
+          const data = await response.json();
+          closeModal('loading');
+
+          if (data.success) {
+            showSuccessModal(
+              'Database Restored Successfully',
+              'Your database has been restored from the backup file.',
+              {
+                fileName: currentBackupFile.file_name,
+                fileSize: formatFileSize(currentBackupFile.file_size),
+                status: 'Restored'
+              }
+            );
+          } else {
+            throw new Error(data.message || 'Failed to restore backup');
+          }
+        } catch (error) {
+          console.error('Failed to restore backup:', error);
+          closeModal('loading');
+          showErrorModal('Restore Failed', error.message || 'Failed to restore database from backup');
+        }
+      }
+    );
+  };
+
+  const handleDeleteBackup = async () => {
+    if (!currentBackupFile) return;
+
+    showConfirmModal(
+      'Delete Backup',
+      `Are you sure you want to delete the backup file "${currentBackupFile.file_name}"? This action cannot be undone.`,
+      async () => {
+        try {
+          showLoadingModal('Deleting Backup...', 'Please wait while we delete the backup file');
+
+          const response = await fetch('/api/backup/delete', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              fileId: currentBackupFile.file_id
+            })
+          });
+
+          const data = await response.json();
+          closeModal('loading');
+
+          if (data.success) {
+            showSuccessModal(
+              'Backup Deleted Successfully',
+              'The backup file has been deleted from Google Drive.'
+            );
+
+            // Clear current backup file and refresh status
+            setCurrentBackupFile(null);
+            await refreshBackupStatus();
+          } else {
+            throw new Error(data.message || 'Failed to delete backup');
+          }
+        } catch (error) {
+          console.error('Failed to delete backup:', error);
+          closeModal('loading');
+          showErrorModal('Delete Failed', error.message || 'Failed to delete backup file');
+        }
+      }
+    );
+  };
+
+
+
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 B';
     const k = 1024;
@@ -342,7 +460,15 @@ const BackupSettings = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   const getDayName = (dayNumber) => {
@@ -378,7 +504,7 @@ const BackupSettings = () => {
               Backup Settings
             </h1>
             <p className="text-gray-400">
-              Configure automatic backups to Google Drive
+              Configure automatic backups to the "ukshati backup" folder in Google Drive. Only one backup file is maintained and updated with each backup.
             </p>
           </div>
 
@@ -432,6 +558,68 @@ const BackupSettings = () => {
             )}
           </motion.div>
 
+          {/* Current Backup File */}
+          {googleAuthStatus?.authenticated && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-800 rounded-xl p-6 mb-8"
+            >
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <FiDownload className="mr-2 text-purple-400" />
+                Current Backup File
+              </h2>
+
+              {loadingBackupFile ? (
+                <div className="flex items-center justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+                  <span className="ml-3 text-gray-400">Loading backup file...</span>
+                </div>
+              ) : currentBackupFile ? (
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-4">
+                        <FiDownload className="text-white" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-white">{currentBackupFile.file_name}</div>
+                        <div className="text-sm text-gray-400">
+                          {formatFileSize(currentBackupFile.file_size)} •
+                          Created: {formatDate(currentBackupFile.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={handleRestoreBackup}
+                        className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      >
+                        <FiDownload className="mr-2" />
+                        Restore
+                      </button>
+                      <button
+                        onClick={handleDeleteBackup}
+                        className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                      >
+                        <FiTrash2 className="mr-2" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-8">
+                  <FiDownload className="mx-auto text-4xl text-gray-500 mb-4" />
+                  <p className="text-gray-400">No backup file found</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Create your first backup using the "Create Backup Now" button above.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          )}
+
           {/* Storage Status */}
           {backupStatus && (
             <motion.div
@@ -444,19 +632,19 @@ const BackupSettings = () => {
                 Storage Status
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <div className="text-2xl font-bold text-blue-400">
                     {backupStatus.storage.backupCount}
                   </div>
-                  <div className="text-sm text-gray-400">Total Backups</div>
+                  <div className="text-sm text-gray-400">Active Backup File</div>
                 </div>
 
                 <div className="bg-gray-700 rounded-lg p-4">
                   <div className="text-2xl font-bold text-green-400">
                     {formatFileSize(backupStatus.storage.totalBackupSize)}
                   </div>
-                  <div className="text-sm text-gray-400">Storage Used</div>
+                  <div className="text-sm text-gray-400">Current File Size</div>
                 </div>
 
                 <div className="bg-gray-700 rounded-lg p-4">
@@ -466,9 +654,23 @@ const BackupSettings = () => {
                       : 'Never'
                     }
                   </div>
-                  <div className="text-sm text-gray-400">Last Backup</div>
+                  <div className="text-sm text-gray-400">Last Updated</div>
+                </div>
+
+                <div className="bg-gray-700 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-orange-400">
+                    {backupStatus.schedule && backupStatus.schedule.is_enabled
+                      ? (backupStatus.schedule.next_backup_at
+                          ? formatDate(backupStatus.schedule.next_backup_at)
+                          : 'Scheduled')
+                      : 'Disabled'
+                    }
+                  </div>
+                  <div className="text-sm text-gray-400">Next Backup</div>
                 </div>
               </div>
+
+
             </motion.div>
           )}
 
@@ -597,22 +799,6 @@ const BackupSettings = () => {
               >
                 <FiUpload className="mr-2" />
                 Create Backup Now
-              </button>
-
-              <button
-                onClick={() => window.location.href = '/backup/manage'}
-                className="flex items-center px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-              >
-                <FiDownload className="mr-2" />
-                Manage Backups
-              </button>
-
-              <button
-                onClick={() => window.location.href = '/backup/test'}
-                className="flex items-center px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <FiSettings className="mr-2" />
-                Test System
               </button>
             </div>
           </motion.div>
@@ -762,11 +948,11 @@ const BackupSettings = () => {
       >
         <div className="text-white">
           <div className="mb-4">
-            <p className="mb-3">This will create a backup of your database.</p>
+            <p className="mb-3">This will create or update your database backup file.</p>
             <div className="bg-blue-900 p-3 rounded-lg">
               <p className="text-sm">
-                <strong>Note:</strong> If Google Drive is not configured, the backup will be created locally only.
-                To enable Google Drive backup, please configure your service account first.
+                <strong>Note:</strong> The backup will be saved as "database_backup.sql" in the "ukshati backup" folder on Google Drive.
+                If Google Drive is not configured, the backup will be created locally only. Only one backup file is maintained and updated with each backup.
               </p>
             </div>
           </div>

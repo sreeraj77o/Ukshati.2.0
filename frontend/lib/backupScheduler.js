@@ -80,11 +80,11 @@ class BackupScheduler {
       }
 
       const task = cron.schedule(cronExpression, async () => {
-        console.log(`Running scheduled backup for ${setting.user_email}`);
+        console.log(`Running scheduled backup for ${setting.user_email} at ${new Date().toISOString()}`);
         await this.executeScheduledBackup(setting);
       }, {
         scheduled: true,
-        timezone: 'UTC'
+        timezone: 'Asia/Kolkata'
       });
 
       this.scheduledTasks.set(setting.user_email, task);
@@ -92,7 +92,7 @@ class BackupScheduler {
       // Update next backup time
       await this.updateNextBackupTime(setting);
       
-      console.log(`Scheduled backup created for ${setting.user_email}: ${cronExpression}`);
+      console.log(`Scheduled backup created for ${setting.user_email}: ${cronExpression} (timezone: Asia/Kolkata)`);
     } catch (error) {
       console.error('Failed to create schedule:', error);
     }
@@ -197,41 +197,46 @@ class BackupScheduler {
   }
 
   calculateNextBackupTime(setting) {
+    // Use IST timezone for calculations
     const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const istNow = new Date(now.getTime() + istOffset);
+
     const [hour, minute] = setting.backup_time.split(':');
-    
-    let nextBackup = new Date();
+
+    let nextBackup = new Date(istNow);
     nextBackup.setHours(parseInt(hour), parseInt(minute), 0, 0);
     
     switch (setting.backup_frequency) {
       case 'daily':
-        if (nextBackup <= now) {
+        if (nextBackup <= istNow) {
           nextBackup.setDate(nextBackup.getDate() + 1);
         }
         break;
-        
+
       case 'weekly':
         const targetDay = setting.backup_day_of_week;
         const currentDay = nextBackup.getDay();
         let daysUntilTarget = targetDay - currentDay;
-        
-        if (daysUntilTarget <= 0 || (daysUntilTarget === 0 && nextBackup <= now)) {
+
+        if (daysUntilTarget <= 0 || (daysUntilTarget === 0 && nextBackup <= istNow)) {
           daysUntilTarget += 7;
         }
-        
+
         nextBackup.setDate(nextBackup.getDate() + daysUntilTarget);
         break;
-        
+
       case 'monthly':
         nextBackup.setDate(setting.backup_day_of_month);
-        
-        if (nextBackup <= now) {
+
+        if (nextBackup <= istNow) {
           nextBackup.setMonth(nextBackup.getMonth() + 1);
         }
         break;
     }
-    
-    return nextBackup;
+
+    // Convert back to UTC for storage
+    return new Date(nextBackup.getTime() - istOffset);
   }
 
   async saveBackupSettings(userEmail, settings) {
@@ -323,6 +328,55 @@ class BackupScheduler {
       console.error('Failed to remove backup schedule:', error);
       throw error;
     }
+  }
+
+  async testScheduledBackup(userEmail) {
+    try {
+      console.log(`Testing scheduled backup for ${userEmail}`);
+      const settings = await this.getBackupSettings(userEmail);
+
+      if (!settings) {
+        throw new Error('No backup settings found for user');
+      }
+
+      if (!settings.is_enabled) {
+        throw new Error('Backup is not enabled for this user');
+      }
+
+      console.log(`Current time: ${new Date().toISOString()}`);
+      console.log(`Backup settings:`, {
+        frequency: settings.backup_frequency,
+        time: settings.backup_time,
+        dayOfWeek: settings.backup_day_of_week,
+        dayOfMonth: settings.backup_day_of_month,
+        nextBackup: settings.next_backup_at
+      });
+
+      const cronExpression = this.getCronExpression(settings);
+      console.log(`Cron expression: ${cronExpression}`);
+
+      // Execute the backup
+      const result = await this.executeScheduledBackup(settings);
+      console.log(`Test backup completed successfully:`, result);
+
+      return result;
+    } catch (error) {
+      console.error(`Test scheduled backup failed for ${userEmail}:`, error);
+      throw error;
+    }
+  }
+
+  clearAllSchedules() {
+    for (const [userEmail, task] of this.scheduledTasks) {
+      try {
+        task.stop();
+        task.destroy();
+        console.log(`Cleared schedule for ${userEmail}`);
+      } catch (error) {
+        console.error(`Failed to clear schedule for ${userEmail}:`, error);
+      }
+    }
+    this.scheduledTasks.clear();
   }
 }
 

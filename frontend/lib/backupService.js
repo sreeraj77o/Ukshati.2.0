@@ -21,8 +21,8 @@ class BackupService {
 
   async createDatabaseBackup() {
     try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const backupFileName = `backup_${timestamp}.sql`;
+      // Use a consistent filename instead of timestamp-based names
+      const backupFileName = 'database_backup.sql';
       const backupFilePath = path.join(this.backupDir, backupFileName);
 
       // Database connection details from environment
@@ -32,9 +32,11 @@ class BackupService {
       const dbPassword = process.env.DB_PASSWORD || 'Ukshati@123';
       const dbName = process.env.DB_NAME || 'company_db';
 
-      // Use mysqldump with proper authentication settings for MySQL 8.0 (MariaDB client)
+      // Use mariadb-dump with proper authentication settings for MySQL 8.0 (MariaDB client)
       // Add --skip-ssl to avoid SSL connection issues since our MySQL server has SSL disabled
-      const dumpCommand = `mysqldump --single-transaction --routines --triggers --default-character-set=utf8mb4 --skip-ssl --host=${dbHost} --port=${dbPort} --user=${dbUser} --password=${dbPassword} ${dbName} > ${backupFilePath}`;
+      // Add --no-tablespaces to avoid PROCESS privilege requirement for tablespace operations
+      // Add --skip-triggers and --skip-routines to avoid SUPER privilege issues during restore
+      const dumpCommand = `mariadb-dump --single-transaction --no-tablespaces --skip-triggers --skip-routines --default-character-set=utf8mb4 --skip-ssl --host=${dbHost} --port=${dbPort} --user=${dbUser} --password=${dbPassword} ${dbName} > ${backupFilePath}`;
 
       console.log('Creating database backup...');
       console.log('Backup command:', dumpCommand.replace(/-p[^\s]+/, '-p***')); // Hide password in logs
@@ -122,7 +124,7 @@ class BackupService {
 
         // Save local backup record
         const localBackupResult = {
-          id: `local_${Date.now()}`,
+          id: 'local_database_backup',
           name: backupInfo.fileName,
           size: backupInfo.size,
           folderId: null,
@@ -149,7 +151,7 @@ class BackupService {
       await this.ensureBackupTables(db);
 
       const recordData = {
-        file_id: backupInfo.id || `local_${Date.now()}`,
+        file_id: backupInfo.id || 'local_database_backup',
         file_name: backupInfo.name || backupInfo.fileName,
         file_size: backupInfo.size || backupInfo.localSize,
         folder_id: backupInfo.folderId || null,
@@ -159,12 +161,18 @@ class BackupService {
 
       console.log('Saving backup record:', recordData);
 
-      // Insert backup record
+      // Use UPSERT to update existing record or insert new one for consistent filename
       const [result] = await db.execute(`
         INSERT INTO backup_history (
           file_id, file_name, file_size, folder_id,
           backup_type, status, uploaded_at
         ) VALUES (?, ?, ?, ?, ?, 'success', ?)
+        ON DUPLICATE KEY UPDATE
+          file_size = VALUES(file_size),
+          folder_id = VALUES(folder_id),
+          backup_type = VALUES(backup_type),
+          status = 'success',
+          uploaded_at = VALUES(uploaded_at)
       `, [
         recordData.file_id,
         recordData.file_name,
@@ -192,6 +200,9 @@ class BackupService {
       // Ensure backup_history table exists
       await this.ensureBackupTables(db);
 
+      // Sync with Google Drive to ensure we have the latest backup info
+      await this.syncGoogleDriveBackups(db);
+
       // Convert limit to integer to ensure proper parameter binding
       const limitInt = parseInt(limit, 10);
 
@@ -216,6 +227,84 @@ class BackupService {
     } catch (error) {
       console.error('Failed to get backup history:', error);
       return [];
+    }
+  }
+
+  async syncGoogleDriveBackups(db) {
+    try {
+      // Check if Google Drive is configured and authenticated
+      const isInitialized = await googleDriveOAuthService.initialize();
+      if (!isInitialized) {
+        console.log('Google Drive not configured, skipping sync');
+        return;
+      }
+
+      console.log('Syncing with Google Drive backups...');
+
+      // Get the backup folder
+      const backupFolder = await googleDriveOAuthService.createBackupFolder();
+      console.log(`Backup folder: ${backupFolder.name} (ID: ${backupFolder.id})`);
+
+      // List backups from Google Drive
+      const driveBackups = await googleDriveOAuthService.listBackups(backupFolder.id);
+
+      console.log(`Found ${driveBackups.length} backups in Google Drive`);
+      if (driveBackups.length > 0) {
+        console.log('Backup files:', driveBackups.map(b => `${b.name} (${b.size} bytes)`));
+      }
+
+      // For each backup in Google Drive, ensure it exists in the database
+      let syncedCount = 0;
+      for (const driveBackup of driveBackups) {
+        try {
+          // Check if this backup already exists in the database
+          const [existingRows] = await db.execute(`
+            SELECT id FROM backup_history WHERE file_id = ?
+          `, [driveBackup.id]);
+
+          if (existingRows.length === 0) {
+            // Backup doesn't exist in database, add it
+            console.log(`Adding missing backup to database: ${driveBackup.name}`);
+
+            await db.execute(`
+              INSERT INTO backup_history (
+                file_id, file_name, file_size, folder_id,
+                backup_type, status, created_at, uploaded_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [
+              driveBackup.id,
+              driveBackup.name,
+              driveBackup.size || 0,
+              backupFolder.id,
+              'manual', // Default to manual since we don't know the original type
+              'success',
+              driveBackup.createdTime || new Date(),
+              driveBackup.modifiedTime || driveBackup.createdTime || new Date()
+            ]);
+            syncedCount++;
+          } else {
+            // Update existing record with latest info from Google Drive
+            await db.execute(`
+              UPDATE backup_history
+              SET file_size = ?, uploaded_at = ?
+              WHERE file_id = ?
+            `, [
+              driveBackup.size || 0,
+              driveBackup.modifiedTime || new Date(),
+              driveBackup.id
+            ]);
+            console.log(`Updated existing backup record: ${driveBackup.name}`);
+          }
+        } catch (backupError) {
+          console.error(`Failed to sync backup ${driveBackup.name}:`, backupError);
+          // Continue with other backups
+        }
+      }
+
+      console.log(`Google Drive sync completed. Synced ${syncedCount} new backups.`);
+    } catch (error) {
+      console.error('Failed to sync with Google Drive:', error);
+      // Don't throw error, just log it so the main function can continue
     }
   }
 
@@ -349,8 +438,10 @@ class BackupService {
       const dbPassword = process.env.DB_PASSWORD || 'Ukshati@123';
       const dbName = process.env.DB_NAME || 'company_db';
 
-      // Use mysql client with proper authentication settings for MySQL 8.0 (MariaDB client)
-      const restoreCommand = `mysql --default-character-set=utf8mb4 --host=${dbHost} --port=${dbPort} --user=${dbUser} --password=${dbPassword} ${dbName} < ${restoreFilePath}`;
+      // Use mariadb client with proper authentication settings for MySQL 8.0 (MariaDB client)
+      // Add --skip-ssl to avoid SSL connection issues since our MySQL server has SSL disabled
+      // Add --force to continue on errors (will skip problematic statements like triggers)
+      const restoreCommand = `mariadb --default-character-set=utf8mb4 --skip-ssl --force --host=${dbHost} --port=${dbPort} --user=${dbUser} --password=${dbPassword} ${dbName} < ${restoreFilePath}`;
 
       console.log('Restoring database...');
       console.log('Restore command:', restoreCommand.replace(/--password=[^\s]+/, '--password=***')); // Hide password in logs
