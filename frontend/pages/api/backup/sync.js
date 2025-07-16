@@ -6,45 +6,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Manual backup sync requested...');
+    console.log('Starting backup sync from API...');
     
-    // Import database connection
-    const { connectToDB } = await import('@/lib/db');
-    const db = await connectToDB();
-    
-    // Ensure backup tables exist
-    await backupService.ensureBackupTables(db);
-    console.log('Backup tables ensured');
-    
-    // Force sync with Google Drive
-    await backupService.syncGoogleDriveBackups(db);
-    console.log('Backup sync completed');
-    
-    // Get updated backup count
-    const [countRows] = await db.execute('SELECT COUNT(*) as count FROM backup_history');
-    const backupCount = countRows[0].count;
-    
-    // Get recent backups to return
-    const [backupRows] = await db.execute(`
-      SELECT file_id, file_name, file_size, created_at, uploaded_at
-      FROM backup_history
-      ORDER BY created_at DESC
-      LIMIT 5
-    `);
-    
-    db.release();
+    const syncResult = await backupService.syncGoogleDriveBackups();
     
     res.status(200).json({
       success: true,
       message: 'Backup sync completed successfully',
-      data: {
-        syncedAt: new Date(),
-        totalBackups: backupCount,
-        recentBackups: backupRows
-      }
+      data: syncResult
     });
   } catch (error) {
-    console.error('Manual backup sync failed:', error);
+    console.error('Backup sync API error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to sync backups',

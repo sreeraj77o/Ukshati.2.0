@@ -503,6 +503,94 @@ class BackupService {
     }
   }
 
+  async syncGoogleDriveBackups() {
+    try {
+      console.log('Starting Google Drive backup sync...');
+
+      // Check if Google Drive is authenticated
+      const isInitialized = await googleDriveOAuthService.initialize();
+      if (!isInitialized) {
+        console.warn('Google Drive not authenticated, cannot sync backups');
+        return { synced: 0, skipped: 0, errors: 0 };
+      }
+
+      // Get all backups from Google Drive
+      const googleDriveBackups = await googleDriveOAuthService.listBackups();
+      console.log(`Found ${googleDriveBackups.length} backups in Google Drive`);
+
+      if (googleDriveBackups.length === 0) {
+        console.log('No backups found in Google Drive to sync');
+        return { synced: 0, skipped: 0, errors: 0 };
+      }
+
+      const db = await connectToDB();
+      await this.ensureBackupTables(db);
+
+      let synced = 0;
+      let skipped = 0;
+      let errors = 0;
+
+      for (const backup of googleDriveBackups) {
+        try {
+          // Check if this backup already exists in our database
+          const [existing] = await db.execute(
+            'SELECT id FROM backup_history WHERE file_id = ?',
+            [backup.id]
+          );
+
+          if (existing.length > 0) {
+            console.log(`Backup ${backup.name} already exists in database, skipping`);
+            skipped++;
+            continue;
+          }
+
+          // Parse backup info from filename and metadata
+          const backupInfo = {
+            file_id: backup.id,
+            file_name: backup.name,
+            file_size: parseInt(backup.size) || 0,
+            folder_id: null, // We'll get this from the backup folder if needed
+            backup_type: 'manual', // Default to manual for existing backups
+            uploaded_at: new Date(backup.createdTime)
+          };
+
+          // Insert the backup record
+          await db.execute(`
+            INSERT INTO backup_history (
+              file_id, file_name, file_size, folder_id,
+              backup_type, status, created_at, uploaded_at
+            ) VALUES (?, ?, ?, ?, ?, 'success', ?, ?)
+          `, [
+            backupInfo.file_id,
+            backupInfo.file_name,
+            backupInfo.file_size,
+            backupInfo.folder_id,
+            backupInfo.backup_type,
+            backupInfo.uploaded_at,
+            backupInfo.uploaded_at
+          ]);
+
+          console.log(`Synced backup: ${backup.name}`);
+          synced++;
+
+        } catch (error) {
+          console.error(`Failed to sync backup ${backup.name}:`, error);
+          errors++;
+        }
+      }
+
+      db.release();
+
+      const result = { synced, skipped, errors };
+      console.log('Google Drive backup sync completed:', result);
+      return result;
+
+    } catch (error) {
+      console.error('Failed to sync Google Drive backups:', error);
+      return { synced: 0, skipped: 0, errors: 1 };
+    }
+  }
+
   async getStorageInfo() {
     try {
       // Check if Google Drive is authenticated

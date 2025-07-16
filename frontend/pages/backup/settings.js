@@ -14,7 +14,8 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiAlertTriangle,
-  FiX
+  FiX,
+  FiRefreshCw
 } from 'react-icons/fi';
 import BackButton from '@/components/BackButton';
 import { FormSkeleton } from '@/components/skeleton';
@@ -98,13 +99,45 @@ const BackupSettings = () => {
     // Check for URL parameters (OAuth callback)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'google_connected') {
-      showSuccessModal(
-        'Google Drive Connected',
-        'Your Google Drive has been connected successfully!'
-      );
+      const synced = urlParams.get('synced');
+      const skipped = urlParams.get('skipped');
+      const syncError = urlParams.get('sync_error');
+
+      let message = 'Your Google Drive has been connected successfully!';
+      let details = null;
+
+      if (syncError) {
+        message += ' However, there was an issue syncing existing backups.';
+      } else if (synced !== null) {
+        const syncedCount = parseInt(synced) || 0;
+        const skippedCount = parseInt(skipped) || 0;
+
+        if (syncedCount > 0) {
+          message += ` Found and synced ${syncedCount} existing backup${syncedCount !== 1 ? 's' : ''}.`;
+          if (skippedCount > 0) {
+            message += ` ${skippedCount} backup${skippedCount !== 1 ? 's were' : ' was'} already in the database.`;
+          }
+        } else if (skippedCount > 0) {
+          message += ` ${skippedCount} backup${skippedCount !== 1 ? 's were' : ' was'} already in the database.`;
+        } else {
+          message += ' No existing backups were found in Google Drive.';
+        }
+
+        details = {
+          synced: syncedCount,
+          skipped: skippedCount,
+          total: syncedCount + skippedCount
+        };
+      }
+
+      showSuccessModal('Google Drive Connected', message, details);
+
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Refresh data to show synced backups
       fetchGoogleAuthStatus();
+      fetchBackupStatus();
     } else if (urlParams.get('error')) {
       const error = urlParams.get('error');
       let message = 'Failed to connect Google Drive';
@@ -222,6 +255,51 @@ const BackupSettings = () => {
     } catch (error) {
       console.error('Failed to connect Google Drive:', error);
       showErrorModal('Connection Failed', 'Failed to connect to Google Drive. Please try again.');
+    }
+  };
+
+  const handleSyncBackups = async () => {
+    try {
+      showLoadingModal('Syncing Backups', 'Checking Google Drive for existing backups...');
+
+      const response = await fetch('/api/backup/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+      closeAllModals();
+
+      if (data.success) {
+        const { synced, skipped, errors } = data.data;
+        let message = 'Backup sync completed successfully!';
+
+        if (synced > 0) {
+          message += ` Found and synced ${synced} new backup${synced !== 1 ? 's' : ''}.`;
+        }
+        if (skipped > 0) {
+          message += ` ${skipped} backup${skipped !== 1 ? 's were' : ' was'} already in the database.`;
+        }
+        if (errors > 0) {
+          message += ` ${errors} error${errors !== 1 ? 's' : ''} occurred during sync.`;
+        }
+        if (synced === 0 && skipped === 0 && errors === 0) {
+          message = 'No new backups found in Google Drive to sync.';
+        }
+
+        showSuccessModal('Sync Complete', message, data.data);
+
+        // Refresh backup status to show newly synced backups
+        await fetchBackupStatus();
+      } else {
+        throw new Error(data.message || 'Failed to sync backups');
+      }
+    } catch (error) {
+      closeAllModals();
+      console.error('Failed to sync backups:', error);
+      showErrorModal('Sync Failed', 'Failed to sync backups from Google Drive. Please try again.');
     }
   };
 
@@ -520,22 +598,36 @@ const BackupSettings = () => {
             </h2>
 
             {googleAuthStatus?.authenticated ? (
-              <div className="flex items-center justify-between p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-400 rounded-full mr-3"></div>
-                  <div>
-                    <div className="text-green-400 font-medium">Connected to Google Drive</div>
-                    <div className="text-sm text-gray-400">
-                      {googleAuthStatus.user?.emailAddress || 'Connected'}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-3 h-3 bg-green-400 rounded-full mr-3"></div>
+                    <div>
+                      <div className="text-green-400 font-medium">Connected to Google Drive</div>
+                      <div className="text-sm text-gray-400">
+                        {googleAuthStatus.user?.emailAddress || 'Connected'}
+                      </div>
                     </div>
                   </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleSyncBackups}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center"
+                    >
+                      <FiRefreshCw className="mr-2 h-4 w-4" />
+                      Sync Backups
+                    </button>
+                    <button
+                      onClick={handleGoogleDisconnect}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={handleGoogleDisconnect}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                >
-                  Disconnect
-                </button>
+                <div className="text-sm text-gray-400 px-4">
+                  <p>Use "Sync Backups" to check for existing backup files in your Google Drive and add them to your backup history.</p>
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-between p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
