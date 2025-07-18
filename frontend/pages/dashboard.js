@@ -256,6 +256,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(false);
 
 useEffect(() => {
   const checkMobile = () => {
@@ -781,7 +782,7 @@ useEffect(() => {
 {/* Crazy Games Style Sidebar */}
 <AnimatePresence>
   <motion.div
-    className="fixed left-0 top-0 h-full z-40 bg-black border-r border-gray-700 flex flex-col justify-between"
+    className="hidden lg:flex fixed left-0 top-0 h-full z-40 bg-black border-r border-gray-700 flex-col justify-between"
     initial={{ width: 64 }}
     whileHover={{ width: 200 }}
     transition={{
@@ -789,8 +790,8 @@ useEffect(() => {
       stiffness: 300,
       damping: 30,
     }}
-    onMouseLeave={() => setIsSidebarOpen(false)}
-    onMouseEnter={() => setIsSidebarOpen(true)}
+    onMouseLeave={() => setIsDesktopSidebarExpanded(false)}
+    onMouseEnter={() => setIsDesktopSidebarExpanded(true)}
   >
     {/* Logo / Brand */}
     <div className="p-4 flex items-center">
@@ -800,7 +801,7 @@ useEffect(() => {
       >
         💧
       </motion.div>
-      {isSidebarOpen && (
+      {isDesktopSidebarExpanded && (
         <motion.span
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
@@ -820,7 +821,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaCogs className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -838,7 +839,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaUsers className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -856,7 +857,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaBoxOpen className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -874,7 +875,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaFileContract className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -892,7 +893,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaFileInvoiceDollar className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -910,7 +911,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaMoneyBillWave className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -928,7 +929,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaFileInvoice className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -946,7 +947,7 @@ useEffect(() => {
     <span className="text-cyan-400 group-hover:text-white transition-colors">
       <FaCalendar className="w-5 h-5" />
     </span>
-    {isSidebarOpen && (
+    {isDesktopSidebarExpanded && (
       <motion.span
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
@@ -965,7 +966,7 @@ useEffect(() => {
         <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
           <FaUser className="text-gray-300" />
         </div>
-        {isSidebarOpen && (
+        {isDesktopSidebarExpanded && (
           <motion.span
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -981,9 +982,7 @@ useEffect(() => {
 
         {/* Main Content Area */}
         <main
-  className={`transition-all duration-300 ease-in-out ${
-    isSidebarOpen ? "lg:ml-52" : "lg:ml-16"
-  } p-6`}
+  className="transition-all duration-300 ease-in-out lg:ml-16 p-6"
 >
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-6">
