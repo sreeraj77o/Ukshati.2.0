@@ -8,8 +8,20 @@
     "start": "next start",
     "lint": "next lint",
     "lint:ci": "next lint --max-warnings 50",
-    "test:unit": "echo '🧪 Running unit tests...' && echo '✅ Unit tests passed (placeholder)'",
-    "test:integration": "echo '🧪 Running integration tests...' && echo '✅ Integration tests passed (placeholder)'"
+    "test:api": "node scripts/test-apis.js",
+    "test:performance": "node scripts/performance-monitor.js",
+    "test:docker": "node scripts/docker-test.js",
+    "test:components": "node scripts/test-components.js",
+    "test:dashboard": "node scripts/test-dashboard-imports.js",
+    "test:pages": "node scripts/test-all-pages.js",
+    "test:docker-imports": "node scripts/test-docker-imports.js",
+    "test:all": "npm run test:components && npm run test:dashboard && npm run test:pages && npm run test:api",
+    "audit:security": "npm audit --audit-level=high",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:js": "prettier --write \"**/*.{js,jsx}\"",
+    "prettier:check": "prettier --check .",
+    "prettier:write": "prettier --write ."
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -48,6 +60,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.1.7",
     "postcss": "^8",
+    "prettier": "^3.0.0",
     "tailwindcss": "^3.4.1"
   }
 }
