@@ -98,6 +98,7 @@ CREATE TABLE `employee` (
   `phone` varchar(20) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
   `role` varchar(50) NOT NULL,
+  `amount_given` DECIMAL(12, 2) DEFAULT 0.00,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -108,8 +109,8 @@ CREATE TABLE `employee` (
 
 LOCK TABLES `employee` WRITE;
 /*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` (`name`, `email`, `phone`, `password`, `role`) VALUES
-('Ukshati', 'ukshati365@gmail.com', '7259439998', '$2b$10$VFW3dVy6O91qYShoi6vEDemc8TMb7DP4SBplGWNm9snPtffVGGu5u', 'Admin');
+INSERT INTO `employee` (`name`, `email`, `phone`, `password`, `role`, `amount_given`) VALUES
+('Ukshati', 'ukshati365@gmail.com', '7259439998', '$2b$10$VFW3dVy6O91qYShoi6vEDemc8TMb7DP4SBplGWNm9snPtffVGGu5u', 'Admin', 0.00);
 /*!40000 ALTER TABLE `employee` ENABLE KEYS */;
 UNLOCK TABLES;
 
