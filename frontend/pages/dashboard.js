@@ -314,6 +314,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktopSidebarExpanded, setIsDesktopSidebarExpanded] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
