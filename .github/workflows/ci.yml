@@ -165,7 +165,7 @@ jobs:
 
       - name: Build Docker Images
         run: |
-          docker-compose build --no-cache
+          docker-compose up --build
 
       - name: Start Services
         run: |
