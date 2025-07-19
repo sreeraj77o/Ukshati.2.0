@@ -1,5 +1,5 @@
 // components/NotificationPermissionButton.js
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
 import { FiBell } from 'react-icons/fi';
 import NotificationService from '@/lib/notifications';
@@ -16,12 +16,11 @@ const NotificationPermissionButton = () => {
   const handleClick = async () => {
     const result = await NotificationService.requestPermission();
     setPermission(result);
-    
+
     if (result === 'granted') {
-      NotificationService.show(
-        'Notifications Enabled',
-        { body: 'You will now receive reminder alerts' }
-      );
+      NotificationService.show('Notifications Enabled', {
+        body: 'You will now receive reminder alerts',
+      });
     }
   };
 
@@ -38,7 +37,9 @@ const NotificationPermissionButton = () => {
       } transition-colors`}
     >
       <FiBell />
-      {permission === 'granted' ? 'Notifications Enabled' : 'Enable Notifications'}
+      {permission === 'granted'
+        ? 'Notifications Enabled'
+        : 'Enable Notifications'}
     </button>
   );
 };

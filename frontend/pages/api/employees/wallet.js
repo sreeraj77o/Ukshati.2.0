@@ -31,7 +31,8 @@ export default async function handler(req, res) {
       `);
       const projectExpenseMap = new Map();
       projectExpenses.forEach(e => {
-        if (!projectExpenseMap.has(e.employee_id)) projectExpenseMap.set(e.employee_id, []);
+        if (!projectExpenseMap.has(e.employee_id))
+          projectExpenseMap.set(e.employee_id, []);
         projectExpenseMap.get(e.employee_id).push({
           project_id: e.project_id,
           project_name: e.project_name,
@@ -69,7 +70,9 @@ export default async function handler(req, res) {
         [amount_given, employee_id]
       );
       if (db) db.release();
-      return res.status(201).json({ message: 'Amount given recorded successfully' });
+      return res
+        .status(201)
+        .json({ message: 'Amount given recorded successfully' });
     }
 
     if (req.method === 'PUT') {
@@ -78,17 +81,18 @@ export default async function handler(req, res) {
         if (db) db.release();
         return res.status(400).json({ error: 'Missing required fields' });
       }
-      await db.query(
-        'UPDATE employee SET amount_given = ? WHERE id = ?',
-        [new_amount_given, employee_id]
-      );
+      await db.query('UPDATE employee SET amount_given = ? WHERE id = ?', [
+        new_amount_given,
+        employee_id,
+      ]);
       if (db) db.release();
-      return res.status(200).json({ message: 'Amount given updated successfully' });
+      return res
+        .status(200)
+        .json({ message: 'Amount given updated successfully' });
     }
 
     if (db) db.release();
     return res.status(405).json({ error: 'Method not allowed' });
-
   } catch (error) {
     console.error('Database error:', error);
     if (db) db.release();

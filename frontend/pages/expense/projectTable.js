@@ -1,23 +1,23 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
 
 export default function ProjectTable({ projects = [], showStatus = false }) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [allProjects, setAllProjects] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
     if (!Array.isArray(projects)) {
-      console.error("Invalid Projects Data:", projects);
+      console.error('Invalid Projects Data:', projects);
       setFilteredProjects([]);
       setAllProjects([]);
       return;
     }
 
-    const uniqueProjects = [...new Set(projects.map((proj) => proj.pname))];
+    const uniqueProjects = [...new Set(projects.map(proj => proj.pname))];
     setAllProjects(uniqueProjects);
     setFilteredProjects(projects);
   }, [projects]);
@@ -25,7 +25,7 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
   // Handle search filter
   useEffect(() => {
     const filtered = searchQuery
-      ? projects.filter((proj) =>
+      ? projects.filter(proj =>
           proj.pname.toLowerCase().includes(searchQuery.toLowerCase())
         )
       : projects;
@@ -38,26 +38,26 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
   );
   const downloadCSV = () => {
     const csvContent = [
-      ["Project", "Client", "Start Date", "End Date", "Amount", "Comments"],
-      ...filteredProjects.map((proj) => [
+      ['Project', 'Client', 'Start Date', 'End Date', 'Amount', 'Comments'],
+      ...filteredProjects.map(proj => [
         proj.pname,
         proj.cname,
         proj.start_date,
         proj.end_date,
-        proj.Amount || "0",
+        proj.Amount || '0',
 
-        proj.Comments || "N/A",
+        proj.Comments || 'N/A',
       ]),
-      ["", "", "", "Total", totalSum.toFixed(2), "", ""],
+      ['', '', '', 'Total', totalSum.toFixed(2), '', ''],
     ]
-      .map((e) => e.join(","))
-      .join("\n");
+      .map(e => e.join(','))
+      .join('\n');
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.setAttribute("href", url);
-    a.setAttribute("download", "project_details.csv");
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'project_details.csv');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -65,32 +65,32 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
 
   const downloadPDF = () => {
     if (filteredProjects.length === 0) {
-      alert("No projects to download");
+      alert('No projects to download');
       return;
     }
 
-    const printWindow = window.open("", "_blank");
+    const printWindow = window.open('', '_blank');
     printWindow.document.write(
-      "<html><head><title>Project Details</title></head><body>"
+      '<html><head><title>Project Details</title></head><body>'
     );
-    printWindow.document.write("<h3>Project Details</h3>");
+    printWindow.document.write('<h3>Project Details</h3>');
     printWindow.document.write(
       "<table border='1' style='width:100%; text-align:center; border-collapse: collapse;'>"
     );
     printWindow.document.write(
-      "<tr><th>Project Name</th><th>Client Name</th><th>Start Date</th><th>End Date</th><th>Amount</th><th>Comments</th></tr>"
+      '<tr><th>Project Name</th><th>Client Name</th><th>Start Date</th><th>End Date</th><th>Amount</th><th>Comments</th></tr>'
     );
 
-    filteredProjects.forEach((proj) => {
+    filteredProjects.forEach(proj => {
       printWindow.document.write(`
         <tr>
-          <td>${proj.pname || "N/A"}</td>
-          <td>${proj.cname || "N/A"}</td>
-          <td>${proj.start_date || "N/A"}</td>
-          <td>${proj.end_date || "N/A"}</td>
-          <td>₹${proj.Amount || "0"}</td>
+          <td>${proj.pname || 'N/A'}</td>
+          <td>${proj.cname || 'N/A'}</td>
+          <td>${proj.start_date || 'N/A'}</td>
+          <td>${proj.end_date || 'N/A'}</td>
+          <td>₹${proj.Amount || '0'}</td>
 
-          <td>${proj.Comments || "N/A"}</td>
+          <td>${proj.Comments || 'N/A'}</td>
         </tr>
       `);
     });
@@ -101,7 +101,7 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
       )}</td><td></td><td></td></tr>`
     );
 
-    printWindow.document.write("</table></body></html>");
+    printWindow.document.write('</table></body></html>');
     printWindow.document.close();
     printWindow.print();
   };
@@ -123,7 +123,7 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
               type="text"
               placeholder="Search by Project Name"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="bg-white/20 text-white p-2 rounded-lg focus:outline-none"
             />
           </div>
@@ -149,13 +149,13 @@ export default function ProjectTable({ projects = [], showStatus = false }) {
                       key={index}
                       className="hover:bg-white/10 transition-all"
                     >
-                      <td className="py-3">{proj.pname || "N/A"}</td>
-                      <td>{proj.cname || "N/A"}</td>
-                      {showStatus && <td>{proj.status || "N/A"}</td>}
-                      <td>{proj.start_date || "N/A"}</td>
-                      <td>{proj.end_date || "N/A"}</td>
-                      <td className="text-center">₹{proj.Amount || "0"}</td>
-                      <td className="text-center">{proj.Comments || "N/A"}</td>
+                      <td className="py-3">{proj.pname || 'N/A'}</td>
+                      <td>{proj.cname || 'N/A'}</td>
+                      {showStatus && <td>{proj.status || 'N/A'}</td>}
+                      <td>{proj.start_date || 'N/A'}</td>
+                      <td>{proj.end_date || 'N/A'}</td>
+                      <td className="text-center">₹{proj.Amount || '0'}</td>
+                      <td className="text-center">{proj.Comments || 'N/A'}</td>
                     </tr>
                   ))
                 ) : (

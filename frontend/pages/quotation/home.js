@@ -1,13 +1,18 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { FaPlus, FaEye, FaMoneyBillWave, FaInfoCircle, FaTimes } from "react-icons/fa";
-import { motion } from "framer-motion";
-import Tilt from "react-parallax-tilt";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { CardSkeleton } from "@/components/skeleton";
-
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import {
+  FaPlus,
+  FaEye,
+  FaMoneyBillWave,
+  FaInfoCircle,
+  FaTimes,
+} from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import Tilt from 'react-parallax-tilt';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { CardSkeleton } from '@/components/skeleton';
 
 export default function Home() {
   const router = useRouter();
@@ -23,7 +28,7 @@ export default function Home() {
   }, []);
 
   // Handle card flip
-  const handleFlip = (index) => {
+  const handleFlip = index => {
     setFlipped(prev => {
       const newFlipped = [...prev];
       newFlipped[index] = !newFlipped[index];
@@ -34,42 +39,42 @@ export default function Home() {
   const quotationCards = [
     {
       id: 1,
-      title: "Generate Quotes",
+      title: 'Generate Quotes',
       Icon: FaPlus,
-      description: "Create new quotations for clients",
-      gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40",
-      route: "/quotation/QuoteManager",
+      description: 'Create new quotations for clients',
+      gradient: 'bg-gradient-to-r from-blue-400/30 to-indigo-500/40',
+      route: '/quotation/QuoteManager',
       stats: {
-        main: "New",
-        secondary: "Quote"
+        main: 'New',
+        secondary: 'Quote',
       },
-      filedBy: "Sales Team"
+      filedBy: 'Sales Team',
     },
     {
       id: 2,
-      title: "View Quotes",
+      title: 'View Quotes',
       Icon: FaEye,
-      description: "Browse and manage existing quotes",
-      gradient: "bg-gradient-to-r from-green-400/30 to-emerald-400/40",
-      route: "/quotation/QuoteList",
+      description: 'Browse and manage existing quotes',
+      gradient: 'bg-gradient-to-r from-green-400/30 to-emerald-400/40',
+      route: '/quotation/QuoteList',
       stats: {
-        main: "12",
-        secondary: "Active"
+        main: '12',
+        secondary: 'Active',
       },
-      filedBy: "Sales Team"
+      filedBy: 'Sales Team',
     },
     {
       id: 3,
-      title: "Manage Rates",
+      title: 'Manage Rates',
       Icon: FaMoneyBillWave,
-      description: "Configure and update product pricing rates",
-      gradient: "bg-gradient-to-r from-purple-400/30 to-violet-500/40",
-      route: "/quotation/RatesManagement",
+      description: 'Configure and update product pricing rates',
+      gradient: 'bg-gradient-to-r from-purple-400/30 to-violet-500/40',
+      route: '/quotation/RatesManagement',
       stats: {
-        main: "24",
-        secondary: "Items"
+        main: '24',
+        secondary: 'Items',
       },
-      filedBy: "Sales Team"
+      filedBy: 'Sales Team',
     },
   ];
 
@@ -82,7 +87,9 @@ export default function Home() {
 
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center flex-grow p-6 py-20">
-        <h1 className="text-4xl font-bold mb-16 mt-8 text-center">Quote Management System</h1>
+        <h1 className="text-4xl font-bold mb-16 mt-8 text-center">
+          Quote Management System
+        </h1>
 
         {/* Dashboard-Style Cards */}
         <div className="w-full max-w-7xl px-4">
@@ -91,7 +98,13 @@ export default function Home() {
               <CardSkeleton count={3} />
             ) : (
               quotationCards.map((card, index) => (
-                <Tilt key={index} tiltMaxAngleX={5} tiltMaxAngleY={5} glareEnable={true} glareMaxOpacity={0.1}>
+                <Tilt
+                  key={index}
+                  tiltMaxAngleX={5}
+                  tiltMaxAngleY={5}
+                  glareEnable={true}
+                  glareMaxOpacity={0.1}
+                >
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
@@ -105,7 +118,7 @@ export default function Home() {
                             <card.Icon size={24} className="text-white" />
                           </div>
                           <button
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                               handleFlip(index);
                             }}
@@ -114,13 +127,19 @@ export default function Home() {
                             {flipped[index] ? <FaTimes /> : <FaInfoCircle />}
                           </button>
                         </div>
-                        <h3 className="mt-4 text-xl font-bold text-white">{card.title}</h3>
+                        <h3 className="mt-4 text-xl font-bold text-white">
+                          {card.title}
+                        </h3>
                         <p className="mt-1 text-gray-200">{card.description}</p>
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-2xl font-bold text-white">{card.stats.main}</p>
-                          <p className="text-xs text-gray-200">{card.stats.secondary}</p>
+                          <p className="text-2xl font-bold text-white">
+                            {card.stats.main}
+                          </p>
+                          <p className="text-xs text-gray-200">
+                            {card.stats.secondary}
+                          </p>
                         </div>
                         <div className="text-xs text-gray-200">
                           {card.filedBy}
@@ -137,7 +156,9 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="w-full bg-black border-t border-gray-800 text-white py-4 text-center mt-auto">
-        <p className="text-sm">© {new Date().getFullYear()} Quote Management System</p>
+        <p className="text-sm">
+          © {new Date().getFullYear()} Quote Management System
+        </p>
       </footer>
     </div>
   );

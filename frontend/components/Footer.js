@@ -1,5 +1,5 @@
 // components/Footer.js
-import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from 'react-icons/fa';
 
 const Footer = () => {
   return (
@@ -54,7 +54,9 @@ const Footer = () => {
           </a>
         </li>
       </ul>
-      <p className="text-sm mt-4">Contact: +91 7259439998 | Email: ukshati365@gmail.com</p>
+      <p className="text-sm mt-4">
+        Contact: +91 7259439998 | Email: ukshati365@gmail.com
+      </p>
 
       <style jsx global>{`
         /* Updated Footer Styles */
@@ -112,16 +114,16 @@ const Footer = () => {
           box-shadow: 3px 2px 45px 0px rgba(0, 0, 0, 0.12);
         }
 
-        .link[data-social="facebook"]:hover {
+        .link[data-social='facebook']:hover {
           color: #1877f2;
         }
-        .link[data-social="instagram"]:hover {
+        .link[data-social='instagram']:hover {
           color: #e4405f;
         }
-        .link[data-social="linkedin"]:hover {
+        .link[data-social='linkedin']:hover {
           color: #0a66c2;
         }
-        .link[data-social="twitter"]:hover {
+        .link[data-social='twitter']:hover {
           color: #1da1f2;
         }
       `}</style>

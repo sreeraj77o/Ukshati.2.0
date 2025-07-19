@@ -1,6 +1,6 @@
-"use client";
-import { useEffect, useState } from "react";
-import StarryBackground from "@/components/StarryBackground";
+'use client';
+import { useEffect, useState } from 'react';
+import StarryBackground from '@/components/StarryBackground';
 import {
   FiArrowLeft,
   FiSearch,
@@ -14,11 +14,11 @@ import {
   FiBox,
   FiDollarSign,
   FiCalendar,
-} from "react-icons/fi";
-import { useRouter } from "next/navigation";
-import BackButton from "@/components/BackButton";
-import { AnimatePresence, motion } from "framer-motion";
-import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
+} from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
+import BackButton from '@/components/BackButton';
+import { AnimatePresence, motion } from 'framer-motion';
+import { TableSkeleton, FormSkeleton } from '@/components/skeleton';
 
 // Custom Pagination Component
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
@@ -33,17 +33,21 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
           {'<'}
         </button>
         <div className="flex gap-2 sm:gap-6 mx-2 overflow-x-auto whitespace-nowrap">
-          {Array.from({ length: totalPages }, (_, index) => index + 1).map((num) => (
-            <button
-              key={num}
-              className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-sm sm:text-lg ${
-                currentPage === num ? 'bg-cyan-600 text-white' : 'text-gray-300'
-              }`}
-              onClick={() => onPageChange(num)}
-            >
-              {num}
-            </button>
-          ))}
+          {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+            num => (
+              <button
+                key={num}
+                className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-sm sm:text-lg ${
+                  currentPage === num
+                    ? 'bg-cyan-600 text-white'
+                    : 'text-gray-300'
+                }`}
+                onClick={() => onPageChange(num)}
+              >
+                {num}
+              </button>
+            )
+          )}
         </div>
         <button
           className={`text-gray-400 px-1 sm:px-3 ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -60,8 +64,8 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 // Custom Modal Component
 const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
   const [formData, setFormData] = useState({
-    quantity: "",
-    price: ""
+    quantity: '',
+    price: '',
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,8 +77,8 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
       // Simulate loading delay
       const timer = setTimeout(() => {
         setFormData({
-          quantity: "",
-          price: stock.price_pu || ""
+          quantity: '',
+          price: stock.price_pu || '',
         });
         setLoading(false);
       }, 300);
@@ -84,21 +88,29 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.quantity || isNaN(formData.quantity) || parseFloat(formData.quantity) <= 0) {
-      newErrors.quantity = "Please enter a valid quantity";
+    if (
+      !formData.quantity ||
+      isNaN(formData.quantity) ||
+      parseFloat(formData.quantity) <= 0
+    ) {
+      newErrors.quantity = 'Please enter a valid quantity';
     }
-    if (!formData.price || isNaN(formData.price) || parseFloat(formData.price) <= 0) {
-      newErrors.price = "Please enter a valid price";
+    if (
+      !formData.price ||
+      isNaN(formData.price) ||
+      parseFloat(formData.price) <= 0
+    ) {
+      newErrors.price = 'Please enter a valid price';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = e => {
     e.preventDefault();
     if (!validateForm()) return;
-    if (userRole?.toLowerCase() !== "admin") {
-      alert("Admin access required to update stock");
+    if (userRole?.toLowerCase() !== 'admin') {
+      alert('Admin access required to update stock');
       return;
     }
     setIsSubmitting(true);
@@ -106,36 +118,36 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
       onUpdate({
         stockId: stock.stock_id,
         quantity: Number(formData.quantity),
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price),
       });
     } catch (err) {
-      console.error("Update error:", err);
+      console.error('Update error:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
-  const handleIncrement = (field) => {
+  const handleIncrement = field => {
     setFormData(prev => ({
       ...prev,
-      [field]: ((parseFloat(prev[field]) || 0) + 1).toString()
+      [field]: ((parseFloat(prev[field]) || 0) + 1).toString(),
     }));
   };
 
-  const handleDecrement = (field) => {
+  const handleDecrement = field => {
     const currentValue = parseFloat(formData[field]) || 0;
     if (currentValue > 0) {
       setFormData(prev => ({
         ...prev,
-        [field]: (currentValue - 1).toString()
+        [field]: (currentValue - 1).toString(),
       }));
     }
   };
@@ -169,104 +181,115 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
                   <span className="text-white">{stock.category_name}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-300 font-medium">Current Quantity:</span>
+                  <span className="text-gray-300 font-medium">
+                    Current Quantity:
+                  </span>
                   <span className="text-white">{stock.quantity}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-300 font-medium">Current Price:</span>
-                  <span className="text-white">₹{stock.price_pu || "0.00"}</span>
+                  <span className="text-gray-300 font-medium">
+                    Current Price:
+                  </span>
+                  <span className="text-white">
+                    ₹{stock.price_pu || '0.00'}
+                  </span>
                 </div>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="quantity" className="block text-gray-300 mb-2">
-                Quantity to Add
-              </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+                <div>
+                  <label
+                    htmlFor="quantity"
+                    className="block text-gray-300 mb-2"
+                  >
+                    Quantity to Add
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDecrement('quantity')}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <FiMinus />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleIncrement('quantity')}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <FiPlus />
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      id="quantity"
+                      name="quantity"
+                      value={formData.quantity}
+                      onChange={handleChange}
+                      className="w-full pl-24 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                      min="1"
+                      step="1"
+                    />
+                  </div>
+                  {errors.quantity && (
+                    <p className="mt-1 text-sm text-red-400">
+                      {errors.quantity}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label htmlFor="price" className="block text-gray-300 mb-2">
+                    New Price per Unit (₹)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDecrement('price')}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <FiMinus />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleIncrement('price')}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <FiPlus />
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      className="w-full pl-24 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
+                      min="0.01"
+                      step="0.01"
+                    />
+                  </div>
+                  {errors.price && (
+                    <p className="mt-1 text-sm text-red-400">{errors.price}</p>
+                  )}
+                </div>
+                <div className="pt-4 flex gap-3 flex-col sm:flex-row">
                   <button
                     type="button"
-                    onClick={() => handleDecrement("quantity")}
-                    className="text-gray-400 hover:text-white"
+                    onClick={onClose}
+                    className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
                   >
-                    <FiMinus />
+                    Cancel
                   </button>
                   <button
-                    type="button"
-                    onClick={() => handleIncrement("quantity")}
-                    className="text-gray-400 hover:text-white"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FiPlus />
+                    {isSubmitting ? 'Updating...' : 'Add Stock'}
                   </button>
                 </div>
-                <input
-                  type="number"
-                  id="quantity"
-                  name="quantity"
-                  value={formData.quantity}
-                  onChange={handleChange}
-                  className="w-full pl-24 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
-                  min="1"
-                  step="1"
-                />
-              </div>
-              {errors.quantity && (
-                <p className="mt-1 text-sm text-red-400">{errors.quantity}</p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="price" className="block text-gray-300 mb-2">
-                New Price per Unit (₹)
-              </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDecrement("price")}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <FiMinus />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleIncrement("price")}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className="w-full pl-24 pr-4 py-2 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
-                  min="0.01"
-                  step="0.01"
-                />
-              </div>
-              {errors.price && (
-                <p className="mt-1 text-sm text-red-400">{errors.price}</p>
-              )}
-            </div>
-            <div className="pt-4 flex gap-3 flex-col sm:flex-row">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Updating..." : "Add Stock"}
-              </button>
-            </div>
-          </form>
+              </form>
             </>
           )}
         </div>
@@ -277,13 +300,13 @@ const UpdateStockModal = ({ stock, onClose, onUpdate, userRole }) => {
 
 export default function StockUpdate() {
   const router = useRouter();
-  const [userRole, setUserRole] = useState("");
+  const [userRole, setUserRole] = useState('');
   const [stocks, setStocks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filteredStocks, setFilteredStocks] = useState([]);
-  const [error, setError] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStock, setCurrentStock] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -291,7 +314,7 @@ export default function StockUpdate() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole") || "";
+    const role = localStorage.getItem('userRole') || '';
     setUserRole(role);
     fetchData();
   }, []);
@@ -299,24 +322,24 @@ export default function StockUpdate() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
 
       const [stocksRes, categoriesRes] = await Promise.all([
-        fetch("/api/stocks", {
+        fetch('/api/stocks', {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }),
-        fetch("/api/categories", {
+        fetch('/api/categories', {
           headers: {
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
-        })
+        }),
       ]);
 
-      if (!stocksRes.ok) throw new Error("Failed to fetch stocks");
-      if (!categoriesRes.ok) throw new Error("Failed to fetch categories");
+      if (!stocksRes.ok) throw new Error('Failed to fetch stocks');
+      if (!categoriesRes.ok) throw new Error('Failed to fetch categories');
 
       const stocksData = await stocksRes.json();
       const categoriesData = await categoriesRes.json();
@@ -334,26 +357,28 @@ export default function StockUpdate() {
   };
 
   useEffect(() => {
-    const filtered = stocks.filter((stock) => {
-      const categoryMatch = selectedCategory === "all" || stock.category_name === selectedCategory;
-      const searchMatch = stock.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         stock.category_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const filtered = stocks.filter(stock => {
+      const categoryMatch =
+        selectedCategory === 'all' || stock.category_name === selectedCategory;
+      const searchMatch =
+        stock.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        stock.category_name.toLowerCase().includes(searchTerm.toLowerCase());
       return categoryMatch && searchMatch;
     });
     setFilteredStocks(filtered);
     setCurrentPage(1); // Reset to first page when filters change
   }, [stocks, searchTerm, selectedCategory]);
 
-  const handleUpdateStock = async (updateData) => {
+  const handleUpdateStock = async updateData => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token found");
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
 
-      const response = await fetch("/api/updateStock", {
-        method: "POST",
+      const response = await fetch('/api/updateStock', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(updateData),
       });
@@ -361,7 +386,7 @@ export default function StockUpdate() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message);
 
-      alert("Stock updated successfully!");
+      alert('Stock updated successfully!');
       fetchData();
       setIsModalOpen(false);
     } catch (err) {
@@ -369,21 +394,21 @@ export default function StockUpdate() {
     }
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = page => {
     setCurrentPage(page);
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     setSearchTerm(e.target.value);
   };
 
-  const handleCategoryChange = (e) => {
+  const handleCategoryChange = e => {
     setSelectedCategory(e.target.value);
   };
 
-  const openModal = (stock) => {
-    if (userRole?.toLowerCase() !== "admin") {
-      alert("Admin access required to update stock");
+  const openModal = stock => {
+    if (userRole?.toLowerCase() !== 'admin') {
+      alert('Admin access required to update stock');
       return;
     }
     setCurrentStock(stock);
@@ -394,7 +419,7 @@ export default function StockUpdate() {
     setIsModalOpen(false);
   };
 
-  const formatDateTime = (dateTime) => {
+  const formatDateTime = dateTime => {
     const date = new Date(dateTime);
     return date.toLocaleString();
   };
@@ -408,9 +433,9 @@ export default function StockUpdate() {
     <div className="min-h-screen bg-black text-gray-100">
       {/* Header */}
       <header className="p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
-      <div className="hidden sm:flex">
-              <BackButton route="/ims/home" />
-            </div>
+        <div className="hidden sm:flex">
+          <BackButton route="/ims/home" />
+        </div>
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center w-full sm:w-auto justify-start">
             <h1 className="text-lg sm:text-2xl font-bold text-blue-400 text-center sm:text-left w-full sm:w-auto pl-4">
@@ -419,7 +444,7 @@ export default function StockUpdate() {
           </div>
           <div className="flex-1 w-full sm:w-auto flex justify-end">
             <button
-              onClick={() => router.push("/ims/view-stock")}
+              onClick={() => router.push('/ims/view-stock')}
               className="flex items-center gap-2 hover:text-blue-400 transition-colors text-sm sm:text-base pr-6"
             >
               <FiActivity className="text-xl" />
@@ -451,8 +476,11 @@ export default function StockUpdate() {
               className="w-full pl-10 pr-4 py-2 bg-gray-700 rounded-lg text-sm sm:text-base"
             >
               <option value="all">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.category_id} value={category.category_name}>
+              {categories.map(category => (
+                <option
+                  key={category.category_id}
+                  value={category.category_name}
+                >
                   {category.category_name}
                 </option>
               ))}
@@ -472,11 +500,19 @@ export default function StockUpdate() {
             <table className="w-full min-w-[600px]">
               <thead className="bg-gray-800">
                 <tr>
-                  {["Product", "Category", "Qty", "Price", "Total", "Date", "Actions"].map((header, i) => (
+                  {[
+                    'Product',
+                    'Category',
+                    'Qty',
+                    'Price',
+                    'Total',
+                    'Date',
+                    'Actions',
+                  ].map((header, i) => (
                     <th
                       key={i}
                       className={`px-4 py-3 text-xs sm:text-sm font-semibold text-indigo-400 border-b border-gray-700 ${
-                        header === "Product" ? "text-left" : "text-center"
+                        header === 'Product' ? 'text-left' : 'text-center'
                       }`}
                     >
                       <div className="inline-flex items-center gap-2">
@@ -493,56 +529,63 @@ export default function StockUpdate() {
                       <TableSkeleton rows={5} columns={7} />
                     </td>
                   </tr>
-                ) : paginatedStocks.map((stock) => (
-                  <tr
-                    key={stock.stock_id}
-                    className="hover:bg-gray-800/30 transition-colors duration-200"
-                  >
-                    <td className="px-4 py-3 text-sm font-medium text-white text-left">
-                      <div className="flex items-center gap-3">
-                        <FiPackage className="text-gray-400 flex-shrink-0" />
-                        <span className="truncate max-w-[150px] sm:max-w-none">
-                          {stock.item_name}
+                ) : (
+                  paginatedStocks.map(stock => (
+                    <tr
+                      key={stock.stock_id}
+                      className="hover:bg-gray-800/30 transition-colors duration-200"
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-white text-left">
+                        <div className="flex items-center gap-3">
+                          <FiPackage className="text-gray-400 flex-shrink-0" />
+                          <span className="truncate max-w-[150px] sm:max-w-none">
+                            {stock.item_name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 rounded-full text-xs font-medium border border-indigo-400/20 inline-block">
+                          {stock.category_name}
                         </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 rounded-full text-xs font-medium border border-indigo-400/20 inline-block">
-                        {stock.category_name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`px-3 py-1 rounded-md text-sm font-medium ${
-                        stock.quantity < 5 ? 'bg-amber-900/30 text-amber-400' : 'bg-green-900/30 text-green-400'
-                      }`}>
-                        {stock.quantity}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-300 text-center">
-                      ₹{stock.price_pu || "0.00"}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-white text-center">
-                      ₹{(stock.price_pu * stock.quantity).toFixed(2) || "0.00"}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-400 text-center">
-                      {formatDateTime(stock.updated_at)}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => openModal(stock)}
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-                          userRole?.toLowerCase() === "admin"
-                            ? "bg-cyan-600 text-white hover:bg-indigo-500 hover:shadow-lg"
-                            : "bg-gray-700 text-gray-400 cursor-not-allowed"
-                        }`}
-                        disabled={userRole?.toLowerCase() !== "admin"}
-                      >
-                        <FiEdit className="w-4 h-4" />
-                        <span>Update</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={`px-3 py-1 rounded-md text-sm font-medium ${
+                            stock.quantity < 5
+                              ? 'bg-amber-900/30 text-amber-400'
+                              : 'bg-green-900/30 text-green-400'
+                          }`}
+                        >
+                          {stock.quantity}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-300 text-center">
+                        ₹{stock.price_pu || '0.00'}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-white text-center">
+                        ₹
+                        {(stock.price_pu * stock.quantity).toFixed(2) || '0.00'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-400 text-center">
+                        {formatDateTime(stock.updated_at)}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => openModal(stock)}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                            userRole?.toLowerCase() === 'admin'
+                              ? 'bg-cyan-600 text-white hover:bg-indigo-500 hover:shadow-lg'
+                              : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                          }`}
+                          disabled={userRole?.toLowerCase() !== 'admin'}
+                        >
+                          <FiEdit className="w-4 h-4" />
+                          <span>Update</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -589,7 +632,7 @@ export default function StockUpdate() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
               className="bg-gray-800 rounded-xl border border-gray-700 w-full max-w-md overflow-hidden shadow-2xl"
             >
               <UpdateStockModal

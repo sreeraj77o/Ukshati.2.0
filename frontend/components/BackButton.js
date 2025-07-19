@@ -1,8 +1,8 @@
 // components/BackButton.js
-import { FiArrowLeft } from "react-icons/fi";
-import { useRouter } from "next/navigation";
+import { FiArrowLeft } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
 
-const BackButton = ({ route = "/", label = "Back", onClick }) => {
+const BackButton = ({ route = '/', label = 'Back', onClick }) => {
   const router = useRouter();
 
   const handleClick = () => {

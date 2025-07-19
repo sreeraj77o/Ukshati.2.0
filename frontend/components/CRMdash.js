@@ -27,26 +27,43 @@ const demoData = {
   customerDistribution: [
     { name: 'Customer', value: 1, color: '#4f46e5' },
     { name: 'Lead', value: 0, color: '#0ea5e9' },
-    { name: 'Prospect', value: 0, color: '#8b5cf6' }
+    { name: 'Prospect', value: 0, color: '#8b5cf6' },
   ],
   remindersByPriority: [
     { priority: 'High', count: 3, color: '#ef4444' },
     { priority: 'Medium', count: 5, color: '#f59e0b' },
-    { priority: 'Low', count: 4, color: '#3b82f6' }
-  ]
+    { priority: 'Low', count: 4, color: '#3b82f6' },
+  ],
 };
 
-const orderedMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const orderedMonths = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 export default function CRMDashboardVisualizations() {
   const [projectGrowth, setProjectGrowth] = useState({
     Completed: Array(12).fill(0),
     Ongoing: Array(12).fill(0),
-    'On Hold': Array(12).fill(0)
+    'On Hold': Array(12).fill(0),
   });
 
-  const [customerData, setCustomerData] = useState(demoData.customerDistribution);
-  const [reminderData, setReminderData] = useState(demoData.remindersByPriority);
+  const [customerData, setCustomerData] = useState(
+    demoData.customerDistribution
+  );
+  const [reminderData, setReminderData] = useState(
+    demoData.remindersByPriority
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,7 +74,7 @@ export default function CRMDashboardVisualizations() {
         const statusGroups = {
           Completed: Array(12).fill(0),
           Ongoing: Array(12).fill(0),
-          'On Hold': Array(12).fill(0)
+          'On Hold': Array(12).fill(0),
         };
 
         tasksData.forEach(task => {
@@ -79,13 +96,21 @@ export default function CRMDashboardVisualizations() {
         if (customersData.customers && customersData.customers.length > 0) {
           const statusCounts = {};
           customersData.customers.forEach(customer => {
-            const status = customer.status?.toLowerCase() || "unknown";
+            const status = customer.status?.toLowerCase() || 'unknown';
             statusCounts[status] = (statusCounts[status] || 0) + 1;
           });
 
           const updatedCustomerData = [
-            { name: 'Customer', value: statusCounts['customer'] || 0, color: '#4f46e5' },
-            { name: 'Lead', value: statusCounts['lead'] || 0, color: '#0ea5e9' },
+            {
+              name: 'Customer',
+              value: statusCounts['customer'] || 0,
+              color: '#4f46e5',
+            },
+            {
+              name: 'Lead',
+              value: statusCounts['lead'] || 0,
+              color: '#0ea5e9',
+            },
           ];
           setCustomerData(updatedCustomerData);
         }
@@ -95,20 +120,27 @@ export default function CRMDashboardVisualizations() {
         if (Array.isArray(remindersData)) {
           const priorityCounts = { High: 0, Medium: 0, Low: 0 };
           remindersData.forEach(reminder => {
-            const priority = reminder.priority || "Low";
+            const priority = reminder.priority || 'Low';
             priorityCounts[priority] += 1;
           });
 
           const updatedReminderData = [
-            { priority: 'High', count: priorityCounts['High'], color: '#ef4444' },
-            { priority: 'Medium', count: priorityCounts['Medium'], color: '#f59e0b' },
-            { priority: 'Low', count: priorityCounts['Low'], color: '#3b82f6' }
+            {
+              priority: 'High',
+              count: priorityCounts['High'],
+              color: '#ef4444',
+            },
+            {
+              priority: 'Medium',
+              count: priorityCounts['Medium'],
+              color: '#f59e0b',
+            },
+            { priority: 'Low', count: priorityCounts['Low'], color: '#3b82f6' },
           ];
           setReminderData(updatedReminderData);
         }
-
       } catch (error) {
-        console.error("Error fetching data", error);
+        console.error('Error fetching data', error);
       }
     };
 
@@ -141,8 +173,8 @@ export default function CRMDashboardVisualizations() {
         backgroundColor: 'rgba(245, 158, 11, 0.2)',
         tension: 0.4,
         fill: true,
-      }
-    ]
+      },
+    ],
   };
 
   const pieChartData = {
@@ -151,8 +183,8 @@ export default function CRMDashboardVisualizations() {
       {
         data: customerData.map(item => item.value),
         backgroundColor: customerData.map(item => item.color),
-      }
-    ]
+      },
+    ],
   };
 
   return (
@@ -160,7 +192,9 @@ export default function CRMDashboardVisualizations() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Line Chart */}
         <div className="bg-black p-6 rounded-2xl shadow-lg w-full">
-          <h3 className="text-xl font-semibold mb-4 text-center text-white">Project Growth</h3>
+          <h3 className="text-xl font-semibold mb-4 text-center text-white">
+            Project Growth
+          </h3>
           <div className="relative h-64 sm:h-80 md:h-96">
             <Line
               data={lineChartData}
@@ -169,19 +203,19 @@ export default function CRMDashboardVisualizations() {
                 maintainAspectRatio: false,
                 plugins: {
                   legend: {
-                    labels: { color: 'white' }
-                  }
+                    labels: { color: 'white' },
+                  },
                 },
                 scales: {
                   x: {
                     ticks: { color: 'white' },
-                    grid: { color: 'rgba(255,255,255,0.1)' }
+                    grid: { color: 'rgba(255,255,255,0.1)' },
                   },
                   y: {
                     ticks: { color: 'white' },
-                    grid: { color: 'rgba(255,255,255,0.1)' }
-                  }
-                }
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                  },
+                },
               }}
             />
           </div>
@@ -189,7 +223,9 @@ export default function CRMDashboardVisualizations() {
 
         {/* Pie Chart */}
         <div className="bg-black p-6 rounded-2xl shadow-lg w-full">
-          <h3 className="text-xl font-semibold mb-4 text-center text-white">Customer Distribution</h3>
+          <h3 className="text-xl font-semibold mb-4 text-center text-white">
+            Customer Distribution
+          </h3>
           <div className="relative h-64 sm:h-80 md:h-96">
             <Pie
               data={pieChartData}
@@ -199,9 +235,9 @@ export default function CRMDashboardVisualizations() {
                 plugins: {
                   legend: {
                     position: 'bottom',
-                    labels: { color: 'white' }
-                  }
-                }
+                    labels: { color: 'white' },
+                  },
+                },
               }}
             />
           </div>

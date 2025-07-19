@@ -1,17 +1,17 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Search } from "lucide-react";
-import EditButton from "./editButton";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { TableSkeleton } from "@/components/skeleton";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Search } from 'lucide-react';
+import EditButton from './editButton';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { TableSkeleton } from '@/components/skeleton';
 
 export default function ProjectDetails() {
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
-  const [filterDate, setFilterDate] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [filterDate, setFilterDate] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -20,12 +20,12 @@ export default function ProjectDetails() {
     fetchProjects();
   }, []);
 
-  const fetchProjects = async (start = "") => {
+  const fetchProjects = async (start = '') => {
     setLoading(true);
     try {
       const url = start
         ? `/api/allProjects?start=${encodeURIComponent(formatDate(start))}`
-        : "/api/allProjects";
+        : '/api/allProjects';
 
       const response = await fetch(url);
       const data = await response.json();
@@ -37,17 +37,17 @@ export default function ProjectDetails() {
       setProjects(safeData);
       setFilteredProjects(safeData);
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error('Error fetching projects:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "";
+  const formatDate = dateStr => {
+    if (!dateStr) return '';
     const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
@@ -57,7 +57,7 @@ export default function ProjectDetails() {
   };
 
   useEffect(() => {
-    const filtered = projects.filter((proj) =>
+    const filtered = projects.filter(proj =>
       proj.pname?.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredProjects(filtered);
@@ -71,41 +71,41 @@ export default function ProjectDetails() {
   // Download CSV
   const downloadCSV = () => {
     if (filteredProjects.length === 0) {
-      alert("No projects to download.");
+      alert('No projects to download.');
       return;
     }
 
     const csvContent = [
       [
-        "Project",
-        "Client",
-        "Status",
-        "Start Date",
-        "End Date",
-        "Amount",
+        'Project',
+        'Client',
+        'Status',
+        'Start Date',
+        'End Date',
+        'Amount',
 
-        "Comments",
+        'Comments',
       ],
-      ...filteredProjects.map((proj) => [
+      ...filteredProjects.map(proj => [
         proj.pname,
         proj.cname,
         proj.status,
         proj.start_date,
         proj.end_date,
-        proj.Amount || "0",
+        proj.Amount || '0',
 
-        proj.Comments || "N/A",
+        proj.Comments || 'N/A',
       ]),
-      ["", "", "", "", "Total", totalAmount.toFixed(2), "", ""],
+      ['', '', '', '', 'Total', totalAmount.toFixed(2), '', ''],
     ]
-      .map((e) => e.join(","))
-      .join("\n");
+      .map(e => e.join(','))
+      .join('\n');
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "project_details.csv";
+    a.download = 'project_details.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -114,34 +114,34 @@ export default function ProjectDetails() {
   // Download PDF
   const downloadPDF = () => {
     if (filteredProjects.length === 0) {
-      alert("No projects to download.");
+      alert('No projects to download.');
       return;
     }
 
-    const printWindow = window.open("", "_blank");
+    const printWindow = window.open('', '_blank');
     printWindow.document.write(
-      "<html><head><title>Project Details</title></head><body>"
+      '<html><head><title>Project Details</title></head><body>'
     );
-    printWindow.document.write("<h3>Project Details</h3>");
+    printWindow.document.write('<h3>Project Details</h3>');
     printWindow.document.write(
       "<table border='1' style='width:100%; text-align:center; border-collapse: collapse;'>"
     );
 
     printWindow.document.write(
-      "<tr><th>Project Name</th><th>Client Name</th><th>Status</th><th>Start Date</th><th>End Date</th><th>Amount</th><th>Comments</th></tr>"
+      '<tr><th>Project Name</th><th>Client Name</th><th>Status</th><th>Start Date</th><th>End Date</th><th>Amount</th><th>Comments</th></tr>'
     );
 
-    filteredProjects.forEach((proj) => {
+    filteredProjects.forEach(proj => {
       printWindow.document.write(`
         <tr>
-          <td>${proj.pname || "N/A"}</td>
-          <td>${proj.cname || "N/A"}</td>
-          <td>${proj.status || "N/A"}</td>
-          <td>${proj.start_date || "N/A"}</td>
-          <td>${proj.end_date || "N/A"}</td>
-          <td>₹${proj.Amount || "0"}</td>
+          <td>${proj.pname || 'N/A'}</td>
+          <td>${proj.cname || 'N/A'}</td>
+          <td>${proj.status || 'N/A'}</td>
+          <td>${proj.start_date || 'N/A'}</td>
+          <td>${proj.end_date || 'N/A'}</td>
+          <td>₹${proj.Amount || '0'}</td>
 
-          <td>${proj.Comments || "N/A"}</td>
+          <td>${proj.Comments || 'N/A'}</td>
         </tr>
       `);
     });
@@ -152,7 +152,7 @@ export default function ProjectDetails() {
       )}</td><td colspan='2'></td></tr>`
     );
 
-    printWindow.document.write("</table></body></html>");
+    printWindow.document.write('</table></body></html>');
     printWindow.document.close();
     printWindow.print();
   };
@@ -173,7 +173,7 @@ export default function ProjectDetails() {
             <input
               type="date"
               value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
+              onChange={e => setFilterDate(e.target.value)}
               className="bg-gray-900 text-white px-4 py-2 rounded-md pr-10"
             />
             <Search
@@ -188,7 +188,7 @@ export default function ProjectDetails() {
               type="text"
               placeholder="Search by Project Name"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
               className="bg-gray-900 text-white px-4 py-2 rounded-md pr-10"
             />
           </div>
@@ -217,14 +217,14 @@ export default function ProjectDetails() {
               {filteredProjects.length > 0 ? (
                 filteredProjects.map((proj, index) => (
                   <tr key={index} className="hover:bg-white/10 transition-all">
-                    <td className="py-4 text-center">{proj.pname || "N/A"}</td>
-                    <td className="text-center">{proj.cname || "N/A"}</td>
-                    <td className="text-center">{proj.status || "N/A"}</td>
-                    <td className="text-center">{proj.start_date || "N/A"}</td>
-                    <td className="text-center">{proj.end_date || "N/A"}</td>
+                    <td className="py-4 text-center">{proj.pname || 'N/A'}</td>
+                    <td className="text-center">{proj.cname || 'N/A'}</td>
+                    <td className="text-center">{proj.status || 'N/A'}</td>
+                    <td className="text-center">{proj.start_date || 'N/A'}</td>
+                    <td className="text-center">{proj.end_date || 'N/A'}</td>
 
-                    <td className="text-center">₹{proj.Amount || "0"}</td>
-                    <td className="text-center">{proj.Comments || "N/A"}</td>
+                    <td className="text-center">₹{proj.Amount || '0'}</td>
+                    <td className="text-center">{proj.Comments || 'N/A'}</td>
 
                     <td className="text-center">
                       <EditButton project={proj} />
@@ -242,7 +242,9 @@ export default function ProjectDetails() {
             <tfoot>
               <tr className="font-semibold">
                 <td colSpan="5" />
-                <td className="text-center">Total: ₹{totalAmount.toFixed(2)}</td>
+                <td className="text-center">
+                  Total: ₹{totalAmount.toFixed(2)}
+                </td>
                 <td colSpan="2" />
               </tr>
             </tfoot>

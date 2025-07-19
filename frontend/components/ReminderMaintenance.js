@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-import { FiAlertCircle, FiUser, FiClock, FiCalendar, FiMessageSquare, FiTrash2 } from 'react-icons/fi';
+import {
+  FiAlertCircle,
+  FiUser,
+  FiClock,
+  FiCalendar,
+  FiMessageSquare,
+  FiTrash2,
+} from 'react-icons/fi';
 
 const ReminderMaintenance = () => {
   const [reminders, setReminders] = useState([]);
@@ -10,7 +17,7 @@ const ReminderMaintenance = () => {
     message: '',
     date: '',
     time: '',
-    customerId: ''
+    customerId: '',
   });
 
   // Service Worker Setup
@@ -28,7 +35,9 @@ const ReminderMaintenance = () => {
       navigator.serviceWorker.addEventListener('message', event => {
         if (event.data.type === 'REMINDER_TRIGGERED') {
           new Audio(event.data.sound).play().catch(console.error);
-          setReminders(prev => prev.filter(r => r.rid !== event.data.reminder.rid));
+          setReminders(prev =>
+            prev.filter(r => r.rid !== event.data.reminder.rid)
+          );
         }
       });
     }
@@ -40,12 +49,12 @@ const ReminderMaintenance = () => {
       try {
         const [customersRes, remindersRes] = await Promise.all([
           fetch('/api/customers'),
-          fetch('/api/reminders')
+          fetch('/api/reminders'),
         ]);
 
         const [customersData, remindersData] = await Promise.all([
           customersRes.json(),
-          remindersRes.json()
+          remindersRes.json(),
         ]);
 
         setCustomers(customersData.customers || []);
@@ -66,60 +75,60 @@ const ReminderMaintenance = () => {
       title,
       text: message,
       background: '#1f2937',
-      color: '#fff'
+      color: '#fff',
     });
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    
+
     try {
       const response = await fetch('/api/reminders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to save reminder');
+      if (!response.ok)
+        throw new Error(data.error || 'Failed to save reminder');
 
       setReminders(prev => [...prev, data]);
       setFormData({ message: '', date: '', time: '', customerId: '' });
-      
+
       Swal.fire({
         icon: 'success',
         title: 'Reminder Added!',
         text: 'Notification will appear at scheduled time',
         background: '#1f2937',
-        color: '#fff'
+        color: '#fff',
       });
-
     } catch (error) {
       Swal.fire({
         icon: 'error',
         title: 'Failed to Save',
         text: error.message,
         background: '#1f2937',
-        color: '#fff'
+        color: '#fff',
       });
     }
   };
 
-  const deleteReminder = async (id) => {
+  const deleteReminder = async id => {
     const { isConfirmed } = await Swal.fire({
       title: 'Delete Reminder?',
-      text: "This cannot be undone!",
+      text: 'This cannot be undone!',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3b82f6',
       cancelButtonColor: '#6b7280',
       background: '#1f2937',
-      color: '#fff'
+      color: '#fff',
     });
 
     if (isConfirmed) {
@@ -132,7 +141,7 @@ const ReminderMaintenance = () => {
           title: 'Delete Failed',
           text: error.message,
           background: '#1f2937',
-          color: '#fff'
+          color: '#fff',
         });
       }
     }

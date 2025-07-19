@@ -1,19 +1,19 @@
-import { connectToDB } from "../../lib/db"; // Import the connection helper
+import { connectToDB } from '../../lib/db'; // Import the connection helper
 
 export default async function handler(req, res) {
-    if (req.method !== "GET") {
-        return res.status(405).json({ error: "Method Not Allowed" });
-    }
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-    let connection;
-    try {
-        let { quote_id, from_date, to_date, customer_name } = req.query;
+  let connection;
+  try {
+    let { quote_id, from_date, to_date, customer_name } = req.query;
 
-        // Get the database connection
-        connection = await connectToDB();
+    // Get the database connection
+    connection = await connectToDB();
 
-        // Base query
-        let query = `
+    // Base query
+    let query = `
             SELECT 
                 q.quote_id, 
                 q.project_id, 
@@ -33,32 +33,32 @@ export default async function handler(req, res) {
             WHERE 1=1
         `;
 
-        let values = [];
+    let values = [];
 
-        // Add filters only if they are provided
-        if (quote_id) {
-            query += " AND q.quote_id = ?";
-            values.push(quote_id);
-        }
-
-        if (from_date && to_date) {
-            query += " AND q.date BETWEEN ? AND ?";
-            values.push(from_date, to_date);
-        }
-
-        if (customer_name) {
-            query += " AND c.cname LIKE ?";
-            values.push(`%${customer_name}%`);
-        }
-
-        // Execute the query (with or without filters)
-        const [results] = await connection.execute(query, values);
-
-        res.status(200).json(results);
-    } catch (error) {
-        console.error("❌ Error:", error);
-        res.status(500).json({ error: "Internal server error" });
-    } finally {
-        if (connection) connection.release(); // ✅ Corrected: Release connection instead of ending it
+    // Add filters only if they are provided
+    if (quote_id) {
+      query += ' AND q.quote_id = ?';
+      values.push(quote_id);
     }
+
+    if (from_date && to_date) {
+      query += ' AND q.date BETWEEN ? AND ?';
+      values.push(from_date, to_date);
+    }
+
+    if (customer_name) {
+      query += ' AND c.cname LIKE ?';
+      values.push(`%${customer_name}%`);
+    }
+
+    // Execute the query (with or without filters)
+    const [results] = await connection.execute(query, values);
+
+    res.status(200).json(results);
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    if (connection) connection.release(); // ✅ Corrected: Release connection instead of ending it
+  }
 }

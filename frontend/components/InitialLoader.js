@@ -1,6 +1,6 @@
-"use client";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+'use client';
+import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 const InitialLoader = () => {
   const [progress, setProgress] = useState(0);
@@ -12,7 +12,10 @@ const InitialLoader = () => {
     }, 150);
 
     const timeout = setTimeout(() => setIsLoading(false), 2500);
-    return () => { clearInterval(interval); clearTimeout(timeout); };
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, []);
 
   if (!isLoading) return null;
@@ -27,14 +30,14 @@ const InitialLoader = () => {
       <motion.div
         initial={{ y: -100, scale: 0.8 }}
         animate={{
-          y: "50vh",
+          y: '50vh',
           scale: [0.8, 1.2, 1],
-          rotate: [0, 15, -15, 0]
+          rotate: [0, 15, -15, 0],
         }}
         transition={{
           duration: 1.2,
           ease: [0.17, 0.67, 0.83, 0.67],
-          times: [0, 0.8, 0.9, 1]
+          times: [0, 0.8, 0.9, 1],
         }}
         className="absolute"
       >
@@ -55,11 +58,11 @@ const InitialLoader = () => {
       <motion.div
         initial={{ scale: 0, opacity: 1 }}
         animate={{ scale: 4, opacity: 0 }}
-        transition={{ 
+        transition={{
           delay: 1,
           duration: 1.5,
           repeat: Infinity,
-          repeatDelay: 1.2
+          repeatDelay: 1.2,
         }}
         className="absolute bottom-1/3 w-16 h-16 border-2 border-cyan-400 rounded-full"
       />
@@ -72,8 +75,8 @@ const InitialLoader = () => {
             initial={{
               opacity: 0,
               scale: 0,
-              x: Math.random() * 100 - 50 + "%",
-              y: Math.random() * 100 - 50 + "%"
+              x: Math.random() * 100 - 50 + '%',
+              y: Math.random() * 100 - 50 + '%',
             }}
             animate={{
               opacity: [0, 0.4, 0],
@@ -82,7 +85,7 @@ const InitialLoader = () => {
             transition={{
               duration: Math.random() * 3 + 1,
               repeat: Infinity,
-              delay: Math.random() * 2
+              delay: Math.random() * 2,
             }}
             className="absolute w-2 h-2 bg-cyan-400 rounded-full"
           />
@@ -107,11 +110,11 @@ const InitialLoader = () => {
       {/* Progress Bar */}
       <motion.div
         initial={{ width: 0 }}
-        animate={{ width: "100%" }}
+        animate={{ width: '100%' }}
         transition={{ duration: 2.5 }}
         className="absolute  mx-auto h-1 bg-gray-800 max-w-xs rounded-full overflow-hidden"
       >
-        <div 
+        <div
           className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-300"
           style={{ width: `${progress}%` }}
         />

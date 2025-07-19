@@ -3,7 +3,16 @@ import db from '../../../lib/db';
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { pid, pname, cid, cname, expenses, extraExpenses, inventory, grandTotal } = req.body;
+      const {
+        pid,
+        pname,
+        cid,
+        cname,
+        expenses,
+        extraExpenses,
+        inventory,
+        grandTotal,
+      } = req.body;
 
       const [result] = await db.query(
         `INSERT INTO invoices (pid, pname, cid, cname, expenses, extraExpenses, inventory, grandTotal, created_at) 

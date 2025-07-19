@@ -10,7 +10,7 @@ const dbConfig = {
 export default async function handler(req, res) {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    
+
     const [results] = await connection.execute(`
       SELECT 
         ispent.*,
@@ -27,16 +27,15 @@ export default async function handler(req, res) {
       LEFT JOIN employee e ON ispent.recorded_by = e.id
       ORDER BY ispent.spent_id DESC
     `);
-    
 
     await connection.end();
 
     res.status(200).json(results);
   } catch (error) {
     console.error('Error fetching inventory spent:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Server error',
-      error: error.message 
+      error: error.message,
     });
   }
 }

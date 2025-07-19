@@ -53,7 +53,8 @@ const StarryBackground = () => {
       this.x = this.random(-0.1, 1.1, true);
       this.y = this.random(-0.1, 1.1, true);
       this.z = this.random(0, 4);
-      this.color = settings.colors[Math.floor(Math.random() * settings.colors.length)]; // Random color
+      this.color =
+        settings.colors[Math.floor(Math.random() * settings.colors.length)]; // Random color
       this.opacity = this.random(0.1, 1, true);
       this.flicker = 0;
       this.neighbors = [];
@@ -96,7 +97,7 @@ const StarryBackground = () => {
           r * 100,
           r,
           (settings.glareAngle -
-            ((nPos.x - 0.5) * settings.noiseStrength * settings.motion)) *
+            (nPos.x - 0.5) * settings.noiseStrength * settings.motion) *
             (Math.PI / 180),
           0,
           Math.PI * 2
@@ -110,12 +111,16 @@ const StarryBackground = () => {
       return {
         x:
           this.x * canvas.width +
-          (canvas.width / 2 - mouse.x + (nPos.x - 0.5) * settings.noiseStrength) *
+          (canvas.width / 2 -
+            mouse.x +
+            (nPos.x - 0.5) * settings.noiseStrength) *
             this.z *
             settings.motion,
         y:
           this.y * canvas.height +
-          (canvas.height / 2 - mouse.y + (nPos.y - 0.5) * settings.noiseStrength) *
+          (canvas.height / 2 -
+            mouse.y +
+            (nPos.y - 0.5) * settings.noiseStrength) *
             this.z *
             settings.motion,
       };
@@ -197,9 +202,9 @@ const StarryBackground = () => {
 
       // Set neighbors
       particles.current.forEach((particle, index) => {
-        triangles.forEach((triangle) => {
+        triangles.forEach(triangle => {
           if (triangle.includes(index)) {
-            triangle.forEach((value) => {
+            triangle.forEach(value => {
               if (value !== index && !particle.neighbors.includes(value)) {
                 particle.neighbors.push(value);
               }
@@ -223,14 +228,14 @@ const StarryBackground = () => {
 
       // Render particles
       if (settings.renderParticles) {
-        particles.current.forEach((particle) => {
+        particles.current.forEach(particle => {
           particle.render(context, canvas, mouse.current, nPos.current);
         });
       }
 
       // Render flares
       if (settings.renderFlares) {
-        flares.current.forEach((flare) => {
+        flares.current.forEach(flare => {
           flare.render(context, canvas, mouse.current, nPos.current);
         });
       }
@@ -249,7 +254,7 @@ const StarryBackground = () => {
       animationFrameId.current = requestAnimationFrame(render);
     };
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = e => {
       mouse.current.x = e.clientX;
       mouse.current.y = e.clientY;
     };

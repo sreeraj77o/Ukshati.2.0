@@ -1,5 +1,5 @@
 // components/NotificationHandler.js
-"use client";
+'use client';
 import { useEffect } from 'react';
 import NotificationService from '@/lib/notifications';
 import Swal from 'sweetalert2';
@@ -8,7 +8,7 @@ const NotificationHandler = () => {
   useEffect(() => {
     if (!NotificationService.isSupported()) return;
 
-    const handleReminderEvent = (event) => {
+    const handleReminderEvent = event => {
       const { reminder } = event.detail || {};
       if (!reminder) return;
 
@@ -27,15 +27,14 @@ const NotificationHandler = () => {
         icon: 'info',
         background: '#1a1a2e',
         color: '#fff',
-        confirmButtonColor: '#4f46e5'
+        confirmButtonColor: '#4f46e5',
       });
 
       // Show system notification if permitted
       if (NotificationService.getPermission() === 'granted') {
-        NotificationService.show(
-          `Reminder: ${reminder.cname || 'Customer'}`,
-          { body: reminder.message || 'No message' }
-        );
+        NotificationService.show(`Reminder: ${reminder.cname || 'Customer'}`, {
+          body: reminder.message || 'No message',
+        });
       }
     };
 

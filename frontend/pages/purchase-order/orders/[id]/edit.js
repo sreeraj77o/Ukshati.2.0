@@ -1,12 +1,16 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import {
-  FiPlus, FiTrash2, FiCalendar, FiSave, FiAlertCircle
-} from "react-icons/fi";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { FormSkeleton } from "@/components/skeleton";
+  FiPlus,
+  FiTrash2,
+  FiCalendar,
+  FiSave,
+  FiAlertCircle,
+} from 'react-icons/fi';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { FormSkeleton } from '@/components/skeleton';
 
 export default function EditPurchaseOrder() {
   const router = useRouter();
@@ -17,16 +21,24 @@ export default function EditPurchaseOrder() {
   const [vendors, setVendors] = useState([]);
   const [originalOrder, setOriginalOrder] = useState(null);
   const [formData, setFormData] = useState({
-    project_id: "",
-    vendor_id: "",
-    expected_delivery_date: "",
-    shipping_address: "",
-    payment_terms: "Net 30 days",
-    notes: "",
-    items: [{ item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }],
+    project_id: '',
+    vendor_id: '',
+    expected_delivery_date: '',
+    shipping_address: '',
+    payment_terms: 'Net 30 days',
+    notes: '',
+    items: [
+      {
+        item_name: '',
+        description: '',
+        quantity: '',
+        unit: 'pcs',
+        unit_price: '',
+      },
+    ],
     subtotal: 0,
     tax_amount: 0,
-    total_amount: 0
+    total_amount: 0,
   });
   const [errors, setErrors] = useState({});
 
@@ -41,22 +53,22 @@ export default function EditPurchaseOrder() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        setErrors({ form: "Authentication required. Please log in again." });
-        router.push("/");
+        setErrors({ form: 'Authentication required. Please log in again.' });
+        router.push('/');
         return;
       }
 
       // Fetch order details, projects, and vendors concurrently
       const [orderRes, projectsRes, vendorsRes] = await Promise.all([
         fetch(`/api/purchase/orders?id=${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }),
         fetch('/api/projects', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }),
         fetch('/api/purchase/vendors', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
 
       if (!orderRes.ok || !projectsRes.ok || !vendorsRes.ok) {
@@ -71,7 +83,7 @@ export default function EditPurchaseOrder() {
       const normalizedProjects = projectsData.map(project => ({
         ...project,
         id: project.pid || project.id,
-        name: project.pname || project.name
+        name: project.pname || project.name,
       }));
 
       setProjects(normalizedProjects);
@@ -80,27 +92,39 @@ export default function EditPurchaseOrder() {
 
       // Set form data from existing order
       setFormData({
-        project_id: orderData.order.project_id || "",
-        vendor_id: orderData.order.vendor_id || "",
-        expected_delivery_date: orderData.order.expected_delivery_date || "",
-        shipping_address: orderData.order.shipping_address || "",
-        payment_terms: orderData.order.payment_terms || "Net 30 days",
-        notes: orderData.order.notes || "",
-        items: orderData.items.length > 0 ? orderData.items.map(item => ({
-          item_name: item.item_name || "",
-          description: item.description || "",
-          quantity: item.quantity?.toString() || "",
-          unit: item.unit || "pcs",
-          unit_price: item.unit_price?.toString() || ""
-        })) : [{ item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }],
+        project_id: orderData.order.project_id || '',
+        vendor_id: orderData.order.vendor_id || '',
+        expected_delivery_date: orderData.order.expected_delivery_date || '',
+        shipping_address: orderData.order.shipping_address || '',
+        payment_terms: orderData.order.payment_terms || 'Net 30 days',
+        notes: orderData.order.notes || '',
+        items:
+          orderData.items.length > 0
+            ? orderData.items.map(item => ({
+                item_name: item.item_name || '',
+                description: item.description || '',
+                quantity: item.quantity?.toString() || '',
+                unit: item.unit || 'pcs',
+                unit_price: item.unit_price?.toString() || '',
+              }))
+            : [
+                {
+                  item_name: '',
+                  description: '',
+                  quantity: '',
+                  unit: 'pcs',
+                  unit_price: '',
+                },
+              ],
         subtotal: Number(orderData.order.subtotal) || 0,
         tax_amount: Number(orderData.order.tax_amount) || 0,
-        total_amount: Number(orderData.order.total_amount) || 0
+        total_amount: Number(orderData.order.total_amount) || 0,
       });
-
     } catch (error) {
-      console.error("Error fetching data:", error);
-      setErrors({ form: "Failed to load purchase order data. Please try again." });
+      console.error('Error fetching data:', error);
+      setErrors({
+        form: 'Failed to load purchase order data. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -111,7 +135,7 @@ export default function EditPurchaseOrder() {
     const subtotal = formData.items.reduce((sum, item) => {
       const quantity = Number(item.quantity) || 0;
       const price = Number(item.unit_price) || 0;
-      return sum + (quantity * price);
+      return sum + quantity * price;
     }, 0);
 
     const taxAmount = subtotal * 0.18; // Assuming 18% tax
@@ -121,14 +145,14 @@ export default function EditPurchaseOrder() {
       ...prev,
       subtotal: Number(subtotal.toFixed(2)),
       tax_amount: Number(taxAmount.toFixed(2)),
-      total_amount: Number(totalAmount.toFixed(2))
+      total_amount: Number(totalAmount.toFixed(2)),
     }));
   }, [formData.items]);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
@@ -138,7 +162,7 @@ export default function EditPurchaseOrder() {
     const updatedItems = [...formData.items];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setFormData(prev => ({ ...prev, items: updatedItems }));
-    
+
     if (errors[`items.${index}.${field}`]) {
       setErrors(prev => ({ ...prev, [`items.${index}.${field}`]: null }));
     }
@@ -147,11 +171,20 @@ export default function EditPurchaseOrder() {
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { item_name: "", description: "", quantity: "", unit: "pcs", unit_price: "" }]
+      items: [
+        ...prev.items,
+        {
+          item_name: '',
+          description: '',
+          quantity: '',
+          unit: 'pcs',
+          unit_price: '',
+        },
+      ],
     }));
   };
 
-  const removeItem = (index) => {
+  const removeItem = index => {
     if (formData.items.length > 1) {
       const updatedItems = formData.items.filter((_, i) => i !== index);
       setFormData(prev => ({ ...prev, items: updatedItems }));
@@ -161,25 +194,29 @@ export default function EditPurchaseOrder() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.project_id) newErrors.project_id = "Project is required";
-    if (!formData.vendor_id) newErrors.vendor_id = "Vendor is required";
-    if (!formData.expected_delivery_date) newErrors.expected_delivery_date = "Expected delivery date is required";
+    if (!formData.project_id) newErrors.project_id = 'Project is required';
+    if (!formData.vendor_id) newErrors.vendor_id = 'Vendor is required';
+    if (!formData.expected_delivery_date)
+      newErrors.expected_delivery_date = 'Expected delivery date is required';
 
     formData.items.forEach((item, index) => {
-      if (!item.item_name) newErrors[`items.${index}.item_name`] = "Item name is required";
-      if (!item.quantity || Number(item.quantity) <= 0) newErrors[`items.${index}.quantity`] = "Valid quantity is required";
-      if (!item.unit_price || Number(item.unit_price) <= 0) newErrors[`items.${index}.unit_price`] = "Valid unit price is required";
+      if (!item.item_name)
+        newErrors[`items.${index}.item_name`] = 'Item name is required';
+      if (!item.quantity || Number(item.quantity) <= 0)
+        newErrors[`items.${index}.quantity`] = 'Valid quantity is required';
+      if (!item.unit_price || Number(item.unit_price) <= 0)
+        newErrors[`items.${index}.unit_price`] = 'Valid unit price is required';
     });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
 
     if (!validateForm()) {
-      console.log("Validation errors:", errors);
+      console.log('Validation errors:', errors);
       return;
     }
 
@@ -187,23 +224,23 @@ export default function EditPurchaseOrder() {
     setErrors({});
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       if (!token) {
-        setErrors({ form: "Authentication required. Please log in again." });
+        setErrors({ form: 'Authentication required. Please log in again.' });
         setSubmitting(false);
-        router.push("/");
+        router.push('/');
         return;
       }
 
-      console.log("Updating purchase order:", formData);
+      console.log('Updating purchase order:', formData);
 
       const response = await fetch(`/api/purchase/orders?id=${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -212,15 +249,16 @@ export default function EditPurchaseOrder() {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
-      console.log("Purchase order updated successfully:", data.po_number);
-      
-      // Show success message and redirect
-      alert("Purchase order updated successfully!");
-      router.push("/purchase-order/orders/AllOrders");
+      console.log('Purchase order updated successfully:', data.po_number);
 
+      // Show success message and redirect
+      alert('Purchase order updated successfully!');
+      router.push('/purchase-order/orders/AllOrders');
     } catch (error) {
-      console.error("Error updating purchase order:", error);
-      setErrors({ form: "Network error: Failed to update purchase order. Please check your connection and try again." });
+      console.error('Error updating purchase order:', error);
+      setErrors({
+        form: 'Network error: Failed to update purchase order. Please check your connection and try again.',
+      });
       setSubmitting(false);
     }
   };
@@ -243,7 +281,9 @@ export default function EditPurchaseOrder() {
         <BackButton route="/purchase-order/orders/AllOrders" />
         <div className="max-w-4xl mx-auto mt-16">
           <h1 className="text-3xl font-bold mb-8">Purchase Order Not Found</h1>
-          <p className="text-gray-400">The requested purchase order could not be found.</p>
+          <p className="text-gray-400">
+            The requested purchase order could not be found.
+          </p>
         </div>
       </div>
     );
@@ -253,12 +293,12 @@ export default function EditPurchaseOrder() {
     <div className="min-h-screen bg-black text-white p-6">
       <BackButton route="/purchase-order/orders/AllOrders" />
       <ScrollToTopButton />
-      
+
       <div className="max-w-4xl mx-auto mt-2 border border-white p-4 rounded-xl">
         <h1 className="text-3xl font-bold mb-8 text-center">
           Edit Purchase Order - {originalOrder.po_number}
         </h1>
-        
+
         {errors.form && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg flex items-center">
             <FiAlertCircle className="text-red-500 mr-2" />
@@ -334,12 +374,16 @@ export default function EditPurchaseOrder() {
               value={formData.expected_delivery_date}
               onChange={handleChange}
               className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.expected_delivery_date ? 'border-red-500' : 'border-gray-600'
+                errors.expected_delivery_date
+                  ? 'border-red-500'
+                  : 'border-gray-600'
               }`}
               required
             />
             {errors.expected_delivery_date && (
-              <p className="text-red-400 text-sm mt-1">{errors.expected_delivery_date}</p>
+              <p className="text-red-400 text-sm mt-1">
+                {errors.expected_delivery_date}
+              </p>
             )}
           </div>
 
@@ -389,7 +433,10 @@ export default function EditPurchaseOrder() {
 
             <div className="space-y-4">
               {formData.items.map((item, index) => (
-                <div key={index} className="bg-gray-800/50 p-4 rounded-lg border border-gray-700">
+                <div
+                  key={index}
+                  className="bg-gray-800/50 p-4 rounded-lg border border-gray-700"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     {/* Item Name */}
                     <div className="lg:col-span-2">
@@ -399,15 +446,21 @@ export default function EditPurchaseOrder() {
                       <input
                         type="text"
                         value={item.item_name}
-                        onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                        onChange={e =>
+                          handleItemChange(index, 'item_name', e.target.value)
+                        }
                         className={`w-full bg-gray-700 border rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors[`items.${index}.item_name`] ? 'border-red-500' : 'border-gray-600'
+                          errors[`items.${index}.item_name`]
+                            ? 'border-red-500'
+                            : 'border-gray-600'
                         }`}
                         placeholder="Enter item name"
                         required
                       />
                       {errors[`items.${index}.item_name`] && (
-                        <p className="text-red-400 text-xs mt-1">{errors[`items.${index}.item_name`]}</p>
+                        <p className="text-red-400 text-xs mt-1">
+                          {errors[`items.${index}.item_name`]}
+                        </p>
                       )}
                     </div>
 
@@ -419,9 +472,13 @@ export default function EditPurchaseOrder() {
                       <input
                         type="number"
                         value={item.quantity}
-                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        onChange={e =>
+                          handleItemChange(index, 'quantity', e.target.value)
+                        }
                         className={`w-full bg-gray-700 border rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors[`items.${index}.quantity`] ? 'border-red-500' : 'border-gray-600'
+                          errors[`items.${index}.quantity`]
+                            ? 'border-red-500'
+                            : 'border-gray-600'
                         }`}
                         placeholder="0"
                         min="0"
@@ -429,7 +486,9 @@ export default function EditPurchaseOrder() {
                         required
                       />
                       {errors[`items.${index}.quantity`] && (
-                        <p className="text-red-400 text-xs mt-1">{errors[`items.${index}.quantity`]}</p>
+                        <p className="text-red-400 text-xs mt-1">
+                          {errors[`items.${index}.quantity`]}
+                        </p>
                       )}
                     </div>
 
@@ -440,7 +499,9 @@ export default function EditPurchaseOrder() {
                       </label>
                       <select
                         value={item.unit}
-                        onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                        onChange={e =>
+                          handleItemChange(index, 'unit', e.target.value)
+                        }
                         className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="pcs">Pieces</option>
@@ -460,9 +521,13 @@ export default function EditPurchaseOrder() {
                       <input
                         type="number"
                         value={item.unit_price}
-                        onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)}
+                        onChange={e =>
+                          handleItemChange(index, 'unit_price', e.target.value)
+                        }
                         className={`w-full bg-gray-700 border rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          errors[`items.${index}.unit_price`] ? 'border-red-500' : 'border-gray-600'
+                          errors[`items.${index}.unit_price`]
+                            ? 'border-red-500'
+                            : 'border-gray-600'
                         }`}
                         placeholder="0.00"
                         min="0"
@@ -470,7 +535,9 @@ export default function EditPurchaseOrder() {
                         required
                       />
                       {errors[`items.${index}.unit_price`] && (
-                        <p className="text-red-400 text-xs mt-1">{errors[`items.${index}.unit_price`]}</p>
+                        <p className="text-red-400 text-xs mt-1">
+                          {errors[`items.${index}.unit_price`]}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -482,7 +549,9 @@ export default function EditPurchaseOrder() {
                     </label>
                     <textarea
                       value={item.description}
-                      onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                      onChange={e =>
+                        handleItemChange(index, 'description', e.target.value)
+                      }
                       rows="2"
                       className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Item description (optional)"
@@ -492,7 +561,11 @@ export default function EditPurchaseOrder() {
                   {/* Total and Remove Button */}
                   <div className="flex justify-between items-center mt-4">
                     <div className="text-lg font-semibold">
-                      Total: ₹{((Number(item.quantity) || 0) * (Number(item.unit_price) || 0)).toFixed(2)}
+                      Total: ₹
+                      {(
+                        (Number(item.quantity) || 0) *
+                        (Number(item.unit_price) || 0)
+                      ).toFixed(2)}
                     </div>
                     {formData.items.length > 1 && (
                       <button
@@ -550,7 +623,7 @@ export default function EditPurchaseOrder() {
           <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={() => router.push("/purchase-order/orders/AllOrders")}
+              onClick={() => router.push('/purchase-order/orders/AllOrders')}
               className="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium"
             >
               Cancel

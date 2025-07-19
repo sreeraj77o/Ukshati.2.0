@@ -1,4 +1,4 @@
-import { connectToDB } from '../../lib/db';  
+import { connectToDB } from '../../lib/db';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -10,7 +10,9 @@ export default async function handler(req, res) {
     connection = await connectToDB();
 
     // Query to get the last quote ID
-    const [rows] = await connection.execute('SELECT MAX(quote_id) AS last_quote_id FROM quotesdata');
+    const [rows] = await connection.execute(
+      'SELECT MAX(quote_id) AS last_quote_id FROM quotesdata'
+    );
 
     // Get the last quote ID or set it to 0 if no quotes exist
     const lastQuoteId = rows[0]?.last_quote_id || 0;
