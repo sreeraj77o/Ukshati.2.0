@@ -33,7 +33,9 @@ export default async function handler(req, res) {
     if (rows.length === 0) {
       // Release the connection back to the pool
       connection.release();
-      return res.status(401).json({ message: 'Invalid credentials: User not found' });
+      return res
+        .status(401)
+        .json({ message: 'Invalid credentials: User not found' });
     }
 
     const user = rows[0];
@@ -42,7 +44,10 @@ export default async function handler(req, res) {
     console.log('User Data:', user);
 
     // Compare passwords
-    const isPasswordValid = await bcrypt.compare(password.trim(), user.password);
+    const isPasswordValid = await bcrypt.compare(
+      password.trim(),
+      user.password
+    );
 
     // Debug: Log password comparison result
     console.log('Password Comparison Result:', isPasswordValid);
@@ -50,7 +55,9 @@ export default async function handler(req, res) {
     if (!isPasswordValid) {
       // Release the connection back to the pool
       connection.release();
-      return res.status(401).json({ message: 'Invalid credentials: Password mismatch' });
+      return res
+        .status(401)
+        .json({ message: 'Invalid credentials: Password mismatch' });
     }
 
     // Generate JWT token
@@ -61,13 +68,12 @@ export default async function handler(req, res) {
 
     // Release the connection back to the pool
     connection.release();
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       token,
       user: userData,
-      message: 'Login successful'
+      message: 'Login successful',
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Internal server error' });

@@ -54,19 +54,34 @@ body {
 }
 
 @keyframes bubble-move {
-  20% { border-radius: var(--size); }
-  50%, 100% { transform: translate(-50%, 0); border-radius: 0; }
+  20% {
+    border-radius: var(--size);
+  }
+  50%,
+  100% {
+    transform: translate(-50%, 0);
+    border-radius: 0;
+  }
 }
 
 @keyframes bubble-second-move {
-  30% { transform: translate(-50%, 100%); }
-  50% { border-radius: var(--size); }
-  100% { transform: translate(-50%, 0); border-radius: 0; }
+  30% {
+    transform: translate(-50%, 100%);
+  }
+  50% {
+    border-radius: var(--size);
+  }
+  100% {
+    transform: translate(-50%, 0);
+    border-radius: 0;
+  }
 }
 
 /* Add smooth transitions */
 * {
-  transition: background-color 0.2s ease, opacity 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 /* Scrollbar styling */
@@ -84,7 +99,7 @@ body {
   border-radius: 4px;
 }
 .svgIcon {
-  width: 24px;  /* Default size (larger than before) */
+  width: 24px; /* Default size (larger than before) */
   height: 24px;
   transition: transform 0.2s ease-in-out;
 }
@@ -100,9 +115,17 @@ body {
 }
 
 @keyframes swal2-show {
-  0% { transform: scale(0.7); opacity: 0; }
-  80% { transform: scale(1.05); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .swal2-title {
@@ -114,7 +137,9 @@ body {
 }
 
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 .animate-blink {
@@ -130,15 +155,29 @@ body {
 }
 
 @keyframes glitch {
-  0% { transform: translate(0); }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); }
-  100% { transform: translate(0); }
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
 }
 
 .glitch-effect {
   animation: glitch 1s infinite;
-  text-shadow: 2px 2px #ff0000, -2px -2px #00ffff;
+  text-shadow:
+    2px 2px #ff0000,
+    -2px -2px #00ffff;
 }

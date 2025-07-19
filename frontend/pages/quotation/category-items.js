@@ -7,14 +7,19 @@ import { CardSkeleton } from '@/components/skeleton';
 
 const CategoryItemsPage = () => {
   const router = useRouter();
-  const { categoryId, projectId, customer, selectedItems: selectedItemsStr } = router.query;
+  const {
+    categoryId,
+    projectId,
+    customer,
+    selectedItems: selectedItemsStr,
+  } = router.query;
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState({});
 
   // Safe parsing of URL parameters
-  const parseSelectedItems = (str) => {
+  const parseSelectedItems = str => {
     try {
       if (!str) return {};
       const decoded = decodeURIComponent(str);
@@ -44,7 +49,7 @@ const CategoryItemsPage = () => {
           setItems(data || []);
           setIsLoading(false);
         })
-        .catch((err) => {
+        .catch(err => {
           console.error('Error fetching data:', err);
           setItems([]);
           setIsLoading(false);
@@ -63,21 +68,26 @@ const CategoryItemsPage = () => {
       if (itemExists) {
         return {
           ...prev,
-          [categoryId]: categoryItems.filter(item => item.item_id !== item_id)
+          [categoryId]: categoryItems.filter(item => item.item_id !== item_id),
         };
       } else {
         return {
           ...prev,
           [categoryId]: [
             ...categoryItems,
-            { item_id, cost: parseFloat(cost) || 0, quantity: 1, printSeparately: false }
-          ]
+            {
+              item_id,
+              cost: parseFloat(cost) || 0,
+              quantity: 1,
+              printSeparately: false,
+            },
+          ],
         };
       }
     });
   };
 
-  const togglePrintSeparately = (item_id) => {
+  const togglePrintSeparately = item_id => {
     setSelectedItems(prev => {
       const categoryItems = prev[categoryId] || [];
       const updatedItems = categoryItems.map(item => {
@@ -89,7 +99,7 @@ const CategoryItemsPage = () => {
 
       return {
         ...prev,
-        [categoryId]: updatedItems
+        [categoryId]: updatedItems,
       };
     });
   };
@@ -103,7 +113,7 @@ const CategoryItemsPage = () => {
       );
       return {
         ...prev,
-        [categoryId]: updatedItems
+        [categoryId]: updatedItems,
       };
     });
   };
@@ -114,8 +124,8 @@ const CategoryItemsPage = () => {
       pathname: '/quotation/QuoteManager',
       query: {
         projectId,
-        selectedItems: encodeURIComponent(JSON.stringify(selectedItems))
-      }
+        selectedItems: encodeURIComponent(JSON.stringify(selectedItems)),
+      },
     });
   };
 
@@ -132,10 +142,7 @@ const CategoryItemsPage = () => {
       <ScrollToTopButton />
 
       <div className="absolute top-4 left-4 z-10">
-        <BackButton
-          label="Back"
-          onClick={handleSaveAndReturn}
-        />
+        <BackButton label="Back" onClick={handleSaveAndReturn} />
       </div>
 
       <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center w-full">
@@ -146,103 +153,112 @@ const CategoryItemsPage = () => {
           transition={{ duration: 0.5 }}
           className="bg-gray-900/80 p-8 rounded-xl shadow-xl w-full max-w-4xl mx-auto border border-gray-800"
         >
-            <h1 className="text-2xl font-bold mb-2">
-              {parsedCustomer?.customer_name}
-            </h1>
-            <p className="text-gray-400 mb-6">{parsedCustomer?.address}</p>
+          <h1 className="text-2xl font-bold mb-2">
+            {parsedCustomer?.customer_name}
+          </h1>
+          <p className="text-gray-400 mb-6">{parsedCustomer?.address}</p>
 
-            <div className="mb-6">
-              <input
-                type="text"
-                placeholder="Search items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full p-3 bg-gray-700 rounded-lg text-white"
-              />
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search items..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full p-3 bg-gray-700 rounded-lg text-white"
+            />
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-4">
+              <CardSkeleton count={5} />
             </div>
-
-            {isLoading ? (
-              <div className="space-y-4">
-                <CardSkeleton count={5} />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredItems.map(item => {
-                  const isSelected = getSelectedItemsForCategory().some(
-                    selected => selected.item_id === item.item_id
-                  );
-                  const selectedItem = isSelected
-                    ? getSelectedItemsForCategory().find(
+          ) : (
+            <div className="space-y-4">
+              {filteredItems.map(item => {
+                const isSelected = getSelectedItemsForCategory().some(
+                  selected => selected.item_id === item.item_id
+                );
+                const selectedItem = isSelected
+                  ? getSelectedItemsForCategory().find(
                       selected => selected.item_id === item.item_id
                     )
-                    : null;
+                  : null;
 
-                  return (
-                    <motion.div
-                      key={item.item_id}
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className={`p-4 rounded-lg ${isSelected ? 'bg-blue-900' : 'bg-gray-700'}`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center space-x-4">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleItemSelection(item.item_id, item.price_pu)}
-                            className="h-5 w-5"
-                          />
-                          <div>
-                            <h3 className="font-medium">{item.item_name}</h3>
-                            <p className="text-sm text-gray-300">
-                              Price: ₹{item.price_pu}
-                            </p>
-                          </div>
+                return (
+                  <motion.div
+                    key={item.item_id}
+                    layout
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className={`p-4 rounded-lg ${isSelected ? 'bg-blue-900' : 'bg-gray-700'}`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() =>
+                            handleItemSelection(item.item_id, item.price_pu)
+                          }
+                          className="h-5 w-5"
+                        />
+                        <div>
+                          <h3 className="font-medium">{item.item_name}</h3>
+                          <p className="text-sm text-gray-300">
+                            Price: ₹{item.price_pu}
+                          </p>
                         </div>
-
-                        {isSelected && (
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="number"
-                              min="1"
-                              value={selectedItem?.quantity || 1}
-                              onChange={(e) => handleQuantityChange(item.item_id, e.target.value)}
-                              className="w-16 p-1 bg-gray-600 rounded text-center"
-                            />
-                            <label className="flex items-center space-x-1">
-                              <input
-                                type="checkbox"
-                                checked={selectedItem?.printSeparately || false}
-                                onChange={() => togglePrintSeparately(item.item_id)}
-                                className="h-4 w-4"
-                              />
-                              <span className="text-xs">Print separately</span>
-                            </label>
-                            <span className="font-bold">
-                              ₹{(selectedItem?.quantity * selectedItem?.cost).toFixed(2)}
-                            </span>
-                          </div>
-                        )}
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
 
-            <div className="mt-8 flex justify-end">
-              <motion.button
-                onClick={handleSaveAndReturn}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-2 bg-green-600 rounded-lg font-medium"
-              >
-                Save and Return
-              </motion.button>
+                      {isSelected && (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="number"
+                            min="1"
+                            value={selectedItem?.quantity || 1}
+                            onChange={e =>
+                              handleQuantityChange(item.item_id, e.target.value)
+                            }
+                            className="w-16 p-1 bg-gray-600 rounded text-center"
+                          />
+                          <label className="flex items-center space-x-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedItem?.printSeparately || false}
+                              onChange={() =>
+                                togglePrintSeparately(item.item_id)
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span className="text-xs">Print separately</span>
+                          </label>
+                          <span className="font-bold">
+                            ₹
+                            {(
+                              selectedItem?.quantity * selectedItem?.cost
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
-          </motion.div>
+          )}
+
+          <div className="mt-8 flex justify-end">
+            <motion.button
+              onClick={handleSaveAndReturn}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-2 bg-green-600 rounded-lg font-medium"
+            >
+              Save and Return
+            </motion.button>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

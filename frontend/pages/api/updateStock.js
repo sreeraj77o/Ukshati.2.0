@@ -37,11 +37,10 @@ export default async function handler(req, res) {
 
     await connection.end();
     res.status(200).json({ message: 'Stock updated successfully' });
-
   } catch (error) {
     console.error('Stock update error:', error);
-    res.status(500).json({ 
-      message: error.message || 'Server error' 
+    res.status(500).json({
+      message: error.message || 'Server error',
     });
   }
 }

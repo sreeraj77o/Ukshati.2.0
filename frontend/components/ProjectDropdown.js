@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import Select from "react-select";
-import { GlobeAltIcon, ChevronUpDownIcon } from "@heroicons/react/24/outline";
-import { FormSkeleton } from "@/components/skeleton";
+import { useState, useEffect } from 'react';
+import Select from 'react-select';
+import { GlobeAltIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline';
+import { FormSkeleton } from '@/components/skeleton';
 
 export default function ProjectDropdown({ onSelect }) {
   const [projects, setProjects] = useState([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,14 +13,14 @@ export default function ProjectDropdown({ onSelect }) {
     const fetchProjects = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/projects");
-        if (!response.ok) throw new Error("Failed to fetch projects");
+        const response = await fetch('/api/projects');
+        if (!response.ok) throw new Error('Failed to fetch projects');
         const data = await response.json();
 
         // Simulate loading delay
         await new Promise(resolve => setTimeout(resolve, 500));
 
-        const projectOptions = data.map((project) => ({
+        const projectOptions = data.map(project => ({
           value: project.pid,
           label: (
             <div className="flex items-center space-x-2">
@@ -43,45 +43,45 @@ export default function ProjectDropdown({ onSelect }) {
     fetchProjects();
   }, []);
 
-  const handleChange = (selectedOption) => {
+  const handleChange = selectedOption => {
     setSelectedProject(selectedOption);
-    onSelect(selectedOption?.value || "");
+    onSelect(selectedOption?.value || '');
   };
 
   // Custom styles for react-select
   const customStyles = {
-    control: (base) => ({
+    control: base => ({
       ...base,
-      backgroundColor: "#1F2937",
-      borderColor: "#4B5563",
-      borderRadius: "0.75rem",
-      padding: "0.5rem",
-      boxShadow: "none",
-      "&:hover": { borderColor: "#00FFFF" }
+      backgroundColor: '#1F2937',
+      borderColor: '#4B5563',
+      borderRadius: '0.75rem',
+      padding: '0.5rem',
+      boxShadow: 'none',
+      '&:hover': { borderColor: '#00FFFF' },
     }),
-    singleValue: (base) => ({
+    singleValue: base => ({
       ...base,
-      color: "white",
+      color: 'white',
     }),
-    menu: (base) => ({
+    menu: base => ({
       ...base,
-      backgroundColor: "#00BBBB",
-      borderRadius: "0.75rem",
-      border: "1px solid #00BBBB",
+      backgroundColor: '#00BBBB',
+      borderRadius: '0.75rem',
+      border: '1px solid #00BBBB',
     }),
     option: (base, { isFocused }) => ({
       ...base,
-      backgroundColor: isFocused ? "#00BBBB" : "transparent",
-      color: isFocused ? "black" : "#E5E7EB",
-      "&:active": { backgroundColor: "#00FFFF" }
+      backgroundColor: isFocused ? '#00BBBB' : 'transparent',
+      color: isFocused ? 'black' : '#E5E7EB',
+      '&:active': { backgroundColor: '#00FFFF' },
     }),
-    input: (base) => ({
+    input: base => ({
       ...base,
-      color: "white",
+      color: 'white',
     }),
-    placeholder: (base) => ({
+    placeholder: base => ({
       ...base,
-      color: "#00FFFF",
+      color: '#00FFFF',
     }),
   };
 

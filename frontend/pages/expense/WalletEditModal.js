@@ -1,19 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiEdit, FiX, FiDollarSign, FiMessageSquare } from "react-icons/fi";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiEdit, FiX, FiDollarSign, FiMessageSquare } from 'react-icons/fi';
 
-export default function WalletEditModal({ isOpen, onClose, employee, initialAmount, onSave }) {
-  const [editedAmount, setEditedAmount] = useState("");
+export default function WalletEditModal({
+  isOpen,
+  onClose,
+  employee,
+  initialAmount,
+  onSave,
+}) {
+  const [editedAmount, setEditedAmount] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setEditedAmount(initialAmount ? initialAmount.toString() : "");
+      setEditedAmount(initialAmount ? initialAmount.toString() : '');
     }
   }, [isOpen, initialAmount]);
 
   const handleSave = () => {
-    if (!editedAmount || isNaN(parseFloat(editedAmount)) || parseFloat(editedAmount) < 0) {
-      alert("Please enter a valid non-negative amount.");
+    if (
+      !editedAmount ||
+      isNaN(parseFloat(editedAmount)) ||
+      parseFloat(editedAmount) < 0
+    ) {
+      alert('Please enter a valid non-negative amount.');
       return;
     }
     onSave({ amount: parseFloat(editedAmount) });
@@ -38,7 +48,9 @@ export default function WalletEditModal({ isOpen, onClose, employee, initialAmou
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-indigo-700 p-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-white">Edit Amount Given</h2>
+              <h2 className="text-2xl font-bold text-white">
+                Edit Amount Given
+              </h2>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -57,7 +69,7 @@ export default function WalletEditModal({ isOpen, onClose, employee, initialAmou
               </label>
               <input
                 type="text"
-                value={employee?.name || ""}
+                value={employee?.name || ''}
                 disabled
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-100 cursor-not-allowed"
               />
@@ -73,7 +85,7 @@ export default function WalletEditModal({ isOpen, onClose, employee, initialAmou
                 min="0"
                 step="0.01"
                 value={editedAmount}
-                onChange={(e) => setEditedAmount(e.target.value)}
+                onChange={e => setEditedAmount(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 placeholder="Enter amount given"
               />

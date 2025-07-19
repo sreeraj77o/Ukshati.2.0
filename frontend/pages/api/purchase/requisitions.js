@@ -1,11 +1,11 @@
-import { authenticate } from "../../../lib/auth";
-import { connectToDB } from "../../../lib/db";
+import { authenticate } from '../../../lib/auth';
+import { connectToDB } from '../../../lib/db';
 
 // Item validation helper
 function validateRequisitionItems(items) {
   const errors = [];
   items.forEach((item, index) => {
-    if (!item.name || item.name.trim() === "") {
+    if (!item.name || item.name.trim() === '') {
       errors.push(`Item ${index + 1}: Name is required`);
     }
     if (!item.quantity || item.quantity <= 0) {
@@ -21,35 +21,37 @@ export default async function handler(req, res) {
   // updated for JWT-only auth
 
   if (!session) {
-    return res.status(401).json({ error: "Unauthorized" });
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const db = await connectToDB();
 
   try {
     switch (req.method) {
-      case "GET": {
+      case 'GET': {
         const { id, project_id, status } = req.query;
 
         const filters = [];
         const params = [];
 
         if (id) {
-          filters.push("pr.id = ?");
+          filters.push('pr.id = ?');
           params.push(id);
         }
 
         if (project_id) {
-          filters.push("pr.project_id = ?");
+          filters.push('pr.project_id = ?');
           params.push(project_id);
         }
 
         if (status) {
-          filters.push("pr.status = ?");
+          filters.push('pr.status = ?');
           params.push(status);
         }
 
-        const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+        const whereClause = filters.length
+          ? `WHERE ${filters.join(' AND ')}`
+          : '';
 
         let requisitions = [];
 
@@ -90,28 +92,30 @@ export default async function handler(req, res) {
         return res.status(200).json(requisitions);
       }
 
-      case "POST": {
+      case 'POST': {
         const { project_id, items, required_by, notes } = req.body;
 
         if (!project_id) {
-          return res.status(400).json({ error: "Project is required" });
+          return res.status(400).json({ error: 'Project is required' });
         }
         if (!required_by) {
-          return res.status(400).json({ error: "Required date is required" });
+          return res.status(400).json({ error: 'Required date is required' });
         }
         if (!items || !items.length) {
-          return res.status(400).json({ error: "At least one item is required" });
+          return res
+            .status(400)
+            .json({ error: 'At least one item is required' });
         }
 
         const itemErrors = validateRequisitionItems(items);
         if (itemErrors.length > 0) {
           return res.status(400).json({
-            error: "Validation failed",
+            error: 'Validation failed',
             details: itemErrors,
           });
         }
 
-        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
         const [lastReq] = await db.execute(
           `SELECT requisition_number FROM purchase_requisitions
            WHERE requisition_number LIKE ? ORDER BY id DESC LIMIT 1`,
@@ -121,8 +125,8 @@ export default async function handler(req, res) {
         const nextNum =
           lastReq.length === 0
             ? 1
-            : parseInt(lastReq[0].requisition_number.split("-")[2]) + 1;
-        const requisitionNumber = `REQ-${dateStr}-${nextNum.toString().padStart(3, "0")}`;
+            : parseInt(lastReq[0].requisition_number.split('-')[2]) + 1;
+        const requisitionNumber = `REQ-${dateStr}-${nextNum.toString().padStart(3, '0')}`;
 
         await db.beginTransaction();
         try {
@@ -156,7 +160,7 @@ export default async function handler(req, res) {
           return res.status(201).json({
             id: requisitionId,
             requisition_number: requisitionNumber,
-            message: "Requisition created successfully",
+            message: 'Requisition created successfully',
           });
         } catch (err) {
           await db.rollback();
@@ -165,12 +169,12 @@ export default async function handler(req, res) {
       }
 
       default:
-        res.setHeader("Allow", ["GET", "POST"]);
+        res.setHeader('Allow', ['GET', 'POST']);
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
-  console.error("🔥 API Error:", error); // FULL server log
-  res.status(500).json({ error: error.message || "Something went wrong" });
+    console.error('🔥 API Error:', error); // FULL server log
+    res.status(500).json({ error: error.message || 'Something went wrong' });
   } finally {
     if (db) db.release();
   }

@@ -1,32 +1,39 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import {
-  FiPlus, FiEdit2, FiTrash2, FiSearch, FiFilter, 
-  FiRefreshCw, FiAlertCircle, FiCheckCircle, FiX
-} from "react-icons/fi";
-import { motion } from "framer-motion";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiSearch,
+  FiFilter,
+  FiRefreshCw,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiX,
+} from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { TableSkeleton, FormSkeleton } from '@/components/skeleton';
 
 export default function ManageVendors() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [vendors, setVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    contact_person: "",
-    email: "",
-    phone: "",
-    address: "",
-    category: "",
-    payment_terms: "",
-    status: "active"
+    name: '',
+    contact_person: '',
+    email: '',
+    phone: '',
+    address: '',
+    category: '',
+    payment_terms: '',
+    status: 'active',
   });
   const [editId, setEditId] = useState(null);
   const [notification, setNotification] = useState(null);
@@ -37,14 +44,17 @@ export default function ManageVendors() {
   }, []);
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
+    if (searchTerm.trim() === '') {
       setFilteredVendors(vendors);
     } else {
-      const filtered = vendors.filter(vendor => 
-        vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.contact_person.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        vendor.category.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = vendors.filter(
+        vendor =>
+          vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vendor.contact_person
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          vendor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vendor.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredVendors(filtered);
     }
@@ -59,7 +69,7 @@ export default function ManageVendors() {
         return;
       }
       const response = await fetch('/api/purchase/vendors', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.status === 401) {
         router.push('/login');
@@ -70,31 +80,31 @@ export default function ManageVendors() {
       setFilteredVendors(Array.isArray(vendorsData) ? vendorsData : []);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching vendors:", error);
+      console.error('Error fetching vendors:', error);
       setVendors([]);
       setFilteredVendors([]);
       setLoading(false);
     }
   };
 
-  const handleSearchChange = (e) => {
+  const handleSearchChange = e => {
     setSearchTerm(e.target.value);
   };
 
   const clearSearch = () => {
-    setSearchTerm("");
+    setSearchTerm('');
   };
 
   const openAddModal = () => {
     setFormData({
-      name: "",
-      contact_person: "",
-      email: "",
-      phone: "",
-      address: "",
-      category: "",
-      payment_terms: "",
-      status: "active"
+      name: '',
+      contact_person: '',
+      email: '',
+      phone: '',
+      address: '',
+      category: '',
+      payment_terms: '',
+      status: 'active',
     });
     setEditId(null);
     setShowModal(true);
@@ -102,21 +112,21 @@ export default function ManageVendors() {
 
   useEffect(() => {
     if (editId !== null) {
-      console.log("editId changed:", editId);
+      console.log('editId changed:', editId);
     }
   }, [editId]);
 
-  const openEditModal = (vendor) => {
+  const openEditModal = vendor => {
     setFormData({
       id: vendor.id,
-      name: vendor.name || "",
-      contact_person: vendor.contact_person || "",
-      email: vendor.email || "",
-      phone: vendor.phone || "",
-      address: vendor.address || "",
-      category: vendor.category || "",
-      payment_terms: vendor.payment_terms || "",
-      status: vendor.status || "active"
+      name: vendor.name || '',
+      contact_person: vendor.contact_person || '',
+      email: vendor.email || '',
+      phone: vendor.phone || '',
+      address: vendor.address || '',
+      category: vendor.category || '',
+      payment_terms: vendor.payment_terms || '',
+      status: vendor.status || 'active',
     });
     setEditId(vendor.id);
     setShowModal(true);
@@ -127,12 +137,12 @@ export default function ManageVendors() {
     setEditId(null);
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setFormSubmitting(true);
 
@@ -142,7 +152,9 @@ export default function ManageVendors() {
         router.push('/login');
         return;
       }
-      const url = editId ? `/api/purchase/vendors?id=${editId}` : '/api/purchase/vendors';
+      const url = editId
+        ? `/api/purchase/vendors?id=${editId}`
+        : '/api/purchase/vendors';
       const method = editId ? 'PUT' : 'POST';
 
       // Remove id from payload for PUT/POST
@@ -150,11 +162,11 @@ export default function ManageVendors() {
 
       const response = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
       if (response.status === 401) {
         router.push('/login');
@@ -166,23 +178,25 @@ export default function ManageVendors() {
       await fetchVendors();
 
       setNotification({
-        type: "success",
-        message: editId ? "Vendor updated successfully!" : "Vendor added successfully!"
+        type: 'success',
+        message: editId
+          ? 'Vendor updated successfully!'
+          : 'Vendor added successfully!',
       });
 
       closeModal();
     } catch (error) {
-      console.error("Error saving vendor:", error);
+      console.error('Error saving vendor:', error);
       setNotification({
-        type: "error",
-        message: "Failed to save vendor. Please try again."
+        type: 'error',
+        message: 'Failed to save vendor. Please try again.',
       });
     } finally {
       setFormSubmitting(false);
     }
   };
 
-  const confirmDeleteVendor = (id) => {
+  const confirmDeleteVendor = id => {
     setConfirmDelete(id);
   };
 
@@ -190,7 +204,7 @@ export default function ManageVendors() {
     setConfirmDelete(null);
   };
 
-  const deleteVendor = async (id) => {
+  const deleteVendor = async id => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -199,23 +213,25 @@ export default function ManageVendors() {
       }
       await fetch(`/api/purchase/vendors/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       // Remove vendor from state
-      setVendors(prev => Array.isArray(prev) ? prev.filter(vendor => vendor.id !== id) : []);
+      setVendors(prev =>
+        Array.isArray(prev) ? prev.filter(vendor => vendor.id !== id) : []
+      );
       setNotification({
-        type: "success",
-        message: "Vendor deleted successfully!"
+        type: 'success',
+        message: 'Vendor deleted successfully!',
       });
     } catch (error) {
-      console.error("Error deleting vendor:", error);
+      console.error('Error deleting vendor:', error);
       setNotification({
-        type: "error",
-        message: "Failed to delete vendor. Please try again."
+        type: 'error',
+        message: 'Failed to delete vendor. Please try again.',
       });
     } finally {
       setConfirmDelete(null);
@@ -235,18 +251,25 @@ export default function ManageVendors() {
 
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center justify-between ${
-          notification.type === "success" ? "bg-green-800/90" : "bg-red-800/90"
-        }`}>
+        <div
+          className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg flex items-center justify-between ${
+            notification.type === 'success'
+              ? 'bg-green-800/90'
+              : 'bg-red-800/90'
+          }`}
+        >
           <div className="flex items-center">
-            {notification.type === "success" ? (
+            {notification.type === 'success' ? (
               <FiCheckCircle className="text-green-400 mr-2" />
             ) : (
               <FiAlertCircle className="text-red-400 mr-2" />
             )}
             <span>{notification.message}</span>
           </div>
-          <button onClick={dismissNotification} className="ml-4 text-gray-300 hover:text-white">
+          <button
+            onClick={dismissNotification}
+            className="ml-4 text-gray-300 hover:text-white"
+          >
             <FiX />
           </button>
         </div>
@@ -283,7 +306,7 @@ export default function ManageVendors() {
               onClick={fetchVendors}
               className="flex items-center gap-2 px-4 py-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
             >
-              <FiRefreshCw className={loading ? "animate-spin" : ""} />
+              <FiRefreshCw className={loading ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
@@ -327,32 +350,39 @@ export default function ManageVendors() {
                 </thead>
                 <tbody className="divide-y divide-gray-700">
                   {filteredVendors.length > 0 ? (
-                    filteredVendors.map((vendor) => (
-                      <tr 
-                        key={vendor.id} 
+                    filteredVendors.map(vendor => (
+                      <tr
+                        key={vendor.id}
                         className="hover:bg-gray-700/30 transition-colors"
                       >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="font-medium">{vendor.name}</div>
-                          <div className="text-sm text-gray-400">Since {vendor.created_at}</div>
+                          <div className="text-sm text-gray-400">
+                            Since {vendor.created_at}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {vendor.contact_person}
                         </td>
                         <td className="px-6 py-4">
                           <div>{vendor.email}</div>
-                          <div className="text-sm text-gray-400">{vendor.phone}</div>
+                          <div className="text-sm text-gray-400">
+                            {vendor.phone}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {vendor.category}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            vendor.status === 'active' 
-                              ? 'bg-green-900/50 text-green-400' 
-                              : 'bg-red-900/50 text-red-400'
-                          }`}>
-                            {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              vendor.status === 'active'
+                                ? 'bg-green-900/50 text-green-400'
+                                : 'bg-red-900/50 text-red-400'
+                            }`}
+                          >
+                            {vendor.status.charAt(0).toUpperCase() +
+                              vendor.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -373,14 +403,19 @@ export default function ManageVendors() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="px-6 py-4 text-center text-gray-400">
-                        No vendors found. {searchTerm && "Try a different search term or"}{" "}
-                        <button 
+                      <td
+                        colSpan="6"
+                        className="px-6 py-4 text-center text-gray-400"
+                      >
+                        No vendors found.{' '}
+                        {searchTerm && 'Try a different search term or'}{' '}
+                        <button
                           onClick={openAddModal}
                           className="text-blue-400 hover:underline"
                         >
                           add a new vendor
-                        </button>.
+                        </button>
+                        .
                       </td>
                     </tr>
                   )}
@@ -401,7 +436,7 @@ export default function ManageVendors() {
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold">
-                {editId ? "Edit Vendor" : "Add New Vendor"}
+                {editId ? 'Edit Vendor' : 'Add New Vendor'}
               </h2>
               <button
                 onClick={closeModal}
@@ -525,13 +560,14 @@ export default function ManageVendors() {
                       className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       required
                     />
-                  </div></div>
+                  </div>
+                </div>
 
                 <button
                   type="submit"
                   className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white p-3 rounded-md font-semibold transition-all hover:from-blue-700 hover:to-blue-600"
                 >
-                  {editId ? "Update Vendor" : "Add Vendor"}
+                  {editId ? 'Update Vendor' : 'Add Vendor'}
                 </button>
               </form>
             )}

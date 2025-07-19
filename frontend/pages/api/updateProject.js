@@ -1,20 +1,34 @@
-import mysql from "mysql2/promise";
+import mysql from 'mysql2/promise';
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { email, projectName, clientName, startDate, endDate, amount, comments } = req.body;
+  const {
+    email,
+    projectName,
+    clientName,
+    startDate,
+    endDate,
+    amount,
+    comments,
+  } = req.body;
 
   // Basic validation
-  if (!email || !projectName || !clientName || !startDate || amount === undefined) {
-    return res.status(400).json({ error: "Missing required fields" });
+  if (
+    !email ||
+    !projectName ||
+    !clientName ||
+    !startDate ||
+    amount === undefined
+  ) {
+    return res.status(400).json({ error: 'Missing required fields' });
   }
 
   let db;
   try {
-    console.log("🔍 Connecting to database...");
+    console.log('🔍 Connecting to database...');
 
     db = await mysql.createConnection({
       host: process.env.DB_HOST,
@@ -23,7 +37,7 @@ export default async function handler(req, res) {
       database: process.env.DB_NAME,
     });
 
-    console.log("✅ Connected to database.");
+    console.log('✅ Connected to database.');
 
     // 🔒 Verify user role
     const [adminCheck] = await db.execute(
@@ -32,16 +46,19 @@ export default async function handler(req, res) {
     );
 
     if (adminCheck.length === 0) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const userRole = adminCheck[0].role;
-    if (userRole.toLowerCase() !== "admin") {
-      return res.status(403).json({ error: "Access denied. Only admins can update projects." });
+    if (userRole.toLowerCase() !== 'admin') {
+      return res
+        .status(403)
+        .json({ error: 'Access denied. Only admins can update projects.' });
     }
 
     // 🛠️ Prepare endDate
-    const parsedEndDate = (!endDate || endDate.trim().toUpperCase() === "TBD") ? null : endDate;
+    const parsedEndDate =
+      !endDate || endDate.trim().toUpperCase() === 'TBD' ? null : endDate;
 
     // 📦 Update project
     const updateProjectQuery = `
@@ -50,26 +67,31 @@ export default async function handler(req, res) {
       WHERE pname = ?
     `;
 
-    await db.execute(updateProjectQuery, [clientName, startDate, parsedEndDate, projectName]);
+    await db.execute(updateProjectQuery, [
+      clientName,
+      startDate,
+      parsedEndDate,
+      projectName,
+    ]);
 
     // 💰 Update expense fields dynamically
     let updateFields = [];
     let updateValues = [];
 
     if (amount !== undefined) {
-      updateFields.push("Amount = ?");
+      updateFields.push('Amount = ?');
       updateValues.push(amount);
     }
 
     if (comments !== undefined) {
-      updateFields.push("Comments = ?");
+      updateFields.push('Comments = ?');
       updateValues.push(comments);
     }
 
     if (updateFields.length > 0) {
       const updateExpenseQuery = `
         UPDATE add_expenses
-        SET ${updateFields.join(", ")}
+        SET ${updateFields.join(', ')}
         WHERE pid = (SELECT pid FROM project WHERE pname = ? LIMIT 1)
       `;
 
@@ -79,16 +101,15 @@ export default async function handler(req, res) {
 
     res.status(200).json({
       success: true,
-      message: "Project and expense updated successfully.",
+      message: 'Project and expense updated successfully.',
     });
-
   } catch (error) {
-    console.error("❌ Database Error:", error);
+    console.error('❌ Database Error:', error);
     res.status(500).json({ error: error.message });
   } finally {
     if (db) {
       await db.end();
-      console.log("🔌 Database connection closed.");
+      console.log('🔌 Database connection closed.');
     }
   }
 }
