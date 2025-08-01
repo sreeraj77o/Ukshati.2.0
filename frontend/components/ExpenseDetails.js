@@ -140,6 +140,7 @@ export default function ExpenseDetails({ projectId, setExpenseData }) {
     cid,
     cname,
     grandTotal,
+    setExpenseData,
   ]);
 
   return (

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import {
   FiPlus,
@@ -35,13 +35,13 @@ export default function AllRequisitions() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, filterStatus, requisitions, sortBy, sortOrder]);
+  }, [applyFilters]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -107,9 +107,9 @@ export default function AllRequisitions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...requisitions];
 
     if (searchTerm) {
@@ -141,7 +141,7 @@ export default function AllRequisitions() {
     });
 
     setFilteredRequisitions(filtered);
-  };
+  }, [requisitions, searchTerm, filterStatus, sortBy, sortOrder]);
 
   const handleDelete = async id => {
     const token = localStorage.getItem('token');

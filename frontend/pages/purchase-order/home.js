@@ -109,7 +109,7 @@ export default function PurchaseDashboard() {
     };
 
     fetchData();
-  }, [router]);
+  }, [router, stats.totalPOs]);
 
   const purchaseCards = [
     {

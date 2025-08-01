@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiCloud,
@@ -15,7 +15,7 @@ import {
   FiXCircle,
   FiAlertTriangle,
   FiX,
-  FiRefreshCw
+  FiRefreshCw,
 } from 'react-icons/fi';
 import BackButton from '@/components/BackButton';
 import { FormSkeleton } from '@/components/skeleton';
@@ -34,7 +34,7 @@ const BackupSettings = () => {
     time: '02:00',
     dayOfWeek: 0, // Sunday
     dayOfMonth: 1,
-    enabled: true
+    enabled: true,
   });
 
   // Modal states
@@ -43,42 +43,42 @@ const BackupSettings = () => {
     error: { isOpen: false, title: '', message: '' },
     confirm: { isOpen: false, title: '', message: '', onConfirm: null },
     loading: { isOpen: false, title: '', message: '' },
-    createBackup: { isOpen: false }
+    createBackup: { isOpen: false },
   });
 
   // Modal helper functions
   const showSuccessModal = (title, message, details = null) => {
     setModals(prev => ({
       ...prev,
-      success: { isOpen: true, title, message, details }
+      success: { isOpen: true, title, message, details },
     }));
   };
 
-  const showErrorModal = (title, message) => {
+  const showErrorModal = useCallback((title, message) => {
     setModals(prev => ({
       ...prev,
-      error: { isOpen: true, title, message }
+      error: { isOpen: true, title, message },
     }));
-  };
+  }, []);
 
   const showConfirmModal = (title, message, onConfirm) => {
     setModals(prev => ({
       ...prev,
-      confirm: { isOpen: true, title, message, onConfirm }
+      confirm: { isOpen: true, title, message, onConfirm },
     }));
   };
 
   const showLoadingModal = (title, message) => {
     setModals(prev => ({
       ...prev,
-      loading: { isOpen: true, title, message }
+      loading: { isOpen: true, title, message },
     }));
   };
 
-  const closeModal = (modalType) => {
+  const closeModal = modalType => {
     setModals(prev => ({
       ...prev,
-      [modalType]: { ...prev[modalType], isOpen: false }
+      [modalType]: { ...prev[modalType], isOpen: false },
     }));
   };
 
@@ -88,9 +88,70 @@ const BackupSettings = () => {
       error: { isOpen: false, title: '', message: '' },
       confirm: { isOpen: false, title: '', message: '', onConfirm: null },
       loading: { isOpen: false, title: '', message: '' },
-      createBackup: { isOpen: false }
+      createBackup: { isOpen: false },
     });
   };
+
+  const fetchBackupStatus = useCallback(async () => {
+    try {
+      setLoading(true);
+      const userEmail =
+        typeof window !== 'undefined'
+          ? localStorage.getItem('userEmail') || 'admin@ukshati.com'
+          : 'admin@ukshati.com';
+
+      // Fetch backup status
+      const statusResponse = await fetch(
+        `/api/backup/status?userEmail=${userEmail}`
+      );
+      const statusData = await statusResponse.json();
+
+      if (statusData.success) {
+        setBackupStatus(statusData.data);
+
+        // If schedule exists, populate settings (but preserve current email if user is editing)
+        if (statusData.data.schedule) {
+          const schedule = statusData.data.schedule;
+          setSettings(prev => ({
+            userEmail: prev.userEmail || schedule.user_email, // Keep current email if set
+            frequency: schedule.backup_frequency,
+            time: schedule.backup_time.substring(0, 5), // Remove seconds
+            dayOfWeek: schedule.backup_day_of_week,
+            dayOfMonth: schedule.backup_day_of_month,
+            enabled: schedule.is_enabled,
+          }));
+        } else {
+          setSettings(prev => ({
+            ...prev,
+            userEmail: prev.userEmail || userEmail, // Only set if not already set
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch backup status:', error);
+      showErrorModal('Error', 'Failed to load backup settings');
+    } finally {
+      setLoading(false);
+    }
+  }, [showErrorModal]);
+
+  const fetchGoogleAuthStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/google/status');
+      const data = await response.json();
+
+      if (data.success) {
+        setGoogleAuthStatus(data.data);
+
+        // If Google Drive is connected, fetch the current backup file
+        if (data.data.authenticated) {
+          fetchCurrentBackupFile();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch Google auth status:', error);
+    }
+  }, []);
 
   useEffect(() => {
     fetchBackupStatus();
@@ -126,7 +187,7 @@ const BackupSettings = () => {
         details = {
           synced: syncedCount,
           skipped: skippedCount,
-          total: syncedCount + skippedCount
+          total: syncedCount + skippedCount,
         };
       }
 
@@ -148,52 +209,20 @@ const BackupSettings = () => {
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
-
-  const fetchBackupStatus = async () => {
-    try {
-      setLoading(true);
-      const userEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') || 'admin@ukshati.com' : 'admin@ukshati.com';
-
-      // Fetch backup status
-      const statusResponse = await fetch(`/api/backup/status?userEmail=${userEmail}`);
-      const statusData = await statusResponse.json();
-
-      if (statusData.success) {
-        setBackupStatus(statusData.data);
-
-        // If schedule exists, populate settings (but preserve current email if user is editing)
-        if (statusData.data.schedule) {
-          const schedule = statusData.data.schedule;
-          setSettings(prev => ({
-            userEmail: prev.userEmail || schedule.user_email, // Keep current email if set
-            frequency: schedule.backup_frequency,
-            time: schedule.backup_time.substring(0, 5), // Remove seconds
-            dayOfWeek: schedule.backup_day_of_week,
-            dayOfMonth: schedule.backup_day_of_month,
-            enabled: schedule.is_enabled
-          }));
-        } else {
-          setSettings(prev => ({
-            ...prev,
-            userEmail: prev.userEmail || userEmail // Only set if not already set
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch backup status:', error);
-      showErrorModal('Error', 'Failed to load backup settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchBackupStatus, fetchGoogleAuthStatus, showErrorModal]);
 
   const refreshBackupStatus = async () => {
     try {
-      const userEmail = settings.userEmail || (typeof window !== 'undefined' ? localStorage.getItem('userEmail') || 'admin@ukshati.com' : 'admin@ukshati.com');
+      const userEmail =
+        settings.userEmail ||
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('userEmail') || 'admin@ukshati.com'
+          : 'admin@ukshati.com');
 
       // Fetch backup status without overriding settings
-      const statusResponse = await fetch(`/api/backup/status?userEmail=${userEmail}`);
+      const statusResponse = await fetch(
+        `/api/backup/status?userEmail=${userEmail}`
+      );
       const statusData = await statusResponse.json();
 
       if (statusData.success) {
@@ -201,24 +230,6 @@ const BackupSettings = () => {
       }
     } catch (error) {
       console.error('Failed to refresh backup status:', error);
-    }
-  };
-
-  const fetchGoogleAuthStatus = async () => {
-    try {
-      const response = await fetch('/api/auth/google/status');
-      const data = await response.json();
-
-      if (data.success) {
-        setGoogleAuthStatus(data.data);
-
-        // If Google Drive is connected, fetch the current backup file
-        if (data.data.authenticated) {
-          fetchCurrentBackupFile();
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch Google auth status:', error);
     }
   };
 
@@ -254,19 +265,25 @@ const BackupSettings = () => {
       }
     } catch (error) {
       console.error('Failed to connect Google Drive:', error);
-      showErrorModal('Connection Failed', 'Failed to connect to Google Drive. Please try again.');
+      showErrorModal(
+        'Connection Failed',
+        'Failed to connect to Google Drive. Please try again.'
+      );
     }
   };
 
   const handleSyncBackups = async () => {
     try {
-      showLoadingModal('Syncing Backups', 'Checking Google Drive for existing backups...');
+      showLoadingModal(
+        'Syncing Backups',
+        'Checking Google Drive for existing backups...'
+      );
 
       const response = await fetch('/api/backup/sync', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const data = await response.json();
@@ -299,7 +316,10 @@ const BackupSettings = () => {
     } catch (error) {
       closeAllModals();
       console.error('Failed to sync backups:', error);
-      showErrorModal('Sync Failed', 'Failed to sync backups from Google Drive. Please try again.');
+      showErrorModal(
+        'Sync Failed',
+        'Failed to sync backups from Google Drive. Please try again.'
+      );
     }
   };
 
@@ -307,14 +327,17 @@ const BackupSettings = () => {
     const performDisconnect = async () => {
       try {
         const response = await fetch('/api/auth/google/disconnect', {
-          method: 'POST'
+          method: 'POST',
         });
 
         const data = await response.json();
 
         if (data.success) {
           setGoogleAuthStatus({ authenticated: false, user: null });
-          showSuccessModal('Disconnected', 'Google Drive has been disconnected successfully');
+          showSuccessModal(
+            'Disconnected',
+            'Google Drive has been disconnected successfully'
+          );
         } else {
           throw new Error(data.message);
         }
@@ -340,7 +363,10 @@ const BackupSettings = () => {
         throw new Error('Please enter a valid email address');
       }
 
-      if (!settings.frequency || !['daily', 'weekly', 'monthly'].includes(settings.frequency)) {
+      if (
+        !settings.frequency ||
+        !['daily', 'weekly', 'monthly'].includes(settings.frequency)
+      ) {
         throw new Error('Please select a valid backup frequency');
       }
 
@@ -351,7 +377,7 @@ const BackupSettings = () => {
       const response = await fetch('/api/backup/settings', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userEmail: settings.userEmail.trim(),
@@ -361,15 +387,18 @@ const BackupSettings = () => {
             dayOfWeek: parseInt(settings.dayOfWeek) || 0,
             dayOfMonth: parseInt(settings.dayOfMonth) || 1,
             enabled: Boolean(settings.enabled),
-            folderId: null // Will be set when Google Drive is configured
-          }
-        })
+            folderId: null, // Will be set when Google Drive is configured
+          },
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        showSuccessModal('Settings Saved', 'Backup settings have been updated successfully');
+        showSuccessModal(
+          'Settings Saved',
+          'Backup settings have been updated successfully'
+        );
 
         // Refresh status without overriding email
         await refreshBackupStatus();
@@ -378,7 +407,10 @@ const BackupSettings = () => {
       }
     } catch (error) {
       console.error('Failed to save settings:', error);
-      showErrorModal('Error', error.message || 'Failed to save backup settings');
+      showErrorModal(
+        'Error',
+        error.message || 'Failed to save backup settings'
+      );
     } finally {
       setSaving(false);
     }
@@ -387,13 +419,16 @@ const BackupSettings = () => {
   const handleCreateBackup = async () => {
     const performBackup = async () => {
       try {
-        showLoadingModal('Creating Backup...', 'Please wait while we backup your data');
+        showLoadingModal(
+          'Creating Backup...',
+          'Please wait while we backup your data'
+        );
 
         const response = await fetch('/api/backup/create', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
-          }
+            'Content-Type': 'application/json',
+          },
         });
 
         const data = await response.json();
@@ -404,10 +439,16 @@ const BackupSettings = () => {
           const details = {
             fileName: data.data.fileName,
             fileSize: Math.round(data.data.fileSize / 1024) + ' KB',
-            status: data.data.fileId ? 'Uploaded to "ukshati backup" folder in Google Drive' : 'Created locally (Google Drive not configured)'
+            status: data.data.fileId
+              ? 'Uploaded to "ukshati backup" folder in Google Drive'
+              : 'Created locally (Google Drive not configured)',
           };
 
-          showSuccessModal('Backup Created', 'Your database backup has been created successfully', details);
+          showSuccessModal(
+            'Backup Created',
+            'Your database backup has been created successfully',
+            details
+          );
 
           // Refresh status and current backup file
           await refreshBackupStatus();
@@ -420,10 +461,16 @@ const BackupSettings = () => {
         closeModal('loading');
 
         let errorMessage = 'Failed to create backup';
-        if (error.message.includes('Google Drive service is not properly configured')) {
-          errorMessage = 'Google Drive is not configured. Please set up your service account to enable cloud backups.';
+        if (
+          error.message.includes(
+            'Google Drive service is not properly configured'
+          )
+        ) {
+          errorMessage =
+            'Google Drive is not configured. Please set up your service account to enable cloud backups.';
         } else if (error.message.includes('TLS/SSL error')) {
-          errorMessage = 'Database connection error. Please check your database configuration.';
+          errorMessage =
+            'Database connection error. Please check your database configuration.';
         } else {
           errorMessage = error.message || 'Failed to create backup';
         }
@@ -434,7 +481,7 @@ const BackupSettings = () => {
 
     setModals(prev => ({
       ...prev,
-      createBackup: { isOpen: true, onConfirm: performBackup }
+      createBackup: { isOpen: true, onConfirm: performBackup },
     }));
   };
 
@@ -446,16 +493,19 @@ const BackupSettings = () => {
       `Are you sure you want to restore the database from "${currentBackupFile.file_name}"? This will replace all current data and cannot be undone.`,
       async () => {
         try {
-          showLoadingModal('Restoring Database...', 'Please wait while we restore your database from the backup');
+          showLoadingModal(
+            'Restoring Database...',
+            'Please wait while we restore your database from the backup'
+          );
 
           const response = await fetch('/api/backup/restore', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              fileId: currentBackupFile.file_id
-            })
+              fileId: currentBackupFile.file_id,
+            }),
           });
 
           const data = await response.json();
@@ -468,7 +518,7 @@ const BackupSettings = () => {
               {
                 fileName: currentBackupFile.file_name,
                 fileSize: formatFileSize(currentBackupFile.file_size),
-                status: 'Restored'
+                status: 'Restored',
               }
             );
           } else {
@@ -477,7 +527,10 @@ const BackupSettings = () => {
         } catch (error) {
           console.error('Failed to restore backup:', error);
           closeModal('loading');
-          showErrorModal('Restore Failed', error.message || 'Failed to restore database from backup');
+          showErrorModal(
+            'Restore Failed',
+            error.message || 'Failed to restore database from backup'
+          );
         }
       }
     );
@@ -491,16 +544,19 @@ const BackupSettings = () => {
       `Are you sure you want to delete the backup file "${currentBackupFile.file_name}"? This action cannot be undone.`,
       async () => {
         try {
-          showLoadingModal('Deleting Backup...', 'Please wait while we delete the backup file');
+          showLoadingModal(
+            'Deleting Backup...',
+            'Please wait while we delete the backup file'
+          );
 
           const response = await fetch('/api/backup/delete', {
             method: 'DELETE',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              fileId: currentBackupFile.file_id
-            })
+              fileId: currentBackupFile.file_id,
+            }),
           });
 
           const data = await response.json();
@@ -521,15 +577,16 @@ const BackupSettings = () => {
         } catch (error) {
           console.error('Failed to delete backup:', error);
           closeModal('loading');
-          showErrorModal('Delete Failed', error.message || 'Failed to delete backup file');
+          showErrorModal(
+            'Delete Failed',
+            error.message || 'Failed to delete backup file'
+          );
         }
       }
     );
   };
 
-
-
-  const formatFileSize = (bytes) => {
+  const formatFileSize = bytes => {
     if (!bytes) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -537,7 +594,7 @@ const BackupSettings = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     return new Date(dateString).toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       year: 'numeric',
@@ -545,12 +602,20 @@ const BackupSettings = () => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   };
 
-  const getDayName = (dayNumber) => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const getDayName = dayNumber => {
+    const days = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
     return days[dayNumber];
   };
 
@@ -569,7 +634,7 @@ const BackupSettings = () => {
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
         <BackButton route="/dashboard" />
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -582,7 +647,9 @@ const BackupSettings = () => {
               Backup Settings
             </h1>
             <p className="text-gray-400">
-              Configure automatic backups to the "ukshati backup" folder in Google Drive. Only one backup file is maintained and updated with each backup.
+              Configure automatic backups to the &quot;ukshati backup&quot;
+              folder in Google Drive. Only one backup file is maintained and
+              updated with each backup.
             </p>
           </div>
 
@@ -603,7 +670,9 @@ const BackupSettings = () => {
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-green-400 rounded-full mr-3"></div>
                     <div>
-                      <div className="text-green-400 font-medium">Connected to Google Drive</div>
+                      <div className="text-green-400 font-medium">
+                        Connected to Google Drive
+                      </div>
                       <div className="text-sm text-gray-400">
                         {googleAuthStatus.user?.emailAddress || 'Connected'}
                       </div>
@@ -626,7 +695,11 @@ const BackupSettings = () => {
                   </div>
                 </div>
                 <div className="text-sm text-gray-400 px-4">
-                  <p>Use "Sync Backups" to check for existing backup files in your Google Drive and add them to your backup history.</p>
+                  <p>
+                    Use &quot;Sync Backups&quot; to check for existing backup
+                    files in your Google Drive and add them to your backup
+                    history.
+                  </p>
                 </div>
               </div>
             ) : (
@@ -634,7 +707,9 @@ const BackupSettings = () => {
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-yellow-400 rounded-full mr-3"></div>
                   <div>
-                    <div className="text-yellow-400 font-medium">Google Drive Not Connected</div>
+                    <div className="text-yellow-400 font-medium">
+                      Google Drive Not Connected
+                    </div>
                     <div className="text-sm text-gray-400">
                       Connect your Google Drive to enable cloud backups
                     </div>
@@ -665,7 +740,9 @@ const BackupSettings = () => {
               {loadingBackupFile ? (
                 <div className="flex items-center justify-center p-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
-                  <span className="ml-3 text-gray-400">Loading backup file...</span>
+                  <span className="ml-3 text-gray-400">
+                    Loading backup file...
+                  </span>
                 </div>
               ) : currentBackupFile ? (
                 <div className="bg-gray-700 rounded-lg p-4">
@@ -675,7 +752,9 @@ const BackupSettings = () => {
                         <FiDownload className="text-white" />
                       </div>
                       <div>
-                        <div className="font-medium text-white">{currentBackupFile.file_name}</div>
+                        <div className="font-medium text-white">
+                          {currentBackupFile.file_name}
+                        </div>
                         <div className="text-sm text-gray-400">
                           {formatFileSize(currentBackupFile.file_size)} •
                           Created: {formatDate(currentBackupFile.created_at)}
@@ -705,7 +784,8 @@ const BackupSettings = () => {
                   <FiDownload className="mx-auto text-4xl text-gray-500 mb-4" />
                   <p className="text-gray-400">No backup file found</p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Create your first backup using the "Create Backup Now" button above.
+                    Create your first backup using the &quot;Create Backup
+                    Now&quot; button above.
                   </p>
                 </div>
               )}
@@ -729,7 +809,9 @@ const BackupSettings = () => {
                   <div className="text-2xl font-bold text-blue-400">
                     {backupStatus.storage.backupCount}
                   </div>
-                  <div className="text-sm text-gray-400">Active Backup File</div>
+                  <div className="text-sm text-gray-400">
+                    Active Backup File
+                  </div>
                 </div>
 
                 <div className="bg-gray-700 rounded-lg p-4">
@@ -743,8 +825,7 @@ const BackupSettings = () => {
                   <div className="text-2xl font-bold text-purple-400">
                     {backupStatus.lastBackup
                       ? formatDate(backupStatus.lastBackup.created_at)
-                      : 'Never'
-                    }
+                      : 'Never'}
                   </div>
                   <div className="text-sm text-gray-400">Last Updated</div>
                 </div>
@@ -752,17 +833,14 @@ const BackupSettings = () => {
                 <div className="bg-gray-700 rounded-lg p-4">
                   <div className="text-2xl font-bold text-orange-400">
                     {backupStatus.schedule && backupStatus.schedule.is_enabled
-                      ? (backupStatus.schedule.next_backup_at
-                          ? formatDate(backupStatus.schedule.next_backup_at)
-                          : 'Scheduled')
-                      : 'Disabled'
-                    }
+                      ? backupStatus.schedule.next_backup_at
+                        ? formatDate(backupStatus.schedule.next_backup_at)
+                        : 'Scheduled'
+                      : 'Disabled'}
                   </div>
                   <div className="text-sm text-gray-400">Next Backup</div>
                 </div>
               </div>
-
-
             </motion.div>
           )}
 
@@ -788,7 +866,12 @@ const BackupSettings = () => {
                 <input
                   type="email"
                   value={settings.userEmail}
-                  onChange={(e) => setSettings(prev => ({ ...prev, userEmail: e.target.value }))}
+                  onChange={e =>
+                    setSettings(prev => ({
+                      ...prev,
+                      userEmail: e.target.value,
+                    }))
+                  }
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="your-email@example.com"
                 />
@@ -802,7 +885,12 @@ const BackupSettings = () => {
                 </label>
                 <select
                   value={settings.frequency}
-                  onChange={(e) => setSettings(prev => ({ ...prev, frequency: e.target.value }))}
+                  onChange={e =>
+                    setSettings(prev => ({
+                      ...prev,
+                      frequency: e.target.value,
+                    }))
+                  }
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="daily">Daily</option>
@@ -819,7 +907,9 @@ const BackupSettings = () => {
                 <input
                   type="time"
                   value={settings.time}
-                  onChange={(e) => setSettings(prev => ({ ...prev, time: e.target.value }))}
+                  onChange={e =>
+                    setSettings(prev => ({ ...prev, time: e.target.value }))
+                  }
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -833,11 +923,18 @@ const BackupSettings = () => {
                   </label>
                   <select
                     value={settings.dayOfWeek}
-                    onChange={(e) => setSettings(prev => ({ ...prev, dayOfWeek: parseInt(e.target.value) }))}
+                    onChange={e =>
+                      setSettings(prev => ({
+                        ...prev,
+                        dayOfWeek: parseInt(e.target.value),
+                      }))
+                    }
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     {[0, 1, 2, 3, 4, 5, 6].map(day => (
-                      <option key={day} value={day}>{getDayName(day)}</option>
+                      <option key={day} value={day}>
+                        {getDayName(day)}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -854,7 +951,12 @@ const BackupSettings = () => {
                     min="1"
                     max="28"
                     value={settings.dayOfMonth}
-                    onChange={(e) => setSettings(prev => ({ ...prev, dayOfMonth: parseInt(e.target.value) }))}
+                    onChange={e =>
+                      setSettings(prev => ({
+                        ...prev,
+                        dayOfMonth: parseInt(e.target.value),
+                      }))
+                    }
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -867,10 +969,17 @@ const BackupSettings = () => {
                 <input
                   type="checkbox"
                   checked={settings.enabled}
-                  onChange={(e) => setSettings(prev => ({ ...prev, enabled: e.target.checked }))}
+                  onChange={e =>
+                    setSettings(prev => ({
+                      ...prev,
+                      enabled: e.target.checked,
+                    }))
+                  }
                   className="mr-3 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium">Enable automatic backups</span>
+                <span className="text-sm font-medium">
+                  Enable automatic backups
+                </span>
               </label>
             </div>
 
@@ -896,38 +1005,45 @@ const BackupSettings = () => {
           </motion.div>
 
           {/* Recent Backups */}
-          {backupStatus?.recentBackups && backupStatus.recentBackups.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-gray-800 rounded-xl p-6"
-            >
-              <h2 className="text-xl font-semibold mb-4">Recent Backups</h2>
-              
-              <div className="space-y-3">
-                {backupStatus.recentBackups.map((backup) => (
-                  <div key={backup.id} className="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
-                    <div>
-                      <div className="font-medium">{backup.file_name}</div>
-                      <div className="text-sm text-gray-400">
-                        {formatDate(backup.created_at)} • {formatFileSize(backup.file_size)}
+          {backupStatus?.recentBackups &&
+            backupStatus.recentBackups.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-gray-800 rounded-xl p-6"
+              >
+                <h2 className="text-xl font-semibold mb-4">Recent Backups</h2>
+
+                <div className="space-y-3">
+                  {backupStatus.recentBackups.map(backup => (
+                    <div
+                      key={backup.id}
+                      className="flex items-center justify-between p-4 bg-gray-700 rounded-lg"
+                    >
+                      <div>
+                        <div className="font-medium">{backup.file_name}</div>
+                        <div className="text-sm text-gray-400">
+                          {formatDate(backup.created_at)} •{' '}
+                          {formatFileSize(backup.file_size)}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs ${
+                            backup.status === 'success'
+                              ? 'bg-green-600 text-green-100'
+                              : 'bg-red-600 text-red-100'
+                          }`}
+                        >
+                          {backup.status}
+                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        backup.status === 'success' 
-                          ? 'bg-green-600 text-green-100' 
-                          : 'bg-red-600 text-red-100'
-                      }`}>
-                        {backup.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
+                  ))}
+                </div>
+              </motion.div>
+            )}
         </motion.div>
       </div>
 
@@ -945,9 +1061,15 @@ const BackupSettings = () => {
           {modals.success.details && (
             <div className="bg-gray-700 p-3 rounded-lg mt-4">
               <div className="space-y-2 text-sm">
-                <div><strong>File:</strong> {modals.success.details.fileName}</div>
-                <div><strong>Size:</strong> {modals.success.details.fileSize}</div>
-                <div><strong>Status:</strong> {modals.success.details.status}</div>
+                <div>
+                  <strong>File:</strong> {modals.success.details.fileName}
+                </div>
+                <div>
+                  <strong>Size:</strong> {modals.success.details.fileSize}
+                </div>
+                <div>
+                  <strong>Status:</strong> {modals.success.details.status}
+                </div>
               </div>
             </div>
           )}
@@ -1040,11 +1162,16 @@ const BackupSettings = () => {
       >
         <div className="text-white">
           <div className="mb-4">
-            <p className="mb-3">This will create or update your database backup file.</p>
+            <p className="mb-3">
+              This will create or update your database backup file.
+            </p>
             <div className="bg-blue-900 p-3 rounded-lg">
               <p className="text-sm">
-                <strong>Note:</strong> The backup will be saved as "database_backup.sql" in the "ukshati backup" folder on Google Drive.
-                If Google Drive is not configured, the backup will be created locally only. Only one backup file is maintained and updated with each backup.
+                <strong>Note:</strong> The backup will be saved as
+                &quot;database_backup.sql&quot; in the &quot;ukshati
+                backup&quot; folder on Google Drive. If Google Drive is not
+                configured, the backup will be created locally only. Only one
+                backup file is maintained and updated with each backup.
               </p>
             </div>
           </div>

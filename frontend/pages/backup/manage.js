@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiCloud,
@@ -12,7 +12,7 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiAlertTriangle,
-  FiSearch
+  FiSearch,
 } from 'react-icons/fi';
 import BackButton from '@/components/BackButton';
 import { TableSkeleton } from '@/components/skeleton';
@@ -28,94 +28,113 @@ const BackupManagement = () => {
   const [modals, setModals] = useState({
     success: { isOpen: false, title: '', message: '' },
     error: { isOpen: false, title: '', message: '' },
-    confirm: { isOpen: false, title: '', message: '', onConfirm: null, details: null },
-    loading: { isOpen: false, title: '', message: '' }
+    confirm: {
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null,
+      details: null,
+    },
+    loading: { isOpen: false, title: '', message: '' },
   });
 
   // Modal helper functions
   const showSuccessModal = (title, message) => {
     setModals(prev => ({
       ...prev,
-      success: { isOpen: true, title, message }
+      success: { isOpen: true, title, message },
     }));
   };
 
-  const showErrorModal = (title, message) => {
+  const showErrorModal = useCallback((title, message) => {
     setModals(prev => ({
       ...prev,
-      error: { isOpen: true, title, message }
+      error: { isOpen: true, title, message },
     }));
-  };
+  }, []);
 
   const showConfirmModal = (title, message, onConfirm, details = null) => {
     setModals(prev => ({
       ...prev,
-      confirm: { isOpen: true, title, message, onConfirm, details }
+      confirm: { isOpen: true, title, message, onConfirm, details },
     }));
   };
 
   const showLoadingModal = (title, message) => {
     setModals(prev => ({
       ...prev,
-      loading: { isOpen: true, title, message }
+      loading: { isOpen: true, title, message },
     }));
   };
 
-  const closeModal = (modalType) => {
+  const closeModal = modalType => {
     setModals(prev => ({
       ...prev,
-      [modalType]: { ...prev[modalType], isOpen: false }
+      [modalType]: { ...prev[modalType], isOpen: false },
     }));
   };
 
   useEffect(() => {
     fetchBackups();
-  }, []);
+  }, [fetchBackups]);
 
-  const fetchBackups = async (forceSync = false) => {
-    try {
-      setLoading(true);
-      const url = forceSync ? '/api/backup/list?forceSync=true' : '/api/backup/list';
-      const response = await fetch(url);
-      const data = await response.json();
+  const fetchBackups = useCallback(
+    async (forceSync = false) => {
+      try {
+        setLoading(true);
+        const url = forceSync
+          ? '/api/backup/list?forceSync=true'
+          : '/api/backup/list';
+        const response = await fetch(url);
+        const data = await response.json();
 
-      if (data.success) {
-        setBackups(data.data.backups);
-        setStorageInfo(data.data.storage);
+        if (data.success) {
+          setBackups(data.data.backups);
+          setStorageInfo(data.data.storage);
 
-        // If no backups found and this wasn't a force sync, try force sync once
-        if (data.data.backups.length === 0 && !forceSync) {
-          console.log('No backups found, attempting force sync to discover existing backups...');
-          setTimeout(() => fetchBackups(true), 1000); // Wait 1 second then force sync
+          // If no backups found and this wasn't a force sync, try force sync once
+          if (data.data.backups.length === 0 && !forceSync) {
+            console.log(
+              'No backups found, attempting force sync to discover existing backups...'
+            );
+            setTimeout(() => fetchBackups(true), 1000); // Wait 1 second then force sync
+          }
+        } else {
+          throw new Error(data.message || 'Failed to fetch backups');
         }
-      } else {
-        throw new Error(data.message || 'Failed to fetch backups');
+      } catch (error) {
+        console.error('Failed to fetch backups:', error);
+        showErrorModal('Error', 'Failed to load backup list');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to fetch backups:', error);
-      showErrorModal('Error', 'Failed to load backup list');
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [showErrorModal]
+  );
 
   const handleManualSync = async () => {
     try {
       setLoading(true);
-      showLoadingModal('Syncing with Google Drive...', 'Searching for existing backups in your Google Drive');
+      showLoadingModal(
+        'Syncing with Google Drive...',
+        'Searching for existing backups in your Google Drive'
+      );
 
       const response = await fetch('/api/backup/sync', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
 
       const data = await response.json();
       closeModal('loading');
 
       if (data.success) {
-        showSuccessModal('Sync Complete', `Found ${data.data.totalBackups} backup(s) in Google Drive`);
+        showSuccessModal(
+          'Sync Complete',
+          `Found ${data.data.totalBackups} backup(s) in Google Drive`
+        );
         // Refresh the backup list
         await fetchBackups();
       } else {
@@ -124,7 +143,10 @@ const BackupManagement = () => {
     } catch (error) {
       console.error('Manual sync failed:', error);
       closeModal('loading');
-      showErrorModal('Sync Failed', error.message || 'Failed to sync with Google Drive');
+      showErrorModal(
+        'Sync Failed',
+        error.message || 'Failed to sync with Google Drive'
+      );
     } finally {
       setLoading(false);
     }
@@ -133,14 +155,18 @@ const BackupManagement = () => {
   const handleDebugSync = async () => {
     try {
       setLoading(true);
-      showLoadingModal('Debug Search...', 'Running detailed Google Drive search with logging');
+      showLoadingModal(
+        'Debug Search...',
+        'Running detailed Google Drive search with logging'
+      );
 
       const response = await fetch('/api/backup/debug-drive');
       const data = await response.json();
       closeModal('loading');
 
       if (data.success) {
-        const { allFiles, currentSearchResults, sqlFiles, backupFiles } = data.data;
+        const { allFiles, currentSearchResults, sqlFiles, backupFiles } =
+          data.data;
 
         let message = `Debug Results:\n\n`;
         message += `📁 Total files in backup folder: ${allFiles.length}\n`;
@@ -165,26 +191,32 @@ const BackupManagement = () => {
     } catch (error) {
       console.error('Debug search failed:', error);
       closeModal('loading');
-      showErrorModal('Debug Failed', error.message || 'Failed to debug Google Drive search');
+      showErrorModal(
+        'Debug Failed',
+        error.message || 'Failed to debug Google Drive search'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRestore = async (backup) => {
+  const handleRestore = async backup => {
     const performRestore = async () => {
       try {
         setActionLoading(prev => ({ ...prev, [`restore_${backup.id}`]: true }));
 
         // Show loading modal
-        showLoadingModal('Restoring Database...', 'Please wait while we restore your database');
+        showLoadingModal(
+          'Restoring Database...',
+          'Please wait while we restore your database'
+        );
 
         const response = await fetch('/api/backup/restore', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ fileId: backup.file_id })
+          body: JSON.stringify({ fileId: backup.file_id }),
         });
 
         const data = await response.json();
@@ -192,23 +224,32 @@ const BackupManagement = () => {
         closeModal('loading');
 
         if (data.success) {
-          showSuccessModal('Database Restored', 'Your database has been successfully restored from the backup');
+          showSuccessModal(
+            'Database Restored',
+            'Your database has been successfully restored from the backup'
+          );
         } else {
           throw new Error(data.message || 'Failed to restore backup');
         }
       } catch (error) {
         console.error('Failed to restore backup:', error);
         closeModal('loading');
-        showErrorModal('Restore Failed', error.message || 'Failed to restore database from backup');
+        showErrorModal(
+          'Restore Failed',
+          error.message || 'Failed to restore database from backup'
+        );
       } finally {
-        setActionLoading(prev => ({ ...prev, [`restore_${backup.id}`]: false }));
+        setActionLoading(prev => ({
+          ...prev,
+          [`restore_${backup.id}`]: false,
+        }));
       }
     };
 
     const details = {
       fileName: backup.file_name,
       created: formatDate(backup.created_at),
-      size: formatFileSize(backup.file_size)
+      size: formatFileSize(backup.file_size),
     };
 
     showConfirmModal(
@@ -219,7 +260,7 @@ const BackupManagement = () => {
     );
   };
 
-  const handleDelete = async (backup) => {
+  const handleDelete = async backup => {
     const performDelete = async () => {
       try {
         setActionLoading(prev => ({ ...prev, [`delete_${backup.id}`]: true }));
@@ -227,15 +268,18 @@ const BackupManagement = () => {
         const response = await fetch('/api/backup/delete', {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ fileId: backup.file_id })
+          body: JSON.stringify({ fileId: backup.file_id }),
         });
 
         const data = await response.json();
 
         if (data.success) {
-          showSuccessModal('Backup File Deleted', 'Your database backup file has been permanently deleted');
+          showSuccessModal(
+            'Backup File Deleted',
+            'Your database backup file has been permanently deleted'
+          );
 
           // Refresh the list
           await fetchBackups();
@@ -244,7 +288,10 @@ const BackupManagement = () => {
         }
       } catch (error) {
         console.error('Failed to delete backup:', error);
-        showErrorModal('Delete Failed', error.message || 'Failed to delete backup');
+        showErrorModal(
+          'Delete Failed',
+          error.message || 'Failed to delete backup'
+        );
       } finally {
         setActionLoading(prev => ({ ...prev, [`delete_${backup.id}`]: false }));
       }
@@ -253,7 +300,7 @@ const BackupManagement = () => {
     const details = {
       fileName: backup.file_name,
       created: formatDate(backup.created_at),
-      size: formatFileSize(backup.file_size)
+      size: formatFileSize(backup.file_size),
     };
 
     showConfirmModal(
@@ -264,7 +311,7 @@ const BackupManagement = () => {
     );
   };
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = bytes => {
     if (!bytes) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -272,7 +319,7 @@ const BackupManagement = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     return new Date(dateString).toLocaleString('en-IN', {
       timeZone: 'Asia/Kolkata',
       year: 'numeric',
@@ -280,17 +327,8 @@ const BackupManagement = () => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'success': return 'bg-green-600 text-green-100';
-      case 'failed': return 'bg-red-600 text-red-100';
-      case 'in_progress': return 'bg-yellow-600 text-yellow-100';
-      default: return 'bg-gray-600 text-gray-100';
-    }
   };
 
   if (loading) {
@@ -308,7 +346,7 @@ const BackupManagement = () => {
     <div className="min-h-screen bg-black text-white">
       <div className="container mx-auto px-4 py-8">
         <BackButton route="/backup/settings" />
-        
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -322,10 +360,11 @@ const BackupManagement = () => {
                 Database Backup
               </h1>
               <p className="text-gray-400">
-                Manage your single database backup file stored in the "ukshati backup" folder
+                Manage your single database backup file stored in the
+                &quot;ukshati backup&quot; folder
               </p>
             </div>
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => fetchBackups(true)}
@@ -366,7 +405,7 @@ const BackupManagement = () => {
                 <FiHardDrive className="mr-2 text-green-400" />
                 Storage Overview
               </h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-700 rounded-lg p-4">
                   <div className="text-2xl font-bold text-blue-400">
@@ -404,7 +443,8 @@ const BackupManagement = () => {
                 <FiDatabase className="mx-auto text-4xl text-gray-500 mb-4" />
                 <p className="text-gray-400">No backup file found</p>
                 <p className="text-sm text-gray-500 mt-2">
-                  If you have existing backups in Google Drive, click "Sync from Drive" above to discover them.
+                  If you have existing backups in Google Drive, click &quot;Sync
+                  from Drive&quot; above to discover them.
                 </p>
                 <p className="text-sm text-gray-500 mt-1">
                   Otherwise, create your first backup from the settings page.
@@ -433,7 +473,7 @@ const BackupManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-700">
-                    {backups.map((backup) => (
+                    {backups.map(backup => (
                       <tr key={backup.id} className="hover:bg-gray-700">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-white">
@@ -454,7 +494,10 @@ const BackupManagement = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-300 flex items-center">
                             <FiCloud className="mr-2" />
-                            {backup.file_id && backup.file_id.startsWith('local_') ? 'Local Storage' : 'Google Drive'}
+                            {backup.file_id &&
+                            backup.file_id.startsWith('local_')
+                              ? 'Local Storage'
+                              : 'Google Drive'}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -465,16 +508,20 @@ const BackupManagement = () => {
                               className="flex items-center px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white rounded transition-colors"
                             >
                               <FiDownload className="mr-1" />
-                              {actionLoading[`restore_${backup.id}`] ? 'Restoring...' : 'Restore'}
+                              {actionLoading[`restore_${backup.id}`]
+                                ? 'Restoring...'
+                                : 'Restore'}
                             </button>
-                            
+
                             <button
                               onClick={() => handleDelete(backup)}
                               disabled={actionLoading[`delete_${backup.id}`]}
                               className="flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white rounded transition-colors"
                             >
                               <FiTrash2 className="mr-1" />
-                              {actionLoading[`delete_${backup.id}`] ? 'Deleting...' : 'Delete'}
+                              {actionLoading[`delete_${backup.id}`]
+                                ? 'Deleting...'
+                                : 'Delete'}
                             </button>
                           </div>
                         </td>
@@ -546,9 +593,15 @@ const BackupManagement = () => {
           {modals.confirm.details && (
             <div className="bg-gray-700 p-3 rounded-lg mt-4 mb-4">
               <div className="space-y-2 text-sm">
-                <div><strong>File:</strong> {modals.confirm.details.fileName}</div>
-                <div><strong>Created:</strong> {modals.confirm.details.created}</div>
-                <div><strong>Size:</strong> {modals.confirm.details.size}</div>
+                <div>
+                  <strong>File:</strong> {modals.confirm.details.fileName}
+                </div>
+                <div>
+                  <strong>Created:</strong> {modals.confirm.details.created}
+                </div>
+                <div>
+                  <strong>Size:</strong> {modals.confirm.details.size}
+                </div>
               </div>
             </div>
           )}

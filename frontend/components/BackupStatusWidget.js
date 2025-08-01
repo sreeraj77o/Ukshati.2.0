@@ -1,28 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  FiCloud, 
-  FiCheck, 
-  FiX, 
-  FiClock, 
+import {
+  FiCloud,
+  FiCheck,
+  FiX,
+  FiClock,
   FiSettings,
   FiAlertTriangle,
-  FiHardDrive
+  FiHardDrive,
 } from 'react-icons/fi';
 
 const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchBackupStatus();
-    
-    // Refresh status every 5 minutes
-    const interval = setInterval(fetchBackupStatus, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [userEmail]);
-
-  const fetchBackupStatus = async () => {
+  const fetchBackupStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/backup/status?userEmail=${userEmail}`);
 
@@ -41,7 +33,7 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
           storage: { backupCount: 0, totalBackupSize: 0 },
           schedule: null,
           recentBackups: [],
-          lastBackup: null
+          lastBackup: null,
         });
       }
     } catch (error) {
@@ -51,14 +43,22 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
         storage: { backupCount: 0, totalBackupSize: 0 },
         schedule: null,
         recentBackups: [],
-        lastBackup: null
+        lastBackup: null,
       });
     } finally {
       setLoading(false);
     }
-  };
+  }, [userEmail]);
 
-  const formatFileSize = (bytes) => {
+  useEffect(() => {
+    fetchBackupStatus();
+
+    // Refresh status every 5 minutes
+    const interval = setInterval(fetchBackupStatus, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [userEmail, fetchBackupStatus]);
+
+  const formatFileSize = bytes => {
     if (!bytes) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -66,14 +66,14 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     if (!dateString) return 'Never';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
-    
+
     if (diffDays > 0) {
       return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
     } else if (diffHours > 0) {
@@ -87,7 +87,7 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
     if (!status?.lastBackup) {
       return <FiAlertTriangle className="text-yellow-400" />;
     }
-    
+
     switch (status.lastBackup.status) {
       case 'success':
         return <FiCheck className="text-green-400" />;
@@ -102,12 +102,16 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
 
   const getBackupStatusColor = () => {
     if (!status?.lastBackup) return 'border-yellow-500';
-    
+
     switch (status.lastBackup.status) {
-      case 'success': return 'border-green-500';
-      case 'failed': return 'border-red-500';
-      case 'in_progress': return 'border-blue-500';
-      default: return 'border-yellow-500';
+      case 'success':
+        return 'border-green-500';
+      case 'failed':
+        return 'border-red-500';
+      case 'in_progress':
+        return 'border-blue-500';
+      default:
+        return 'border-yellow-500';
     }
   };
 
@@ -115,14 +119,14 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
     if (!status?.schedule?.is_enabled) {
       return 'Automatic backups disabled';
     }
-    
+
     if (status?.schedule?.next_backup_at) {
       const nextBackup = new Date(status.schedule.next_backup_at);
       const now = new Date();
       const diffMs = nextBackup - now;
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays = Math.floor(diffHours / 24);
-      
+
       if (diffMs < 0) {
         return 'Backup overdue';
       } else if (diffDays > 0) {
@@ -133,7 +137,7 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
         return 'Next backup soon';
       }
     }
-    
+
     return 'Schedule not configured';
   };
 
@@ -171,7 +175,7 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
         <div className="flex items-center space-x-2">
           {getBackupStatusIcon()}
           <button
-            onClick={() => window.location.href = '/backup/settings'}
+            onClick={() => (window.location.href = '/backup/settings')}
             className="p-1 hover:bg-gray-700 rounded transition-colors"
           >
             <FiSettings className="text-gray-400 hover:text-white" />
@@ -185,10 +189,9 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
         <div className="flex justify-between items-center">
           <span className="text-gray-400 text-sm">Last Backup:</span>
           <span className="text-white text-sm font-medium">
-            {status?.lastBackup 
+            {status?.lastBackup
               ? formatDate(status.lastBackup.created_at)
-              : 'Never'
-            }
+              : 'Never'}
           </span>
         </div>
 
@@ -208,7 +211,8 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
               Storage:
             </span>
             <span className="text-white text-sm font-medium">
-              {status.storage.backupCount} backups • {formatFileSize(status.storage.totalBackupSize)}
+              {status.storage.backupCount} backups •{' '}
+              {formatFileSize(status.storage.totalBackupSize)}
             </span>
           </div>
         )}
@@ -227,18 +231,25 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
       {/* Recent Backups */}
       {status?.recentBackups && status.recentBackups.length > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-700">
-          <h4 className="text-sm font-medium text-gray-300 mb-2">Recent Backups</h4>
+          <h4 className="text-sm font-medium text-gray-300 mb-2">
+            Recent Backups
+          </h4>
           <div className="space-y-1">
             {status.recentBackups.slice(0, 2).map((backup, index) => (
-              <div key={backup.id} className="flex justify-between items-center text-xs">
+              <div
+                key={backup.id}
+                className="flex justify-between items-center text-xs"
+              >
                 <span className="text-gray-400 truncate">
                   {backup.file_name.replace('backup_', '').replace('.sql', '')}
                 </span>
-                <span className={`px-2 py-1 rounded ${
-                  backup.status === 'success' 
-                    ? 'bg-green-600 text-green-100' 
-                    : 'bg-red-600 text-red-100'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded ${
+                    backup.status === 'success'
+                      ? 'bg-green-600 text-green-100'
+                      : 'bg-red-600 text-red-100'
+                  }`}
+                >
                   {backup.status}
                 </span>
               </div>
@@ -250,13 +261,13 @@ const BackupStatusWidget = ({ userEmail = 'admin@ukshati.com' }) => {
       {/* Action Buttons */}
       <div className="mt-4 pt-4 border-t border-gray-700 flex space-x-2">
         <button
-          onClick={() => window.location.href = '/backup/settings'}
+          onClick={() => (window.location.href = '/backup/settings')}
           className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors"
         >
           Configure
         </button>
         <button
-          onClick={() => window.location.href = '/backup/manage'}
+          onClick={() => (window.location.href = '/backup/manage')}
           className="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors"
         >
           Manage
