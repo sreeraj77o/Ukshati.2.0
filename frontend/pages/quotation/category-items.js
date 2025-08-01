@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import ScrollToTopButton from '@/components/scrollup';
 import { motion } from 'framer-motion';
@@ -58,7 +58,7 @@ const CategoryItemsPage = () => {
 
     // Initialize selected items
     setSelectedItems(initialSelectedItems);
-  }, [categoryId]);
+  }, [categoryId, initialSelectedItems]);
 
   const handleItemSelection = (item_id, cost) => {
     setSelectedItems(prev => {

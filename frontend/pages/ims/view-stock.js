@@ -326,7 +326,7 @@ export default function StockDetails() {
     } finally {
       setIsUploading(false);
     }
-  }, [csvData, fetchData]);
+  }, [csvData, fetchData, closeBulkModal]);
 
   const closeBulkModal = useCallback(() => {
     setIsBulkModalOpen(false);

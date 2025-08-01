@@ -73,7 +73,7 @@ const ReminderMaintenance = () => {
     } catch (error) {
       console.error('Error requesting notification permission:', error);
     }
-  }, []);
+  }, [showError, showSuccess]);
 
   // Handle reminder notifications
   const setupNotificationListener = useCallback(() => {
@@ -99,6 +99,9 @@ const ReminderMaintenance = () => {
           background: '#1a1a2e',
           color: '#fff',
           confirmButtonColor: '#4f46e5',
+          confirmButtonText: 'OK',
+        }).then(() => {
+          console.log('Alert closed');
         });
       }
     };
@@ -179,7 +182,7 @@ const ReminderMaintenance = () => {
     return () => {
       isMounted = false;
     };
-  }, [fetchReminders]);
+  }, [fetchReminders, showError]);
 
   const showError = useCallback((title, message) => {
     Swal.fire({

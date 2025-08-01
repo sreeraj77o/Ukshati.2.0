@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import ScrollToTopButton from '@/components/scrollup';
 import { motion } from 'framer-motion';
@@ -68,7 +68,7 @@ const RatesManagement = () => {
   }, [rates]);
 
   // Fetch data functions
-  const fetchUnratedItems = async () => {
+  const fetchUnratedItems = useCallback(async () => {
     setLoading(prev => ({ ...prev, unrated: true }));
     try {
       const res = await fetch('/api/rates/getUnratedItems');
@@ -80,44 +80,58 @@ const RatesManagement = () => {
     } finally {
       setLoading(prev => ({ ...prev, unrated: false }));
     }
-  };
+  }, [showNotification]);
 
-  const fetchRates = async (search = '') => {
-    setLoading(prev => ({ ...prev, rates: true }));
-    try {
-      const res = await fetch(`/api/rates/searchRates?search=${search}`);
-      const data = await res.json();
-      setRates(data);
-      if (search === '') setAllRates(data); // Store all rates when no search term
-    } catch (error) {
-      console.error('Failed to fetch rates:', error);
-      showNotification('Failed to load rates', 'error');
-    } finally {
-      setLoading(prev => ({ ...prev, rates: false }));
-    }
-  };
+  const fetchRates = useCallback(
+    async (search = '') => {
+      setLoading(prev => ({ ...prev, rates: true }));
+      try {
+        const res = await fetch(`/api/rates/searchRates?search=${search}`);
+        const data = await res.json();
+        setRates(data);
+        if (search === '') setAllRates(data); // Store all rates when no search term
+      } catch (error) {
+        console.error('Failed to fetch rates:', error);
+        showNotification('Failed to load rates', 'error');
+      } finally {
+        setLoading(prev => ({ ...prev, rates: false }));
+      }
+    },
+    [showNotification]
+  );
 
   // Initial data load
   useEffect(() => {
     fetchUnratedItems();
     fetchRates();
-  }, []);
+  }, [fetchUnratedItems, fetchRates]);
+
+  // Ref to store timeout ID for debouncing
+  const searchTimeoutRef = useRef(null);
 
   // Debounced search handler
   const debouncedSearch = useCallback(
-    debounce(searchValue => {
-      if (searchValue.length < 3) {
-        // Client-side filter for short queries
-        const filtered = allRates.filter(rate =>
-          rate.item_name.toLowerCase().includes(searchValue.toLowerCase())
-        );
-        setRates(filtered);
-      } else {
-        // Server-side search for longer queries
-        fetchRates(searchValue);
+    searchValue => {
+      // Clear previous timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
-    }, 300),
-    [allRates]
+
+      // Set new timeout
+      searchTimeoutRef.current = setTimeout(() => {
+        if (searchValue.length < 3) {
+          // Client-side filter for short queries
+          const filtered = allRates.filter(rate =>
+            rate.item_name.toLowerCase().includes(searchValue.toLowerCase())
+          );
+          setRates(filtered);
+        } else {
+          // Server-side search for longer queries
+          fetchRates(searchValue);
+        }
+      }, 300);
+    },
+    [allRates, fetchRates]
   );
 
   // Handle search input changes
@@ -222,10 +236,10 @@ const RatesManagement = () => {
   };
 
   // Helper functions
-  const showNotification = (message, type) => {
+  const showNotification = useCallback((message, type) => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 5000);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center">
