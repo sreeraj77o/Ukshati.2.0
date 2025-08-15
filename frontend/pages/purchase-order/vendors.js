@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import {
   FiPlus,
@@ -41,7 +41,7 @@ export default function ManageVendors() {
 
   useEffect(() => {
     fetchVendors();
-  }, []);
+  }, [fetchVendors]);
 
   useEffect(() => {
     if (searchTerm.trim() === '') {
@@ -60,7 +60,7 @@ export default function ManageVendors() {
     }
   }, [searchTerm, vendors]);
 
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -85,7 +85,7 @@ export default function ManageVendors() {
       setFilteredVendors([]);
       setLoading(false);
     }
-  };
+  }, [router]);
 
   const handleSearchChange = e => {
     setSearchTerm(e.target.value);

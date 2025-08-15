@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import {
   FiPlus,
@@ -46,9 +46,9 @@ export default function EditPurchaseOrder() {
     if (id) {
       fetchData();
     }
-  }, [id]);
+  }, [id, fetchData]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -128,7 +128,7 @@ export default function EditPurchaseOrder() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
 
   // Calculate totals whenever items change
   useEffect(() => {

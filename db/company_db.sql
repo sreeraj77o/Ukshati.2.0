@@ -1,5 +1,5 @@
 DROP USER IF EXISTS 'company'@'%';
-CREATE USER 'company'@'%' IDENTIFIED BY 'Ukshati@123';
+CREATE USER 'company'@'%' IDENTIFIED WITH mysql_native_password BY 'Ukshati@123';
 GRANT ALL PRIVILEGES ON company_db.* TO 'company'@'%';
 FLUSH PRIVILEGES;
 
@@ -1248,6 +1248,78 @@ BEGIN
 END//
 
 DELIMITER ;
+
+-- Backup system tables
+-- Create backup_history table
+CREATE TABLE IF NOT EXISTS backup_history (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  file_id VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL,
+  folder_id VARCHAR(255),
+  backup_type ENUM('manual', 'scheduled') DEFAULT 'manual',
+  status ENUM('success', 'failed', 'in_progress') DEFAULT 'success',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  uploaded_at TIMESTAMP NULL,
+  error_message TEXT NULL,
+  INDEX idx_created_at (created_at),
+  INDEX idx_file_id (file_id),
+  INDEX idx_status (status)
+);
+
+-- Create backup_settings table
+CREATE TABLE IF NOT EXISTS backup_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(255) NOT NULL,
+  backup_frequency ENUM('daily', 'weekly', 'monthly') NOT NULL,
+  backup_time TIME DEFAULT '02:00:00',
+  backup_day_of_week INT DEFAULT 0,
+  backup_day_of_month INT DEFAULT 1,
+  is_enabled BOOLEAN DEFAULT true,
+  google_folder_id VARCHAR(255),
+  last_backup_at TIMESTAMP NULL,
+  last_backup_status ENUM('success', 'failed', 'in_progress') NULL,
+  last_backup_error TEXT NULL,
+  next_backup_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_user_email (user_email),
+  INDEX idx_next_backup (next_backup_at),
+  INDEX idx_enabled (is_enabled)
+);
+
+-- Insert default backup settings for admin user
+INSERT IGNORE INTO backup_settings (
+  user_email,
+  backup_frequency,
+  backup_time,
+  backup_day_of_week,
+  backup_day_of_month,
+  is_enabled
+) VALUES (
+  'admin@ukshati.com',
+  'weekly',
+  '02:00:00',
+  0,
+  1,
+  false
+);
+
+-- Create Google OAuth tokens table
+CREATE TABLE IF NOT EXISTS google_auth (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  access_token TEXT,
+  refresh_token TEXT,
+  scope TEXT,
+  token_type VARCHAR(50),
+  expiry_date BIGINT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Ensure the company user uses mysql_native_password for compatibility
+ALTER USER 'company'@'%' IDENTIFIED WITH mysql_native_password BY 'Ukshati@123';
+FLUSH PRIVILEGES;
 
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   FiUsers,
   FiBell,
@@ -119,22 +119,25 @@ const CRMDashboard = () => {
     if (isMounted) {
       fetchData();
     }
-  }, [isMounted]);
+  }, [isMounted, updateMetrics]);
 
-  const updateMetrics = (customers, projects, reminders) => {
-    const updatedMetrics = [...metrics];
-    updatedMetrics[0].value = customers.length;
-    const activeProjects = projects.filter(
-      project => project.status === 'Ongoing'
-    );
-    updatedMetrics[1].value = activeProjects.length;
-    updatedMetrics[2].value = reminders.length;
-    const completedProjects = projects.filter(
-      project => project.status === 'Completed'
-    );
-    updatedMetrics[3].value = completedProjects.length;
-    setMetrics(updatedMetrics);
-  };
+  const updateMetrics = useCallback(
+    (customers, projects, reminders) => {
+      const updatedMetrics = [...metrics];
+      updatedMetrics[0].value = customers.length;
+      const activeProjects = projects.filter(
+        project => project.status === 'Ongoing'
+      );
+      updatedMetrics[1].value = activeProjects.length;
+      updatedMetrics[2].value = reminders.length;
+      const completedProjects = projects.filter(
+        project => project.status === 'Completed'
+      );
+      updatedMetrics[3].value = completedProjects.length;
+      setMetrics(updatedMetrics);
+    },
+    [metrics]
+  );
 
   useEffect(() => {
     if (searchTerm.trim() === '') {

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import {
@@ -35,9 +35,9 @@ export default function ViewPurchaseOrder() {
     if (id) {
       fetchOrderData();
     }
-  }, [id]);
+  }, [id, fetchOrderData]);
 
-  const fetchOrderData = async () => {
+  const fetchOrderData = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -92,7 +92,7 @@ export default function ViewPurchaseOrder() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, router]);
 
   const getStatusBadgeClass = status => {
     switch (status) {

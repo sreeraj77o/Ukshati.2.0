@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import EditButton from './editButton';
@@ -18,9 +18,9 @@ export default function ProjectDetails() {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [fetchProjects]);
 
-  const fetchProjects = async (start = '') => {
+  const fetchProjects = useCallback(async (start = '') => {
     setLoading(true);
     try {
       const url = start
@@ -41,7 +41,7 @@ export default function ProjectDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const formatDate = dateStr => {
     if (!dateStr) return '';

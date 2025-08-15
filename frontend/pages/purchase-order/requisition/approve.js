@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 import {
@@ -32,7 +32,7 @@ export default function ApproveRequisitions() {
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, filterStatus, requisitions]);
+  }, [applyFilters]);
 
   const fetchRequisitions = async () => {
     try {
@@ -51,7 +51,7 @@ export default function ApproveRequisitions() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     // Check if requisitions is an array before spreading
     let result = Array.isArray(requisitions) ? [...requisitions] : [];
 
@@ -73,7 +73,7 @@ export default function ApproveRequisitions() {
     }
 
     setFilteredRequisitions(result);
-  };
+  }, [requisitions, searchTerm, filterStatus]);
 
   const toggleRequisitionExpand = reqId => {
     setExpandedRequisition(expandedRequisition === reqId ? null : reqId);

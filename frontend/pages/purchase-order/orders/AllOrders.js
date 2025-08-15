@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import {
   FiPlus,
@@ -40,13 +40,13 @@ export default function AllPurchaseOrders() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, filterStatus, orders, sortBy, sortOrder]);
+  }, [applyFilters]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -180,9 +180,9 @@ export default function AllPurchaseOrders() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let result = [...orders];
 
     // Apply search filter
@@ -225,7 +225,7 @@ export default function AllPurchaseOrders() {
     });
 
     setFilteredOrders(result);
-  };
+  }, [orders, searchTerm, filterStatus, sortBy, sortOrder]);
 
   const handleSearchChange = e => {
     setSearchTerm(e.target.value);

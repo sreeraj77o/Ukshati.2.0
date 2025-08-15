@@ -24,6 +24,7 @@ import {
   FaFileInvoice,
   FaBell,
   FaCogs,
+  FaCloud,
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -40,6 +41,7 @@ import {
 
 import { Bar, Line, Doughnut } from 'react-chartjs-2';
 import Footer from '@/components/Footer';
+import BackupStatusWidget from "@/components/BackupStatusWidget";
 import {
   DashboardSkeleton,
   CardSkeleton,
@@ -902,6 +904,11 @@ export default function Dashboard() {
                       <span className="font-medium">Inventory</span>
                     </Link>
 
+            <Link href="/backup/settings" className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group">
+              <FaCloud className="w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors" />
+              <span className="font-medium">Backup</span>
+            </Link>
+
                     <Link
                       href="/quotation/home"
                       className="flex items-center px-4 py-3 text-gray-300 rounded-lg hover:bg-gray-700 transition-all group"
@@ -1070,6 +1077,24 @@ export default function Dashboard() {
                   </motion.span>
                 )}
               </Link>
+
+  <Link
+    href="/backup/settings"
+    className="group flex items-center px-3 py-2 text-gray-300 rounded-md hover:bg-gray-700/80 transition-colors"
+  >
+    <span className="text-cyan-400 group-hover:text-white transition-colors">
+      <FaCloud className="w-5 h-5" />
+    </span>
+    {isSidebarOpen && (
+      <motion.span
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="ml-3 text-sm text-gray-200 whitespace-nowrap"
+      >
+        Backup
+      </motion.span>
+    )}
+  </Link>
 
               <Link
                 href="/quotation/home"
@@ -1300,6 +1325,16 @@ export default function Dashboard() {
                       </motion.div>
                     </Tilt>
                   ))}
+                </div>
+
+                {/* Backup Status Widget */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    {/* This space can be used for other widgets in the future */}
+                  </div>
+                  <div>
+                    <BackupStatusWidget userEmail={typeof window !== 'undefined' ? localStorage.getItem('userEmail') || 'admin@ukshati.com' : 'admin@ukshati.com'} />
+                  </div>
                 </div>
               </>
             )}
