@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
-import ProjectTable from "@/pages/expense/projectTable";
+import { useEffect, useState } from 'react';
+import ProjectTable from '@/pages/expense/projectTable';
 
 const AllProjects = () => {
   const [projects, setProjects] = useState([]);
 
   useEffect(() => {
-    fetch("/api/projects")
-      .then((res) => res.json())
-      .then((data) => setProjects(data))
-      .catch((err) => console.error("Error fetching projects:", err));
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(data => setProjects(data))
+      .catch(err => console.error('Error fetching projects:', err));
   }, []);
 
   return (

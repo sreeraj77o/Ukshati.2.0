@@ -1,15 +1,23 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+'use client';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/router';
 import {
-  FiPlus, FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiChevronDown,
-  FiChevronUp, FiX, FiAlertCircle
-} from "react-icons/fi";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { TableSkeleton } from "@/components/skeleton";
-import { motion } from "framer-motion";
-import { useUserSession } from "@/src/hooks/useDashboard";
+  FiPlus,
+  FiSearch,
+  FiFilter,
+  FiEye,
+  FiEdit,
+  FiTrash2,
+  FiChevronDown,
+  FiChevronUp,
+  FiX,
+  FiAlertCircle,
+} from 'react-icons/fi';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { TableSkeleton } from '@/components/skeleton';
+import { motion } from 'framer-motion';
+import { useUserSession } from '@/src/hooks/useDashboard';
 
 export default function AllRequisitions() {
   const router = useRouter();
@@ -19,70 +27,73 @@ export default function AllRequisitions() {
   const [filteredRequisitions, setFilteredRequisitions] = useState([]);
   const [projects, setProjects] = useState([]);
   const [expandedReq, setExpandedReq] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState("desc");
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     applyFilters();
-  }, [searchTerm, filterStatus, requisitions, sortBy, sortOrder]);
+  }, [applyFilters]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       if (!token) {
-        setError("Authentication required. Please log in again.");
-        router.push("/");
+        setError('Authentication required. Please log in again.');
+        router.push('/');
         return;
       }
 
       const [reqRes, projectRes] = await Promise.all([
-        fetch("/api/purchase/requisitions", {
+        fetch('/api/purchase/requisitions', {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("/api/projects", {
+        fetch('/api/projects', {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
 
       if (!reqRes.ok || !projectRes.ok) {
-        throw new Error("Failed to fetch requisitions or projects");
+        throw new Error('Failed to fetch requisitions or projects');
       }
 
       const requisitionsData = await reqRes.json();
       const projectData = await projectRes.json();
-      const normalizedProjects = projectData.map((p) => ({
+      const normalizedProjects = projectData.map(p => ({
         id: p.pid || p.id,
         name: p.pname || p.name,
       }));
 
       const detailedRequisitions = await Promise.all(
-        requisitionsData.map(async (req) => {
-          const itemsRes = await fetch(`/api/purchase/requisitions?id=${req.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+        requisitionsData.map(async req => {
+          const itemsRes = await fetch(
+            `/api/purchase/requisitions?id=${req.id}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
 
           const items = itemsRes.ok ? (await itemsRes.json()).items : [];
 
           const project = normalizedProjects.find(
-            (p) => p.id === req.project_id || p.pid === req.project_id
-          ) || { name: "Unknown Project" };
+            p => p.id === req.project_id || p.pid === req.project_id
+          ) || { name: 'Unknown Project' };
 
           return {
             ...req,
             project_name: project.name,
-            items: items.map((item) => ({
+            items: items.map(item => ({
               ...item,
               quantity: Number(item.quantity),
             })),
@@ -93,77 +104,86 @@ export default function AllRequisitions() {
       setRequisitions(detailedRequisitions);
       setFilteredRequisitions(detailedRequisitions);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError(err.message || "Error fetching requisitions.");
+      console.error('Fetch error:', err);
+      setError(err.message || 'Error fetching requisitions.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...requisitions];
 
     if (searchTerm) {
-      filtered = filtered.filter((r) =>
-        (r.req_number || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.project_name || "").toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        r =>
+          (r.req_number || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          (r.project_name || '')
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
     }
 
-    if (filterStatus !== "all") {
-      filtered = filtered.filter((r) => r.status === filterStatus);
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(r => r.status === filterStatus);
     }
 
     filtered.sort((a, b) => {
       let result = 0;
-      if (sortBy === "date") {
+      if (sortBy === 'date') {
         result = new Date(a.required_by) - new Date(b.required_by);
-      } else if (sortBy === "req_number") {
+      } else if (sortBy === 'req_number') {
         result = a.req_number.localeCompare(b.req_number);
-      } else if (sortBy === "project") {
+      } else if (sortBy === 'project') {
         result = a.project_name.localeCompare(b.project_name);
       }
-      return sortOrder === "asc" ? result : -result;
+      return sortOrder === 'asc' ? result : -result;
     });
 
     setFilteredRequisitions(filtered);
-  };
+  }, [requisitions, searchTerm, filterStatus, sortBy, sortOrder]);
 
-  const handleDelete = async (id) => {
-    const token = localStorage.getItem("token");
+  const handleDelete = async id => {
+    const token = localStorage.getItem('token');
     try {
       const res = await fetch(`/api/purchase/requisition-approval?id=${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error('Delete failed');
       await fetchData(); // Refresh data from backend after delete
       setConfirmDelete(null);
     } catch (err) {
-      setError("Failed to delete requisition.");
+      setError('Failed to delete requisition.');
     }
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    const token = localStorage.getItem("token");
-    console.log("Token:", token);
-    const user = localStorage.getItem("user");
-    const approvedBy = user ? JSON.parse(user).id : "Unknown";
-    console.log("Approved by:", approvedBy);
+    const token = localStorage.getItem('token');
+    console.log('Token:', token);
+    const user = localStorage.getItem('user');
+    const approvedBy = user ? JSON.parse(user).id : 'Unknown';
+    console.log('Approved by:', approvedBy);
     try {
       const res = await fetch(`/api/purchase/requisition-approval?id=${id}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ id, status: newStatus, approved_by: approvedBy }),
+        body: JSON.stringify({
+          id,
+          status: newStatus,
+          approved_by: approvedBy,
+        }),
       });
-      console.log("Status update response:", res);
-      if (!res.ok) throw new Error("Status update failed");
+      console.log('Status update response:', res);
+      if (!res.ok) throw new Error('Status update failed');
       await fetchData(); // Refresh requisitions after status change
     } catch (err) {
-      console.error("Status update error:", err);
+      console.error('Status update error:', err);
       setError(`Failed to ${newStatus} requisition.`);
     }
   };
@@ -442,7 +462,7 @@ export default function AllRequisitions() {
                   )}
 
                   {/* Approval/Reject buttons, only if status is pending */}
-                  {userRole === "admin" && req.status === "pending" && (
+                  {userRole === 'admin' && req.status === 'pending' && (
                     <div className="mt-4 flex justify-end gap-2">
                       <button
                         onClick={() => handleStatusChange(req.id, "rejected")}

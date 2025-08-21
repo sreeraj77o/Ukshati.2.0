@@ -1,18 +1,18 @@
 'use client';
-import BackButton from "@/components/BackButton";
-import { useEffect, useState } from "react";
-import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
+import BackButton from '@/components/BackButton';
+import { useEffect, useState } from 'react';
+import { TableSkeleton, FormSkeleton } from '@/components/skeleton';
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [name, setName] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState(""); // End date is now optional
-  const [status, setStatus] = useState("");
-  const [customerId, setCustomerId] = useState("");
+  const [name, setName] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState(''); // End date is now optional
+  const [status, setStatus] = useState('');
+  const [customerId, setCustomerId] = useState('');
   const [editId, setEditId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,8 +23,8 @@ export default function Projects() {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/tasks");
-      if (!res.ok) throw new Error("Failed to fetch projects");
+      const res = await fetch('/api/tasks');
+      if (!res.ok) throw new Error('Failed to fetch projects');
       const data = await res.json();
 
       // Simulate data loading delay (remove in production if not needed)
@@ -32,7 +32,7 @@ export default function Projects() {
 
       setProjects(data);
     } catch (error) {
-      console.error("Error fetching projects:", error);
+      console.error('Error fetching projects:', error);
     } finally {
       setLoading(false);
     }
@@ -40,146 +40,161 @@ export default function Projects() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await fetch("/api/customers");
-      if (!res.ok) throw new Error("Failed to fetch customers");
+      const res = await fetch('/api/customers');
+      if (!res.ok) throw new Error('Failed to fetch customers');
       const data = await res.json();
       setCustomers(data.customers);
     } catch (error) {
-      console.error("Error fetching customers:", error);
+      console.error('Error fetching customers:', error);
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString || dateString === "TBD" || dateString === "null") return "TBD";
+  const formatDate = dateString => {
+    if (!dateString || dateString === 'TBD' || dateString === 'null')
+      return 'TBD';
 
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return "TBD"; // Guard against invalid dates
+    if (isNaN(date.getTime())) return 'TBD'; // Guard against invalid dates
 
     date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-    return date.toISOString().split("T")[0];
+    return date.toISOString().split('T')[0];
   };
 
-
   const statusOptions = [
-    { value: "", label: "Select Status" },
+    { value: '', label: 'Select Status' },
     { value: 'ongoing', label: 'Ongoing' },
     { value: 'on hold', label: 'On Hold' },
-    { value: 'completed', label: 'Completed' }
+    { value: 'completed', label: 'Completed' },
   ];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     if (!name || !startDate || !customerId) {
-      alert("Please fill all required fields.");
+      alert('Please fill all required fields.');
       return;
     }
-    const isValidDate = (date) => {
+    const isValidDate = date => {
       return date && !isNaN(new Date(date).getTime());
     };
 
     if (!isValidDate(startDate)) {
-      alert("Start date is invalid or missing.");
+      alert('Start date is invalid or missing.');
       return;
     }
 
     const projectData = {
       pname: name,
-      start_date: new Date(startDate).toISOString().split("T")[0],
+      start_date: new Date(startDate).toISOString().split('T')[0],
       end_date: isValidDate(endDate)
-        ? new Date(endDate).toISOString().split("T")[0]
-        : "TBD", // Default to TBD if endDate is missing/invalid
+        ? new Date(endDate).toISOString().split('T')[0]
+        : 'TBD', // Default to TBD if endDate is missing/invalid
       status,
       cid: customerId,
     };
 
     try {
-      const url = editId ? `/api/tasks?pid=${editId}` : "/api/tasks";
-      const method = editId ? "PUT" : "POST";
+      const url = editId ? `/api/tasks?pid=${editId}` : '/api/tasks';
+      const method = editId ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editId ? { pid: editId, ...projectData } : projectData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          editId ? { pid: editId, ...projectData } : projectData
+        ),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to save project");
+        throw new Error(errorData.error || 'Failed to save project');
       }
 
       fetchProjects();
       resetForm();
     } catch (error) {
-      console.error("Error:", error.message);
+      console.error('Error:', error.message);
       alert(error.message);
     }
   };
 
   const resetForm = () => {
-    setName("");
-    setStartDate("");
-    setEndDate(""); // Reset end date
-    setStatus("");
-    setCustomerId("");
+    setName('');
+    setStartDate('');
+    setEndDate(''); // Reset end date
+    setStatus('');
+    setCustomerId('');
     setEditId(null);
   };
 
-  const handleEdit = (project) => {
+  const handleEdit = project => {
     setEditId(project.pid);
     setName(project.pname);
     setStartDate(formatDate(project.start_date));
-    setEndDate(project.end_date === "TBD" ? "" : formatDate(project.end_date)); // Handle "TBD" for editing
+    setEndDate(project.end_date === 'TBD' ? '' : formatDate(project.end_date)); // Handle "TBD" for editing
     setStatus(project.status);
     setCustomerId(project.cid);
-  };  
-  
-  const handleDelete = async (pid) => {
-    if (!window.confirm("Are you sure you want to delete this project?")) return;
+  };
+
+  const handleDelete = async pid => {
+    if (!window.confirm('Are you sure you want to delete this project?'))
+      return;
 
     try {
       // First, try to delete without cascade
       const response = await fetch(`/api/tasks?pid=${pid}`, {
-        method: "DELETE",
+        method: 'DELETE',
       });
 
       // Handle special case for related records
       if (response.status === 409) {
         const errorData = await response.json();
-          if (errorData.type === "related_records_exist") {
+        if (errorData.type === 'related_records_exist') {
           let confirmMessage = `This project has ${errorData.relatedRecords} related stock transaction(s).`;
-          
+
           // Add spending information if available
           if (errorData.hasSpending) {
             confirmMessage += `\n\nWARNING: This project has ${errorData.spendingRecords} inventory spending record(s). Deleting this project will delete all spending history.`;
           }
-          
-          confirmMessage += "\n\nDo you want to delete the project and all related records?";
-          
+
+          confirmMessage +=
+            '\n\nDo you want to delete the project and all related records?';
+
           const confirmCascade = window.confirm(confirmMessage);
-          
+
           if (confirmCascade) {
             try {
               // Show loading state (optional)
               setLoading(true);
-              
+
               // User confirmed cascade delete
-              const cascadeResponse = await fetch(`/api/tasks?pid=${pid}&cascade=true`, {
-                method: "DELETE",
-              });
-                if (!cascadeResponse.ok) {
+              const cascadeResponse = await fetch(
+                `/api/tasks?pid=${pid}&cascade=true`,
+                {
+                  method: 'DELETE',
+                }
+              );
+              if (!cascadeResponse.ok) {
                 const cascadeError = await cascadeResponse.json();
-                throw new Error(cascadeError.error || "Failed to delete project and related records");
+                throw new Error(
+                  cascadeError.error ||
+                    'Failed to delete project and related records'
+                );
               }
-              
+
               // Success message
-              let successMessage = "Project and related records deleted successfully.";
+              let successMessage =
+                'Project and related records deleted successfully.';
               if (errorData.hasSpending) {
-                successMessage += "\nInventory spending records have also been deleted.";
+                successMessage +=
+                  '\nInventory spending records have also been deleted.';
               }
               alert(successMessage);
               fetchProjects();
             } catch (cascadeError) {
-              console.error("Error during cascade delete:", cascadeError);
-              alert(cascadeError.message || "Failed to delete project and related records");
+              console.error('Error during cascade delete:', cascadeError);
+              alert(
+                cascadeError.message ||
+                  'Failed to delete project and related records'
+              );
             } finally {
               setLoading(false);
             }
@@ -190,24 +205,24 @@ export default function Projects() {
           }
         } else {
           // Other 409 errors
-          throw new Error(errorData.error || "Failed to delete project");
+          throw new Error(errorData.error || 'Failed to delete project');
         }
       }
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete project");
+        throw new Error(errorData.error || 'Failed to delete project');
       }
 
-      alert("Project deleted successfully");
+      alert('Project deleted successfully');
       fetchProjects();
     } catch (error) {
-      console.error("Error deleting project:", error);
+      console.error('Error deleting project:', error);
       alert(error.message);
     }
   };
 
-  const filteredProjects = projects.filter((project) =>
+  const filteredProjects = projects.filter(project =>
     project.pname.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -232,7 +247,7 @@ export default function Projects() {
                     type="text"
                     placeholder="Enter project name"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     required
                   />
                 </div>
@@ -241,7 +256,7 @@ export default function Projects() {
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={e => setStartDate(e.target.value)}
                     required
                   />
                 </div>
@@ -250,17 +265,18 @@ export default function Projects() {
                   <input
                     type="date"
                     value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  /> {/* Removed required attribute */}
+                    onChange={e => setEndDate(e.target.value)}
+                  />{' '}
+                  {/* Removed required attribute */}
                 </div>
                 <div className="input-group">
                   <label>Status</label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={e => setStatus(e.target.value)}
                     required
                   >
-                    {statusOptions.map((option) => (
+                    {statusOptions.map(option => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
@@ -271,11 +287,11 @@ export default function Projects() {
                   <label>Customer</label>
                   <select
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
+                    onChange={e => setCustomerId(e.target.value)}
                     required
                   >
                     <option value="">Select Customer</option>
-                    {customers.map((customer) => (
+                    {customers.map(customer => (
                       <option key={customer.cid} value={customer.cid}>
                         {customer.cid} - {customer.cname}
                       </option>
@@ -283,7 +299,7 @@ export default function Projects() {
                   </select>
                 </div>
                 <button type="submit" className="submit-button">
-                  {editId ? "Update Project" : "Add Project"}
+                  {editId ? 'Update Project' : 'Add Project'}
                 </button>
               </div>
             </form>
@@ -294,7 +310,7 @@ export default function Projects() {
             type="text"
             placeholder="Search projects..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="projects-table">
@@ -315,18 +331,20 @@ export default function Projects() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProjects.map((project) => (
+                  {filteredProjects.map(project => (
                     <tr key={project.pid}>
                       <td>{project.pid}</td>
                       <td>{project.pname}</td>
                       <td>{formatDate(project.start_date)}</td>
                       <td>{formatDate(project.end_date)}</td>
                       <td>
-                        <span className={`status-badge ${project.status.replace(' ', '-')}`}>
+                        <span
+                          className={`status-badge ${project.status.replace(' ', '-')}`}
+                        >
                           {project.status}
                         </span>
                       </td>
-                      <td>{project.cname || "N/A"}</td>
+                      <td>{project.cname || 'N/A'}</td>
                       <td className="actions">
                         <button
                           onClick={() => handleEdit(project)}

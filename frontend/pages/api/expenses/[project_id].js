@@ -1,14 +1,14 @@
-import { connectToDB } from "@/lib/db"; // Ensure correct import
+import { connectToDB } from '@/lib/db'; // Ensure correct import
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   const { project_id } = req.query; // 🔹 Extracts correctly from [project_id].js
 
   if (!project_id || isNaN(parseInt(project_id, 10))) {
-    return res.status(400).json({ error: "Invalid Project ID" });
+    return res.status(400).json({ error: 'Invalid Project ID' });
   }
 
   let connection;
@@ -19,12 +19,12 @@ export default async function handler(req, res) {
     const [projects] = await connection.execute(
       `SELECT pid, pname, cid, cname 
        FROM project 
-       WHERE pid = ?;`, 
+       WHERE pid = ?;`,
       [project_id]
     );
 
     if (!projects.length) {
-      return res.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: 'Project not found' });
     }
 
     const project = projects[0];
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
        FROM add_expenses e
        LEFT JOIN rates r ON e.id = r.item_id
        LEFT JOIN category c ON r.category_id = c.category_id
-       WHERE e.pid = ?;`, 
+       WHERE e.pid = ?;`,
       [project_id]
     );
 
@@ -64,9 +64,8 @@ export default async function handler(req, res) {
       expenses,
       inventory,
     });
-
   } catch (error) {
-    console.error("Database Error:", error);
+    console.error('Database Error:', error);
     res.status(500).json({ error: error.message });
   } finally {
     if (connection) connection.release();

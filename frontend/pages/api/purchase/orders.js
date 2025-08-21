@@ -1,20 +1,20 @@
-import { authenticate } from "../../../lib/auth";
-import { getConnection } from "../../../lib/db";
+import { authenticate } from '../../../lib/auth';
+import { getConnection } from '../../../lib/db';
 
 // Validation helper functions
 function validatePurchaseOrderData(data) {
   const errors = [];
 
   if (!data.vendor_id) {
-    errors.push("Vendor is required");
+    errors.push('Vendor is required');
   }
 
   if (!data.project_id) {
-    errors.push("Project is required");
+    errors.push('Project is required');
   }
 
   if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
-    errors.push("At least one item is required");
+    errors.push('At least one item is required');
   }
 
   if (data.items) {
@@ -32,42 +32,42 @@ function validatePurchaseOrderData(data) {
   }
 
   if (!data.total_amount || data.total_amount <= 0) {
-    errors.push("Valid total amount is required");
+    errors.push('Valid total amount is required');
   }
 
   return errors;
 }
 
 export default async function handler(req, res) {
-  console.log("=== PURCHASE ORDER API CALLED ===");
-  console.log("Method:", req.method);
-  console.log("Environment variables:");
-  console.log("- DB_HOST:", process.env.DB_HOST);
-  console.log("- DB_USER:", process.env.DB_USER);
-  console.log("- DB_NAME:", process.env.DB_NAME);
-  console.log("- DB_PORT:", process.env.DB_PORT);
+  console.log('=== PURCHASE ORDER API CALLED ===');
+  console.log('Method:', req.method);
+  console.log('Environment variables:');
+  console.log('- DB_HOST:', process.env.DB_HOST);
+  console.log('- DB_USER:', process.env.DB_USER);
+  console.log('- DB_NAME:', process.env.DB_NAME);
+  console.log('- DB_PORT:', process.env.DB_PORT);
 
   // Authenticate user using JWT token
   let user;
   try {
     user = await authenticate(req);
-    console.log("✅ Authentication successful for user:", user.userId);
+    console.log('✅ Authentication successful for user:', user.userId);
   } catch (error) {
-    console.error("❌ Authentication error:", error.message);
-    return res.status(401).json({ error: "Unauthorized" });
+    console.error('❌ Authentication error:', error.message);
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   let db = null;
 
   try {
-    console.log("Attempting to connect to database...");
+    console.log('Attempting to connect to database...');
     db = await getConnection();
-    console.log("✅ Database connection established for purchase orders API");
+    console.log('✅ Database connection established for purchase orders API');
 
     // Test database connection
-    console.log("Testing database connection...");
+    console.log('Testing database connection...');
     await db.execute('SELECT 1');
-    console.log("✅ Database connection test successful");
+    console.log('✅ Database connection test successful');
     switch (req.method) {
       case 'GET':
         // Get all purchase orders or filter by ID
@@ -86,7 +86,10 @@ export default async function handler(req, res) {
               [req.query.id]
             );
           } catch (error) {
-            console.log("New table structure failed, trying old table structure:", error.message);
+            console.log(
+              'New table structure failed, trying old table structure:',
+              error.message
+            );
             // Fallback to old table structure
             try {
               [order] = await db.execute(
@@ -100,23 +103,26 @@ export default async function handler(req, res) {
                 [req.query.id]
               );
             } catch (fallbackError) {
-              console.log("Both table structures failed:", fallbackError.message);
-              return res.status(500).json({ error: "Database schema issue" });
+              console.log(
+                'Both table structures failed:',
+                fallbackError.message
+              );
+              return res.status(500).json({ error: 'Database schema issue' });
             }
           }
-          
+
           if (order.length === 0) {
-            return res.status(404).json({ error: "Purchase order not found" });
+            return res.status(404).json({ error: 'Purchase order not found' });
           }
-          
+
           const [items] = await db.execute(
             `SELECT * FROM po_items WHERE po_id = ?`,
             [req.query.id]
           );
-          
-          return res.status(200).json({ 
+
+          return res.status(200).json({
             order: order[0],
-            items 
+            items,
           });
         } else {
           // Try with new table structure first
@@ -130,7 +136,10 @@ export default async function handler(req, res) {
                ORDER BY po.created_at DESC`
             );
           } catch (error) {
-            console.log("New table structure failed for orders list, trying old table structure:", error.message);
+            console.log(
+              'New table structure failed for orders list, trying old table structure:',
+              error.message
+            );
             // Fallback to old table structure
             try {
               [orders] = await db.execute(
@@ -141,14 +150,17 @@ export default async function handler(req, res) {
                  ORDER BY po.created_at DESC`
               );
             } catch (fallbackError) {
-              console.log("Both table structures failed for orders list:", fallbackError.message);
-              return res.status(500).json({ error: "Database schema issue" });
+              console.log(
+                'Both table structures failed for orders list:',
+                fallbackError.message
+              );
+              return res.status(500).json({ error: 'Database schema issue' });
             }
           }
 
           return res.status(200).json(orders);
         }
-        
+
       case 'POST':
         // Create new purchase order
         const {
@@ -162,15 +174,19 @@ export default async function handler(req, res) {
           subtotal,
           tax_amount,
           total_amount,
-          notes
+          notes,
         } = req.body;
 
-        console.log("Creating purchase order with data:", {
-          vendor_id, project_id, items_count: items?.length, total_amount, user_id: user.userId
+        console.log('Creating purchase order with data:', {
+          vendor_id,
+          project_id,
+          items_count: items?.length,
+          total_amount,
+          user_id: user.userId,
         });
 
         // Add detailed logging for debugging
-        console.log("Full request body:", JSON.stringify(req.body, null, 2));
+        console.log('Full request body:', JSON.stringify(req.body, null, 2));
 
         // Verify user exists in the employees table (since foreign key references employees table)
         let actualUserId = user.userId;
@@ -184,7 +200,9 @@ export default async function handler(req, res) {
               [user.userId]
             );
           } catch (error) {
-            console.log("New employees table not available, checking old employee table");
+            console.log(
+              'New employees table not available, checking old employee table'
+            );
           }
 
           // If not found in new table, check old employee table
@@ -195,31 +213,42 @@ export default async function handler(req, res) {
                 [user.userId]
               );
             } catch (error) {
-              console.log("Old employee table also not available:", error.message);
+              console.log(
+                'Old employee table also not available:',
+                error.message
+              );
             }
           }
 
           if (userCheck.length > 0) {
-            console.log("User found in employee/employees table with ID:", user.userId);
+            console.log(
+              'User found in employee/employees table with ID:',
+              user.userId
+            );
             actualUserId = user.userId;
           } else {
-            console.log("User not found in either employees or employee table:", user.userId);
+            console.log(
+              'User not found in either employees or employee table:',
+              user.userId
+            );
             return res.status(400).json({
-              error: "Invalid user - user not found in employee database"
+              error: 'Invalid user - user not found in employee database',
             });
           }
         } catch (error) {
-          console.log("Error checking employee tables:", error.message);
-          return res.status(500).json({ error: "Database error while verifying user" });
+          console.log('Error checking employee tables:', error.message);
+          return res
+            .status(500)
+            .json({ error: 'Database error while verifying user' });
         }
 
         // Validate input data
         const validationErrors = validatePurchaseOrderData(req.body);
         if (validationErrors.length > 0) {
-          console.log("Validation errors:", validationErrors);
+          console.log('Validation errors:', validationErrors);
           return res.status(400).json({
-            error: "Validation failed",
-            details: validationErrors
+            error: 'Validation failed',
+            details: validationErrors,
           });
         }
 
@@ -230,8 +259,8 @@ export default async function handler(req, res) {
         );
 
         if (vendorCheck.length === 0) {
-          console.log("Vendor not found or inactive:", vendor_id);
-          return res.status(400).json({ error: "Invalid or inactive vendor" });
+          console.log('Vendor not found or inactive:', vendor_id);
+          return res.status(400).json({ error: 'Invalid or inactive vendor' });
         }
 
         // Verify project exists (prioritize new projects table since foreign key references it)
@@ -246,11 +275,14 @@ export default async function handler(req, res) {
           );
 
           if (projectCheck.length > 0) {
-            console.log("Project found in projects table with ID:", project_id);
+            console.log('Project found in projects table with ID:', project_id);
             usingNewProjectsTable = true;
           }
         } catch (error) {
-          console.log("New projects table not available, checking old project table:", error.message);
+          console.log(
+            'New projects table not available, checking old project table:',
+            error.message
+          );
         }
 
         // If not found in new table, check old project table as fallback
@@ -262,28 +294,42 @@ export default async function handler(req, res) {
             );
 
             if (projectCheck.length > 0) {
-              console.log("Project found in old project table with ID:", project_id);
-              console.warn("Warning: Using old project table but purchase_orders foreign key references projects table");
-              console.warn("This may cause foreign key constraint violations during insertion");
+              console.log(
+                'Project found in old project table with ID:',
+                project_id
+              );
+              console.warn(
+                'Warning: Using old project table but purchase_orders foreign key references projects table'
+              );
+              console.warn(
+                'This may cause foreign key constraint violations during insertion'
+              );
             }
           } catch (error) {
-            console.log("Old project table also not available:", error.message);
+            console.log('Old project table also not available:', error.message);
           }
         }
 
         if (projectCheck.length === 0) {
-          console.log("Project not found in either projects or project table:", project_id);
-          return res.status(400).json({ error: "Invalid project - project not found" });
+          console.log(
+            'Project not found in either projects or project table:',
+            project_id
+          );
+          return res
+            .status(400)
+            .json({ error: 'Invalid project - project not found' });
         }
 
         // If using old project table, warn about potential issues
         if (!usingNewProjectsTable) {
-          console.warn("Purchase order creation may fail due to foreign key constraint mismatch");
+          console.warn(
+            'Purchase order creation may fail due to foreign key constraint mismatch'
+          );
         }
 
         // Generate PO number (PO-YYYYMMDD-XXX)
         const date = new Date();
-        const dateStr = date.toISOString().slice(0,10).replace(/-/g,'');
+        const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
 
         const [lastPO] = await db.execute(
           `SELECT po_number FROM purchase_orders
@@ -300,12 +346,12 @@ export default async function handler(req, res) {
           poNumber = `PO-${dateStr}-${(lastNum + 1).toString().padStart(3, '0')}`;
         }
 
-        console.log("Generated PO number:", poNumber);
+        console.log('Generated PO number:', poNumber);
 
         // Start transaction
-        console.log("🔄 Starting database transaction...");
+        console.log('🔄 Starting database transaction...');
         await db.beginTransaction();
-        console.log("✅ Transaction started successfully");
+        console.log('✅ Transaction started successfully');
 
         try {
           // Log all the values being inserted for debugging
@@ -321,10 +367,10 @@ export default async function handler(req, res) {
             subtotal,
             tax_amount || 0,
             total_amount,
-            notes || null
+            notes || null,
           ];
 
-          console.log("Inserting purchase order with values:", {
+          console.log('Inserting purchase order with values:', {
             po_number: poNumber,
             requisition_id: requisition_id || null,
             vendor_id: vendor_id,
@@ -336,10 +382,10 @@ export default async function handler(req, res) {
             subtotal: subtotal,
             tax_amount: tax_amount || 0,
             total_amount: total_amount,
-            notes: notes || null
+            notes: notes || null,
           });
 
-          console.log("🔄 Executing purchase order insertion...");
+          console.log('🔄 Executing purchase order insertion...');
           const [result] = await db.execute(
             `INSERT INTO purchase_orders
              (po_number, requisition_id, vendor_id, project_id, created_by
@@ -350,8 +396,8 @@ export default async function handler(req, res) {
           );
 
           const poId = result.insertId;
-          console.log("✅ Purchase order created successfully with ID:", poId);
-          console.log("✅ Insert result:", result);
+          console.log('✅ Purchase order created successfully with ID:', poId);
+          console.log('✅ Insert result:', result);
 
           // Insert items
           console.log(`🔄 Inserting ${items.length} items...`);
@@ -371,52 +417,60 @@ export default async function handler(req, res) {
                 item.unit_price,
                 item.unit || 'pcs',
                 item.quantity * item.unit_price,
-                item.stock_id || null
+                item.stock_id || null,
               ]
             );
-            console.log(`✅ Item ${index + 1} inserted with ID:`, itemResult[0].insertId);
+            console.log(
+              `✅ Item ${index + 1} inserted with ID:`,
+              itemResult[0].insertId
+            );
           }
 
-          console.log(`✅ Successfully inserted ${items.length} items for PO ${poId}`);
+          console.log(
+            `✅ Successfully inserted ${items.length} items for PO ${poId}`
+          );
 
           // If created from requisition, update requisition status
           if (requisition_id) {
-            console.log("Updating requisition status:", requisition_id);
+            console.log('Updating requisition status:', requisition_id);
             await db.execute(
               `UPDATE purchase_requisitions SET status = 'converted' WHERE id = ?`,
               [requisition_id]
             );
           }
 
-          console.log("🔄 Committing transaction...");
+          console.log('🔄 Committing transaction...');
           await db.commit();
-          console.log("✅ Transaction committed successfully - Purchase order saved to database!");
+          console.log(
+            '✅ Transaction committed successfully - Purchase order saved to database!'
+          );
 
-          console.log("🎉 Purchase order creation completed successfully!");
-          console.log("📊 Final result:", {
+          console.log('🎉 Purchase order creation completed successfully!');
+          console.log('📊 Final result:', {
             id: poId,
             po_number: poNumber,
-            items_count: items.length
+            items_count: items.length,
           });
 
           return res.status(201).json({
             success: true,
             id: poId,
             po_number: poNumber,
-            message: "Purchase order created successfully"
+            message: 'Purchase order created successfully',
           });
-
         } catch (insertError) {
-          console.error("Error during purchase order creation:", insertError);
+          console.error('Error during purchase order creation:', insertError);
           await db.rollback();
-          console.log("Transaction rolled back");
+          console.log('Transaction rolled back');
           throw insertError;
         }
       case 'PUT':
         // Update existing purchase order
         const orderId = req.query.id;
         if (!orderId) {
-          return res.status(400).json({ error: "Order ID is required for update" });
+          return res
+            .status(400)
+            .json({ error: 'Order ID is required for update' });
         }
 
         const {
@@ -429,21 +483,27 @@ export default async function handler(req, res) {
           subtotal: updateSubtotal,
           tax_amount: updateTaxAmount,
           total_amount: updateTotalAmount,
-          notes: updateNotes
+          notes: updateNotes,
         } = req.body;
 
-        console.log("Updating purchase order with ID:", orderId);
-        console.log("Update data:", {
+        console.log('Updating purchase order with ID:', orderId);
+        console.log('Update data:', {
           vendor_id: updateVendorId,
           project_id: updateProjectId,
           items_count: updateItems?.length,
-          total_amount: updateTotalAmount
+          total_amount: updateTotalAmount,
         });
 
         // Validate required fields
-        if (!updateVendorId || !updateProjectId || !updateItems || updateItems.length === 0) {
+        if (
+          !updateVendorId ||
+          !updateProjectId ||
+          !updateItems ||
+          updateItems.length === 0
+        ) {
           return res.status(400).json({
-            error: "Missing required fields: vendor_id, project_id, and items are required"
+            error:
+              'Missing required fields: vendor_id, project_id, and items are required',
           });
         }
 
@@ -452,17 +512,17 @@ export default async function handler(req, res) {
           const item = updateItems[i];
           if (!item.item_name || !item.quantity || !item.unit_price) {
             return res.status(400).json({
-              error: `Item ${i + 1} is missing required fields: item_name, quantity, and unit_price are required`
+              error: `Item ${i + 1} is missing required fields: item_name, quantity, and unit_price are required`,
             });
           }
         }
 
         // User is already authenticated via JWT token, so allow the update
-        console.log("Authenticated user updating purchase order:", user.userId);
+        console.log('Authenticated user updating purchase order:', user.userId);
 
         // Start transaction for update
         await db.beginTransaction();
-        console.log("Transaction started for update");
+        console.log('Transaction started for update');
 
         try {
           // Check if purchase order exists
@@ -473,7 +533,7 @@ export default async function handler(req, res) {
 
           if (existingOrder.length === 0) {
             await db.rollback();
-            return res.status(404).json({ error: "Purchase order not found" });
+            return res.status(404).json({ error: 'Purchase order not found' });
           }
 
           // Update purchase order
@@ -494,15 +554,15 @@ export default async function handler(req, res) {
               updateTaxAmount || 0,
               updateTotalAmount,
               updateNotes || null,
-              orderId
+              orderId,
             ]
           );
 
-          console.log(" Purchase order updated successfully");
+          console.log(' Purchase order updated successfully');
 
           // Delete existing items
           await db.execute('DELETE FROM po_items WHERE po_id = ?', [orderId]);
-          console.log(" Existing items deleted");
+          console.log(' Existing items deleted');
 
           // Insert updated items
           for (const item of updateItems) {
@@ -518,28 +578,27 @@ export default async function handler(req, res) {
                 Number(item.quantity),
                 item.unit || 'pcs',
                 Number(item.unit_price),
-                totalPrice
+                totalPrice,
               ]
             );
           }
 
-          console.log(" Updated items inserted successfully");
+          console.log(' Updated items inserted successfully');
 
           // Commit transaction
           await db.commit();
-          console.log(" Transaction committed successfully");
+          console.log(' Transaction committed successfully');
 
           return res.status(200).json({
             success: true,
             id: orderId,
             po_number: existingOrder[0].po_number,
-            message: "Purchase order updated successfully"
+            message: 'Purchase order updated successfully',
           });
-
         } catch (updateError) {
-          console.error("Error during purchase order update:", updateError);
+          console.error('Error during purchase order update:', updateError);
           await db.rollback();
-          console.log("Transaction rolled back");
+          console.log('Transaction rolled back');
           throw updateError;
         }
 
@@ -548,53 +607,57 @@ export default async function handler(req, res) {
         return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
   } catch (error) {
-    console.error("Purchase orders API error:", error);
+    console.error('Purchase orders API error:', error);
 
     // Rollback transaction if it exists and is active
     if (db) {
       try {
         // Attempt to rollback any active transaction
         await db.rollback();
-        console.log("Transaction rolled back due to error");
+        console.log('Transaction rolled back due to error');
       } catch (rollbackError) {
         // Rollback might fail if no transaction is active, which is fine
-        console.log("Rollback attempted (may not have been in transaction):", rollbackError.message);
+        console.log(
+          'Rollback attempted (may not have been in transaction):',
+          rollbackError.message
+        );
       }
     }
 
     // Return appropriate error response based on error type
     let statusCode = 500;
-    let errorMessage = "Database operation failed";
+    let errorMessage = 'Database operation failed';
 
     if (error.code === 'ER_NO_SUCH_TABLE') {
       statusCode = 500;
-      errorMessage = "Database schema issue - table not found";
+      errorMessage = 'Database schema issue - table not found';
     } else if (error.code === 'ER_DUP_ENTRY') {
       statusCode = 409;
-      errorMessage = "Duplicate entry - this purchase order number already exists";
+      errorMessage =
+        'Duplicate entry - this purchase order number already exists';
     } else if (error.code === 'ER_NO_REFERENCED_ROW_2') {
       statusCode = 400;
-      errorMessage = "Invalid reference - vendor, project, or employee not found";
+      errorMessage =
+        'Invalid reference - vendor, project, or employee not found';
     } else if (error.code === 'ER_BAD_FIELD_ERROR') {
       statusCode = 500;
-      errorMessage = "Database schema issue - field not found";
+      errorMessage = 'Database schema issue - field not found';
     }
 
     return res.status(statusCode).json({
       error: errorMessage,
       message: error.message,
-      code: error.code || 'UNKNOWN_ERROR'
+      code: error.code || 'UNKNOWN_ERROR',
     });
   } finally {
     // Always release the database connection
     if (db) {
       try {
         db.release();
-        console.log("Database connection released");
+        console.log('Database connection released');
       } catch (releaseError) {
-        console.error("Error releasing database connection:", releaseError);
+        console.error('Error releasing database connection:', releaseError);
       }
     }
   }
-
 }

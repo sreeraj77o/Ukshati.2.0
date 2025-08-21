@@ -1,44 +1,63 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Papa from "papaparse";
-import { FiUploadCloud, FiFilePlus, FiShoppingCart, FiX, FiTag, FiBox, FiDollarSign , FiFile, FiUpload, FiActivity, FiSearch, FiCheckCircle, FiFilter } from "react-icons/fi";
-import ScrollToTopButton from "@/components/scrollup";
-import BackButton from "@/components/BackButton";
-import { TableSkeleton, FormSkeleton } from "@/components/skeleton";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Papa from 'papaparse';
+import {
+  FiUploadCloud,
+  FiFilePlus,
+  FiShoppingCart,
+  FiX,
+  FiTag,
+  FiBox,
+  FiDollarSign,
+  FiFile,
+  FiUpload,
+  FiActivity,
+  FiSearch,
+  FiCheckCircle,
+  FiFilter,
+} from 'react-icons/fi';
+import ScrollToTopButton from '@/components/scrollup';
+import BackButton from '@/components/BackButton';
+import { TableSkeleton, FormSkeleton } from '@/components/skeleton';
 
 export default function StockDetails() {
   const router = useRouter();
   const [stocks, setStocks] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({ categoryName: "", productName: "", quantity: "", price: "" });
+  const [formData, setFormData] = useState({
+    categoryName: '',
+    productName: '',
+    quantity: '',
+    price: '',
+  });
   const [csvData, setCsvData] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [catRes, stockRes] = await Promise.all([
-          fetch("/api/categories"),
-          fetch("/api/stocks")
+          fetch('/api/categories'),
+          fetch('/api/stocks'),
         ]);
 
         const [categoriesData, stocksData] = await Promise.all([
           catRes.json(),
-          stockRes.json()
+          stockRes.json(),
         ]);
 
         setCategories(categoriesData.categories || []);
         setStocks((stocksData || []).sort((a, b) => b.stock_id - a.stock_id));
       } catch (error) {
-        setErrors(["Failed to load initial data"]);
+        setErrors(['Failed to load initial data']);
       } finally {
         setLoading(false);
       }
@@ -48,7 +67,8 @@ export default function StockDetails() {
 
   // Apply category filter
   const filteredStocks = stocks.filter(stock => {
-    const categoryMatch = selectedCategory === "all" || stock.category_name === selectedCategory;
+    const categoryMatch =
+      selectedCategory === 'all' || stock.category_name === selectedCategory;
     const itemName = String(stock?.item_name || '').toLowerCase();
     const searchTerm = String(searchQuery || '').toLowerCase();
     const searchMatch = itemName.includes(searchTerm);
@@ -62,13 +82,13 @@ export default function StockDetails() {
   });
 
   // Enhanced drag & drop handlers
-  const handleDrag = (e) => {
+  const handleDrag = e => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(e.type === 'dragover');
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = e => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -79,37 +99,37 @@ export default function StockDetails() {
       if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
         handleFileUpload({ target: { files } });
       } else {
-        setErrors(["Only CSV files are allowed"]);
+        setErrors(['Only CSV files are allowed']);
       }
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = e => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      transformHeader: (header) => {
+      transformHeader: header => {
         const lowerHeader = header.toLowerCase().trim();
         const headerMap = {
-          'category': 'category',
-          'cat': 'category',
+          category: 'category',
+          cat: 'category',
           'category name': 'category',
-          'product': 'product',
+          product: 'product',
           'product name': 'product',
-          'item': 'product',
-          'quantity': 'quantity',
-          'qty': 'quantity',
-          'price': 'price',
+          item: 'product',
+          quantity: 'quantity',
+          qty: 'quantity',
+          price: 'price',
           'unit price': 'price',
-          'unitprice': 'price'
+          unitprice: 'price',
         };
         return headerMap[lowerHeader] || lowerHeader;
       },
       dynamicTyping: true,
-      complete: (results) => {
+      complete: results => {
         const validEntries = [];
         const invalidEntries = [];
 
@@ -120,23 +140,23 @@ export default function StockDetails() {
           const product = (row.product || '').toString().trim();
 
           const errors = [];
-          if (!category) errors.push("Missing category");
-          if (!product) errors.push("Missing product name");
-          if (isNaN(quantity) || quantity <= 0) errors.push("Invalid quantity");
-          if (isNaN(price) || price <= 0) errors.push("Invalid price");
+          if (!category) errors.push('Missing category');
+          if (!product) errors.push('Missing product name');
+          if (isNaN(quantity) || quantity <= 0) errors.push('Invalid quantity');
+          if (isNaN(price) || price <= 0) errors.push('Invalid price');
 
           if (errors.length === 0) {
             validEntries.push({
               categoryName: category,
               productName: product,
               quantity: quantity,
-              price: price
+              price: price,
             });
           } else {
             invalidEntries.push({
               row: index + 2,
               errors: errors,
-              data: row
+              data: row,
             });
           }
         });
@@ -145,31 +165,31 @@ export default function StockDetails() {
 
         if (validEntries.length === 0) {
           setErrors([
-            "No valid entries found. Common issues:",
-            ...invalidEntries.slice(0, 5).map(entry =>
-              `Row ${entry.row}: ${entry.errors.join(', ')}`
-            )
+            'No valid entries found. Common issues:',
+            ...invalidEntries
+              .slice(0, 5)
+              .map(entry => `Row ${entry.row}: ${entry.errors.join(', ')}`),
           ]);
         } else if (invalidEntries.length > 0) {
           setErrors([
             `Found ${validEntries.length} valid entries (${invalidEntries.length} invalid):`,
-            ...invalidEntries.slice(0, 5).map(entry =>
-              `Row ${entry.row}: ${entry.errors.join(', ')}`
-            )
+            ...invalidEntries
+              .slice(0, 5)
+              .map(entry => `Row ${entry.row}: ${entry.errors.join(', ')}`),
           ]);
         } else {
           setErrors([]);
         }
       },
-      error: (error) => {
+      error: error => {
         setErrors([`CSV Error: ${error.message}`]);
-      }
+      },
     });
   };
 
   const handleBulkUpload = async () => {
     if (!csvData.length) {
-      setErrors(["Please select a valid CSV file first"]);
+      setErrors(['Please select a valid CSV file first']);
       return;
     }
 
@@ -177,28 +197,29 @@ export default function StockDetails() {
       setUploadProgress(10);
       setErrors([]);
 
-      const response = await fetch("/api/upload-stocks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/upload-stocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stocks: csvData }),
       });
 
-      const contentType = response.headers.get("content-type");
-      const result = contentType?.includes("application/json")
+      const contentType = response.headers.get('content-type');
+      const result = contentType?.includes('application/json')
         ? await response.json()
         : null;
 
       if (!response.ok) {
-        const errorMessage = result?.error ||
-                            result?.message ||
-                            `HTTP Error ${response.status}: ${await response.text()}`;
+        const errorMessage =
+          result?.error ||
+          result?.message ||
+          `HTTP Error ${response.status}: ${await response.text()}`;
         throw new Error(errorMessage);
       }
 
       setUploadProgress(70);
       const updatedStocks = result.processedStocks.map(stock => ({
         ...stock,
-        price_pu: Number(stock.price_pu)
+        price_pu: Number(stock.price_pu),
       }));
 
       setStocks(prev => [...updatedStocks, ...prev]);
@@ -208,74 +229,83 @@ export default function StockDetails() {
         setCsvData([]);
         setUploadProgress(0);
       }, 1500);
-
     } catch (error) {
       setUploadProgress(0);
       setErrors([error.message]);
-      console.error("Upload error:", {
+      console.error('Upload error:', {
         error: error.message,
         stack: error.stack,
-        csvData: csvData.slice(0, 3)
+        csvData: csvData.slice(0, 3),
       });
     }
     window.location.reload();
   };
 
-  const handleAddStock = async (e) => {
+  const handleAddStock = async e => {
     e.preventDefault();
     const { categoryName, productName, quantity, price } = formData;
 
     try {
-      const response = await fetch("/api/stocks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/stocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category_name: categoryName,
           productName,
           quantity: Number(quantity),
-          price: Number(price)
-        })
+          price: Number(price),
+        }),
       });
       window.location.reload();
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to add stock");
+        throw new Error(result.error || 'Failed to add stock');
       }
 
-      setStocks(prev => [{
-        stock_id: result.stockId || Date.now(),
-        item_name: productName,
-        category_name: categoryName,
-        quantity: Number(quantity),
-        price_pu: Number(price),
-        created_at: new Date().toISOString()
-      }, ...prev]);
+      setStocks(prev => [
+        {
+          stock_id: result.stockId || Date.now(),
+          item_name: productName,
+          category_name: categoryName,
+          quantity: Number(quantity),
+          price_pu: Number(price),
+          created_at: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
 
-      setFormData({ categoryName: "", productName: "", quantity: "", price: "" });
+      setFormData({
+        categoryName: '',
+        productName: '',
+        quantity: '',
+        price: '',
+      });
     } catch (error) {
       setErrors([error.message]);
     }
   };
-  const formatDateTime = (dateTime) => {
+  const formatDateTime = dateTime => {
     const date = new Date(dateTime);
     return date.toLocaleString();
   };
 
   return (
     <div className="min-h-screen bg-black text-gray-100">
-      <ScrollToTopButton/>
+      <ScrollToTopButton />
       <header className="p-4 backdrop-blur-sm shadow-lg sticky top-0 z-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="pr-4">
-          <BackButton route="/ims/home"/>
+          <div className="pr-4">
+            <BackButton route="/ims/home" />
           </div>
           <div className="flex-1 text-center pr-4">
-            <h1 className="text-2xl font-bold text-cyan-600">Stock Management</h1>
+            <h1 className="text-2xl font-bold text-cyan-600">
+              Stock Management
+            </h1>
           </div>
 
           <button
-            onClick={() => router.push("/ims/view-stock")}
+            onClick={() => router.push('/ims/view-stock')}
             className="flex items-center gap-2 hover:text-cyan-400 transition-colors mr-8"
           >
             <FiActivity className="text-xl" />
@@ -316,15 +346,21 @@ export default function StockDetails() {
                   onChange={handleFileUpload}
                   className="hidden"
                 />
-                <div className={`p-6 border-2 border-dashed rounded-xl flex flex-col items-center space-y-3
+                <div
+                  className={`p-6 border-2 border-dashed rounded-xl flex flex-col items-center space-y-3
                   ${isDragging ? 'border-blue-400 bg-blue-500/10' : 'border-gray-600 hover:border-blue-400'}
-                  transition-all duration-200`}>
+                  transition-all duration-200`}
+                >
                   {csvData.length > 0 ? (
                     <>
                       <FiCheckCircle className="text-3xl text-green-400 animate-pulse" />
                       <div className="text-center">
-                        <p className="font-medium">{csvData.length} records loaded</p>
-                        <p className="text-sm text-gray-400 mt-1">Click to change file</p>
+                        <p className="font-medium">
+                          {csvData.length} records loaded
+                        </p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Click to change file
+                        </p>
                       </div>
                     </>
                   ) : (
@@ -332,7 +368,9 @@ export default function StockDetails() {
                       <FiFile className="text-3xl text-blue-400" />
                       <div className="text-center">
                         <p className="font-medium">Drag & drop files</p>
-                        <p className="text-gray-400 text-sm mt-1">or click to browse</p>
+                        <p className="text-gray-400 text-sm mt-1">
+                          or click to browse
+                        </p>
                       </div>
                     </>
                   )}
@@ -358,9 +396,11 @@ export default function StockDetails() {
                 onClick={handleBulkUpload}
                 disabled={!csvData.length}
                 className={`w-full py-3.5 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2
-                  ${csvData.length ?
-                    'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/30' :
-                    'bg-gray-700 text-gray-400 cursor-not-allowed'}
+                  ${
+                    csvData.length
+                      ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg hover:shadow-blue-500/30'
+                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  }
                   ${uploadProgress === 100 && 'bg-green-500 hover:bg-green-400'}`}
               >
                 {uploadProgress === 100 ? (
@@ -397,13 +437,18 @@ export default function StockDetails() {
                 <form onSubmit={handleAddStock} className="w-full space-y-4">
                   <select
                     value={formData.categoryName}
-                    onChange={(e) => setFormData({ ...formData, categoryName: e.target.value })}
+                    onChange={e =>
+                      setFormData({ ...formData, categoryName: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
                     required
                   >
                     <option value="">Select Category</option>
                     {categories.map(category => (
-                      <option key={category.category_id} value={category.category_name}>
+                      <option
+                        key={category.category_id}
+                        value={category.category_name}
+                      >
                         {category.category_name}
                       </option>
                     ))}
@@ -413,7 +458,9 @@ export default function StockDetails() {
                     type="text"
                     placeholder="Product Name"
                     value={formData.productName}
-                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
+                    onChange={e =>
+                      setFormData({ ...formData, productName: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
                     required
                   />
@@ -423,7 +470,9 @@ export default function StockDetails() {
                       type="number"
                       placeholder="Quantity"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, quantity: e.target.value })
+                      }
                       className="p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
                       min="1"
                       required
@@ -433,7 +482,9 @@ export default function StockDetails() {
                       step="0.01"
                       placeholder="Price"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      onChange={e =>
+                        setFormData({ ...formData, price: e.target.value })
+                      }
                       className="p-3 bg-gray-700 rounded-lg focus:ring-2 focus:ring-blue-400"
                       min="0.01"
                       required
@@ -452,7 +503,6 @@ export default function StockDetails() {
           </div>
         </section>
 
-
         <section className="rounded-xl bg-gray-800/50 backdrop-blur-sm border-2 border-gray-700">
           {/* Filters */}
           <div className="p-4 border-b border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -467,13 +517,13 @@ export default function StockDetails() {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={e => setStartDate(e.target.value)}
                   className="p-2 text-sm rounded bg-gray-800 text-white"
                 />
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={e => setEndDate(e.target.value)}
                   className="p-2 text-sm rounded bg-gray-800 text-white"
                 />
               </div>
@@ -486,7 +536,7 @@ export default function StockDetails() {
                   placeholder="Search products..."
                   className="p-2 pl-8 text-sm bg-gray-700 rounded-lg w-full"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={e => setSearchQuery(e.target.value)}
                 />
               </div>
 
@@ -496,11 +546,14 @@ export default function StockDetails() {
                 <select
                   className="pl-10 pr-4 py-2 text-sm bg-gray-700 rounded-lg w-full"
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={e => setSelectedCategory(e.target.value)}
                 >
                   <option value="all">All Categories</option>
-                  {categories.map((category) => (
-                    <option key={category.category_id} value={category.category_name}>
+                  {categories.map(category => (
+                    <option
+                      key={category.category_id}
+                      value={category.category_name}
+                    >
                       {category.category_name}
                     </option>
                   ))}
@@ -547,12 +600,15 @@ export default function StockDetails() {
                   </tr>
                 ) : filteredStocks.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="px-6 py-6 text-center text-gray-500">
+                    <td
+                      colSpan="6"
+                      className="px-6 py-6 text-center text-gray-500"
+                    >
                       No matching stock items found
                     </td>
                   </tr>
                 ) : (
-                  filteredStocks.map((stock) => (
+                  filteredStocks.map(stock => (
                     <tr
                       key={stock.stock_id}
                       className="hover:bg-gray-850/50 transition-colors duration-200"
@@ -566,9 +622,13 @@ export default function StockDetails() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-md text-sm font-medium ${
-                          stock.quantity < 10 ? 'bg-red-900/30 text-red-400' : 'bg-green-900/30 text-green-400'
-                        }`}>
+                        <span
+                          className={`px-2 py-1 rounded-md text-sm font-medium ${
+                            stock.quantity < 10
+                              ? 'bg-red-900/30 text-red-400'
+                              : 'bg-green-900/30 text-green-400'
+                          }`}
+                        >
                           {stock.quantity}
                         </span>
                       </td>

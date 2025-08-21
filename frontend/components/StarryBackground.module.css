@@ -6,5 +6,9 @@
   height: 100vh;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, rgb(0, 0, 0) 0%, rgb(5, 0, 34) 100%);
+  background: radial-gradient(
+    ellipse at center,
+    rgb(0, 0, 0) 0%,
+    rgb(5, 0, 34) 100%
+  );
 }

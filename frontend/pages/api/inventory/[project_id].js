@@ -23,7 +23,8 @@ export default async function handler(req, res) {
   try {
     connection = await mysql.createConnection(dbConfig);
 
-    const [results] = await connection.execute(`
+    const [results] = await connection.execute(
+      `
       SELECT 
         s.item_name AS productName,
         ispent.quantity_used AS quantity,
@@ -33,13 +34,17 @@ export default async function handler(req, res) {
       JOIN stock s ON ispent.stock_id = s.stock_id
       WHERE ispent.used_for = ?
       ORDER BY ispent.spent_id DESC
-    `, [project_id]);
+    `,
+      [project_id]
+    );
 
     await connection.end();
-    
+
     return res.status(200).json(results);
   } catch (error) {
     console.error('Error fetching inventory spent:', error);
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res
+      .status(500)
+      .json({ message: 'Server error', error: error.message });
   }
 }

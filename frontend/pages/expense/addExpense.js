@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 import {
   FiArrowUp,
   FiCalendar,
@@ -7,27 +7,27 @@ import {
   FiDollarSign,
   FiFileText,
   FiCheckCircle,
-} from "react-icons/fi";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { FormSkeleton } from "@/components/skeleton";
+} from 'react-icons/fi';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { FormSkeleton } from '@/components/skeleton';
 
 export default function AddExpense() {
   const router = useRouter();
-  const [date, setDate] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
-  const [projectStatus, setProjectStatus] = useState("");
-  const [projectId, setProjectId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [comments, setComments] = useState("");
+  const [date, setDate] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [projectStatus, setProjectStatus] = useState('');
+  const [projectId, setProjectId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [comments, setComments] = useState('');
   const [projects, setProjects] = useState([]);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
         if (user.id) {
           setEmployeeId(user.id); // Autofill employeeId from logged-in user
 
@@ -36,12 +36,12 @@ export default function AddExpense() {
 
           setLoading(false);
         } else {
-          setMessage("User not logged in. Please log in first.");
-          router.push("/expense/login"); // Redirect to login if no user found
+          setMessage('User not logged in. Please log in first.');
+          router.push('/expense/login'); // Redirect to login if no user found
         }
       } catch (error) {
-        console.error("Error loading user data:", error);
-        router.push("/expense/login");
+        console.error('Error loading user data:', error);
+        router.push('/expense/login');
       }
     };
 
@@ -51,19 +51,19 @@ export default function AddExpense() {
   useEffect(() => {
     if (projectStatus) {
       fetch(`/api/projects?status=${projectStatus}`)
-        .then((res) => {
-          if (!res.ok) throw new Error("Network response was not ok");
+        .then(res => {
+          if (!res.ok) throw new Error('Network response was not ok');
           return res.json();
         })
-        .then((data) => {
+        .then(data => {
           // Ensure only projects matching the selected status are displayed
           const filteredProjects = data.filter(
-            (project) => project.status === projectStatus
+            project => project.status === projectStatus
           );
           setProjects(filteredProjects);
         })
-        .catch((err) => {
-          console.error("Error fetching projects:", err);
+        .catch(err => {
+          console.error('Error fetching projects:', err);
           setProjects([]);
         });
     } else {
@@ -71,25 +71,25 @@ export default function AddExpense() {
     }
   }, [projectStatus]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    const response = await fetch("/api/addExpense", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/addExpense', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, employeeId, projectId, amount, comments }),
     });
     const data = await response.json();
     if (response.status === 201) {
       setMessage(`Expense added successfully with ID: ${data.expenseId}`);
       // Reset form fields
-      setDate("");
-      setProjectStatus("");
-      setProjectId("");
-      setAmount("");
-      setComments("");
+      setDate('');
+      setProjectStatus('');
+      setProjectId('');
+      setAmount('');
+      setComments('');
       setProjects([]);
     } else {
-      setMessage(data.message || "Failed to add expense");
+      setMessage(data.message || 'Failed to add expense');
     }
   };
 
@@ -128,7 +128,7 @@ export default function AddExpense() {
                       <input
                         type="date"
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                        onChange={e => setDate(e.target.value)}
                         required
                         className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white transition-all"
                       />
@@ -157,7 +157,7 @@ export default function AddExpense() {
                     </label>
                     <select
                       value={projectStatus}
-                      onChange={(e) => setProjectStatus(e.target.value)}
+                      onChange={e => setProjectStatus(e.target.value)}
                       required
                       className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white appearance-none"
                     >
@@ -181,7 +181,7 @@ export default function AddExpense() {
                     </label>
                     <select
                       value={projectId}
-                      onChange={(e) => setProjectId(e.target.value)}
+                      onChange={e => setProjectId(e.target.value)}
                       required
                       disabled={!projectStatus}
                       className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -189,7 +189,7 @@ export default function AddExpense() {
                       <option value="" className="bg-gray-800">
                         Select Project
                       </option>
-                      {projects.map((project) => (
+                      {projects.map(project => (
                         <option
                           key={project.pid}
                           value={project.pid}
@@ -211,7 +211,7 @@ export default function AddExpense() {
                       type="number"
                       step="0.01"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={e => setAmount(e.target.value)}
                       required
                       className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white"
                     />
@@ -226,7 +226,7 @@ export default function AddExpense() {
                   </label>
                   <textarea
                     value={comments}
-                    onChange={(e) => setComments(e.target.value)}
+                    onChange={e => setComments(e.target.value)}
                     className="w-full p-4 rounded-xl bg-white/5 border border-white/10 focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/20 backdrop-blur-sm text-white min-h-[120px]"
                   />
                 </div>
@@ -284,7 +284,7 @@ export default function AddExpense() {
           margin: 0;
         }
 
-        input[type="number"] {
+        input[type='number'] {
           -moz-appearance: textfield;
         }
       `}</style>

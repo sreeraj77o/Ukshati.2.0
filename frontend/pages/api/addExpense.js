@@ -28,7 +28,12 @@ export default async function handler(req, res) {
       await connection.end();
 
       // Return success response
-      res.status(201).json({ message: 'Expense added successfully', expenseId: result.insertId });
+      res
+        .status(201)
+        .json({
+          message: 'Expense added successfully',
+          expenseId: result.insertId,
+        });
     } catch (error) {
       console.error('Error adding expense:', error);
       res.status(500).json({ message: 'Internal server error' });
@@ -37,4 +42,3 @@ export default async function handler(req, res) {
     res.status(405).json({ message: 'Method not allowed' });
   }
 }
-  

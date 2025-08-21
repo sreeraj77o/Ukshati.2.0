@@ -1,15 +1,22 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { motion } from "framer-motion";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { motion } from 'framer-motion';
 import {
-  FiPlus, FiTrash2, FiCalendar, FiDollarSign, FiSave,
-  FiX, FiAlertCircle, FiCheckCircle, FiUsers
-} from "react-icons/fi";
-import BackButton from "@/components/BackButton";
-import ScrollToTopButton from "@/components/scrollup";
-import { FormSkeleton } from "@/components/skeleton";
-import generatePurchaseOrderPDF from "@/components/purchase/PurchaseOrderPDF";
+  FiPlus,
+  FiTrash2,
+  FiCalendar,
+  FiDollarSign,
+  FiSave,
+  FiX,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiUsers,
+} from 'react-icons/fi';
+import BackButton from '@/components/BackButton';
+import ScrollToTopButton from '@/components/scrollup';
+import { FormSkeleton } from '@/components/skeleton';
+import generatePurchaseOrderPDF from '@/components/purchase/PurchaseOrderPDF';
 import { useSearchParams } from "next/navigation";
 
 export default function NewPurchaseOrder() {
@@ -21,16 +28,24 @@ export default function NewPurchaseOrder() {
   const [projects, setProjects] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [formData, setFormData] = useState({
-    project_id: "",
-    vendor_id: "",
-    expected_delivery_date: "",
-    shipping_address: "",
-    payment_terms: "",
-    notes: "",
-    items: [{ item_name: "", description: "", quantity: "", unit_price: "" }],
+    project_id: '',
+    vendor_id: '',
+    expected_delivery_date: '',
+    shipping_address: '',
+    payment_terms: '',
+    notes: '',
+    items: [
+      {
+        item_name: '',
+        description: '',
+        quantity: '',
+        unit: 'pcs',
+        unit_price: '',
+      },
+    ],
     subtotal: 0,
     tax_amount: 0,
-    total_amount: 0
+    total_amount: 0,
   });
   const [errors, setErrors] = useState({});
 
@@ -38,27 +53,29 @@ export default function NewPurchaseOrder() {
     const fetchData = async () => {
       try {
         // Check authentication
-        const token = localStorage.getItem("token");
-        const user = localStorage.getItem("user");
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
 
         if (!token || !user) {
-          console.error("No authentication found, redirecting to login");
-          router.push("/");
+          console.error('No authentication found, redirecting to login');
+          router.push('/');
           return;
         }
 
         setLoading(true);
         const [projectRes, vendorsRes] = await Promise.all([
           fetch('/api/projects', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }),
           fetch('/api/purchase/vendors', {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         if (!projectRes.ok || !vendorsRes.ok) {
-          throw new Error(`Failed to fetch data: Projects (${projectRes.status}), Vendors (${vendorsRes.status})`);
+          throw new Error(
+            `Failed to fetch data: Projects (${projectRes.status}), Vendors (${vendorsRes.status})`
+          );
         }
 
         const projectData = await projectRes.json();
@@ -68,11 +85,11 @@ export default function NewPurchaseOrder() {
         const normalizedProjects = projectData.map(project => ({
           ...project,
           id: project.pid || project.id, // Ensure id is set to pid
-          name: project.pname || project.name
+          name: project.pname || project.name,
         }));
 
-        console.log("Normalized Projects:", normalizedProjects);
-        console.log("Vendors:", vendorsData);
+        console.log('Normalized Projects:', normalizedProjects);
+        console.log('Vendors:', vendorsData);
 
         setProjects(normalizedProjects);
         setVendors(vendorsData);
@@ -98,8 +115,10 @@ export default function NewPurchaseOrder() {
         }
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching data:", error);
-        setErrors({ form: "Failed to load projects or vendors. Please try again." });
+        console.error('Error fetching data:', error);
+        setErrors({
+          form: 'Failed to load projects or vendors. Please try again.',
+        });
         setLoading(false);
       }
     };
@@ -111,7 +130,7 @@ export default function NewPurchaseOrder() {
     const subtotal = formData.items.reduce((sum, item) => {
       const quantity = Number(item.quantity) || 0;
       const price = Number(item.unit_price) || 0;
-      return sum + (quantity * price);
+      return sum + quantity * price;
     }, 0);
 
     const taxAmount = subtotal * 0.18; // Assuming 18% tax
@@ -121,10 +140,9 @@ export default function NewPurchaseOrder() {
       ...prev,
       subtotal: Number(subtotal.toFixed(2)),
       tax_amount: Number(taxAmount.toFixed(2)),
-      total_amount: Number(totalAmount.toFixed(2))
+      total_amount: Number(totalAmount.toFixed(2)),
     }));
   }, [formData.items]);
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -161,13 +179,21 @@ export default function NewPurchaseOrder() {
   const addItem = () => {
     setFormData(prev => ({
       ...prev,
-      items: [...prev.items, { item_name: "", description: "", quantity: "", unit_price: "" }]
+      items: [
+        ...prev.items,
+        {
+          item_name: '',
+          description: '',
+          quantity: '',
+          unit_price: '',
+        },
+      ],
     }));
   };
 
-  const removeItem = (index) => {
+  const removeItem = index => {
     if (formData.items.length === 1) return;
-    
+
     const newItems = [...formData.items];
     newItems.splice(index, 1);
     setFormData(prev => ({ ...prev, items: newItems }));
@@ -176,23 +202,28 @@ export default function NewPurchaseOrder() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.project_id) newErrors.project_id = "Project is required";
-    if (!formData.vendor_id) newErrors.vendor_id = "Vendor is required";
-    if (!formData.expected_delivery_date) newErrors.expected_delivery_date = "Delivery date is required";
+    if (!formData.project_id) newErrors.project_id = 'Project is required';
+    if (!formData.vendor_id) newErrors.vendor_id = 'Vendor is required';
+    if (!formData.expected_delivery_date)
+      newErrors.expected_delivery_date = 'Delivery date is required';
 
     formData.items.forEach((item, index) => {
       if (!item.item_name || item.item_name.trim() === '') {
-        newErrors[`items.${index}.item_name`] = "Item name is required";
+        newErrors[`items.${index}.item_name`] = 'Item name is required';
       }
       if (!item.quantity || item.quantity === '') {
-        newErrors[`items.${index}.quantity`] = "Quantity is required";
+        newErrors[`items.${index}.quantity`] = 'Quantity is required';
       } else if (isNaN(Number(item.quantity)) || Number(item.quantity) <= 0) {
-        newErrors[`items.${index}.quantity`] = "Quantity must be a positive number";
+        newErrors[`items.${index}.quantity`] =
+          'Quantity must be a positive number';
       }
       if (!item.unit_price || item.unit_price === '') {
-        newErrors[`items.${index}.unit_price`] = "Unit price is required";
-      } else if (isNaN(Number(item.unit_price)) || Number(item.unit_price) < 0) {
-        newErrors[`items.${index}.unit_price`] = "Price must be a valid number";
+        newErrors[`items.${index}.unit_price`] = 'Unit price is required';
+      } else if (
+        isNaN(Number(item.unit_price)) ||
+        Number(item.unit_price) < 0
+      ) {
+        newErrors[`items.${index}.unit_price`] = 'Price must be a valid number';
       }
     });
 
@@ -200,20 +231,20 @@ export default function NewPurchaseOrder() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     if (!validateForm()) {
-      console.log("Validation errors:", errors);
+      console.log('Validation errors:', errors);
       return;
     }
     setSubmitting(true);
     setErrors({});
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       if (!token) {
-        setErrors({ form: "Authentication required. Please log in again." });
+        setErrors({ form: 'Authentication required. Please log in again.' });
         setSubmitting(false);
-        router.push("/");
+        router.push('/');
         return;
       }
       //create PO for all items
@@ -223,21 +254,85 @@ export default function NewPurchaseOrder() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload)
       });
       const data = await response.json();
       if (!response.ok) {
-        setErrors({ form: data.error || data.message || "Failed to create purchase order" });
+        if (response.status === 401) {
+          setErrors({ form: 'Session expired. Please log in again.' });
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('userRole');
+          setTimeout(() => router.push('/'), 2000);
+          setSubmitting(false);
+          return;
+        }
+
+        setErrors({
+          form: data.error || data.message || 'Failed to create purchase order',
+        });
         setSubmitting(false);
         return;
       }
-      alert('Purchase order created successfully!');
-      router.push("/purchase-order/home");
+
+      // Find vendor and project with fallback values
+      const selectedVendor = vendors.find(
+        v => v.id === parseInt(formData.vendor_id)
+      ) || {
+        name: 'Unknown Vendor',
+        address: 'N/A',
+        contact_person: 'N/A',
+        phone: 'N/A',
+      };
+      const selectedProject = projects.find(
+        p =>
+          p.id === parseInt(formData.project_id) ||
+          p.pid === parseInt(formData.project_id)
+      ) || {
+        name: 'Unknown Project',
+        pname: 'Unknown Project',
+      };
+
+      // Prepare data for PDF
+      const poData = {
+        po_number: data.po_number || 'PO-' + Date.now(),
+        vendor_name: selectedVendor.name,
+        project_name: selectedProject.name || selectedProject.pname,
+        order_date: new Date().toISOString().split('T')[0],
+        vendor_address: selectedVendor.address || 'N/A',
+        vendor_contact:
+          selectedVendor.contact_person || selectedVendor.phone || 'N/A',
+        items: formData.items.map(item => ({
+          item_name: item.item_name || 'N/A',
+          description: item.description || '',
+          quantity: Number(item.quantity) || 0,
+          unit: item.unit || 'pcs',
+          unit_price: Number(item.unit_price) || 0,
+          total_price: Number(item.quantity) * Number(item.unit_price) || 0,
+        })),
+        subtotal: formData.subtotal,
+        tax_amount: formData.tax_amount,
+        total_amount: formData.total_amount,
+        expected_delivery_date: formData.expected_delivery_date,
+        shipping_address: formData.shipping_address || 'N/A',
+        payment_terms: formData.payment_terms,
+        notes: formData.notes || '',
+      };
+
+      console.log('PO Data for PDF:', poData);
+
+      // Generate PDF
+      generatePurchaseOrderPDF(poData);
+
+      console.log('Purchase order created successfully:', data.po_number);
+      router.push('/purchase-order/home');
     } catch (error) {
-      console.error("Error processing request:", error);
-      setErrors({ form: "Network error: Failed to process request. Please check your connection and try again." });
+      console.error('Error submitting purchase order:', error);
+      setErrors({
+        form: 'Network error: Failed to submit purchase order. Please check your connection and try again.',
+      });
       setSubmitting(false);
     }
   };
@@ -258,17 +353,19 @@ export default function NewPurchaseOrder() {
     <div className="min-h-screen bg-black text-white p-6">
       <BackButton route="/purchase-order/home" />
       <ScrollToTopButton />
-      
+
       <div className="max-w-4xl mx-auto mt-2 border border-white p-4 rounded-xl">
-        <h1 className="text-3xl font-bold mb-8 text-center">New Purchase Order</h1>
-        
+        <h1 className="text-3xl font-bold mb-8 text-center">
+          New Purchase Order
+        </h1>
+
         {errors.form && (
           <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg flex items-center">
             <FiAlertCircle className="text-red-500 mr-2" />
             <span>{errors.form}</span>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Project Selection */}
@@ -281,7 +378,9 @@ export default function NewPurchaseOrder() {
                 value={formData.project_id}
                 onChange={handleChange}
                 className={`w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 ${
-                  errors.project_id ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                  errors.project_id
+                    ? 'border border-red-500 focus:ring-red-500'
+                    : 'focus:ring-blue-500'
                 }`}
                 disabled={submitting}
               >
@@ -296,7 +395,7 @@ export default function NewPurchaseOrder() {
                 <p className="text-red-500 text-sm mt-1">{errors.project_id}</p>
               )}
             </div>
-            
+
             {/* Vendor Selection */}
             <div className="space-y-2">
               <label className="block text-sm font-medium">
@@ -307,7 +406,9 @@ export default function NewPurchaseOrder() {
                 value={formData.vendor_id}
                 onChange={handleChange}
                 className={`w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 ${
-                  errors.vendor_id ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                  errors.vendor_id
+                    ? 'border border-red-500 focus:ring-red-500'
+                    : 'focus:ring-blue-500'
                 }`}
                 disabled={submitting}
               >
@@ -323,7 +424,7 @@ export default function NewPurchaseOrder() {
               )}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Expected Delivery Date */}
             <div className="space-y-2">
@@ -337,17 +438,21 @@ export default function NewPurchaseOrder() {
                   value={formData.expected_delivery_date}
                   onChange={handleChange}
                   className={`w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 ${
-                    errors.expected_delivery_date ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                    errors.expected_delivery_date
+                      ? 'border border-red-500 focus:ring-red-500'
+                      : 'focus:ring-blue-500'
                   }`}
                   min={new Date().toISOString().split('T')[0]}
                   disabled={submitting}
                 />
               </div>
               {errors.expected_delivery_date && (
-                <p className="text-red-500 text-sm mt-1">{errors.expected_delivery_date}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.expected_delivery_date}
+                </p>
               )}
             </div>
-            
+
             {/* Payment Terms */}
             <div className="space-y-2">
               <label className="block text-sm font-medium">Payment Terms</label>
@@ -362,10 +467,12 @@ export default function NewPurchaseOrder() {
               />
             </div>
           </div>
-          
+
           {/* Shipping Address */}
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Shipping Address</label>
+            <label className="block text-sm font-medium">
+              Shipping Address
+            </label>
             <textarea
               name="shipping_address"
               value={formData.shipping_address}
@@ -376,7 +483,7 @@ export default function NewPurchaseOrder() {
               disabled={submitting}
             />
           </div>
-          
+
           {/* Notes */}
           <div className="space-y-2">
             <label className="block text-sm font-medium">Notes</label>
@@ -390,7 +497,7 @@ export default function NewPurchaseOrder() {
               disabled={submitting}
             />
           </div>
-          
+
           {/* Items */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -405,10 +512,10 @@ export default function NewPurchaseOrder() {
                 <span>Add Item</span>
               </button>
             </div>
-            
+
             {formData.items.map((item, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="p-4 bg-gray-800/50 rounded-lg space-y-4 border border-gray-700"
               >
                 <div className="flex justify-between">
@@ -422,7 +529,7 @@ export default function NewPurchaseOrder() {
                     <FiTrash2 />
                   </button>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Item Name */}
                   <div className="space-y-1">
@@ -433,26 +540,32 @@ export default function NewPurchaseOrder() {
                       type="text"
                       name="item_name"
                       value={item.item_name}
-                      onChange={(e) => handleItemChange(index, e)}
+                      onChange={e => handleItemChange(index, e)}
                       className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${
-                        errors[`items.${index}.item_name`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'
+                        errors[`items.${index}.item_name`]
+                          ? 'border border-red-500 focus:ring-red-500'
+                          : 'focus:ring-blue-500'
                       }`}
                       placeholder="e.g., Water Pump"
                       disabled={submitting}
                     />
                     {errors[`items.${index}.item_name`] && (
-                      <p className="text-red-500 text-sm">{errors[`items.${index}.item_name`]}</p>
+                      <p className="text-red-500 text-sm">
+                        {errors[`items.${index}.item_name`]}
+                      </p>
                     )}
                   </div>
-                  
+
                   {/* Description */}
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium">Description</label>
+                    <label className="block text-sm font-medium">
+                      Description
+                    </label>
                     <input
                       type="text"
                       name="description"
                       value={item.description}
-                      onChange={(e) => handleItemChange(index, e)}
+                      onChange={e => handleItemChange(index, e)}
                       className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="e.g., 1HP Submersible Pump"
                       disabled={submitting}
@@ -470,13 +583,19 @@ export default function NewPurchaseOrder() {
                       type="number"
                       name="quantity"
                       value={item.quantity}
-                      onChange={(e) => handleItemChange(index, e)}
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${errors[`items.${index}.quantity`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
+                      onChange={e => handleItemChange(index, e)}
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${
+                        errors[`items.${index}.quantity`]
+                          ? 'border border-red-500 focus:ring-red-500'
+                          : 'focus:ring-blue-500'
+                      }`}
                       min="1"
                       disabled={submitting}
                     />
                     {errors[`items.${index}.quantity`] && (
-                      <p className="text-red-500 text-sm">{errors[`items.${index}.quantity`]}</p>
+                      <p className="text-red-500 text-sm">
+                        {errors[`items.${index}.quantity`]}
+                      </p>
                     )}
                   </div>
                   {/* Unit Price (read-only if from stock) */}
@@ -488,14 +607,18 @@ export default function NewPurchaseOrder() {
                       type="number"
                       name="unit_price"
                       value={item.unit_price}
-                      onChange={(e) => handleItemChange(index, e)}
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${errors[`items.${index}.unit_price`] ? 'border border-red-500 focus:ring-red-500' : 'focus:ring-blue-500'}`}
+                      onChange={e => handleItemChange(index, e)}
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${errors[`items.${index}.unit_price`]
+                          ? 'border border-red-500 focus:ring-red-500'
+                          : 'focus:ring-blue-500'}`}
                       min="0"
                       step="0.01"
                       disabled={submitting}
                     />
                     {errors[`items.${index}.unit_price`] && (
-                      <p className="text-red-500 text-sm">{errors[`items.${index}.unit_price`]}</p>
+                      <p className="text-red-500 text-sm">
+                        {errors[`items.${index}.unit_price`]}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -503,7 +626,7 @@ export default function NewPurchaseOrder() {
               </div>
             ))}
           </div>
-          
+
           {/* Order Summary */}
           <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
             <h3 className="text-xl font-medium mb-4">Order Summary</h3>
@@ -522,14 +645,14 @@ export default function NewPurchaseOrder() {
               </div>
             </div>
           </div>
-          
+
           {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white p-3 rounded-md font-semibold transition-all hover:from-blue-700 hover:to-blue-600"
             disabled={submitting}
           >
-            {submitting ? "Submitting..." : "Create Purchase Order"}
+            {submitting ? 'Submitting...' : 'Create Purchase Order'}
           </button>
         </form>
       </div>

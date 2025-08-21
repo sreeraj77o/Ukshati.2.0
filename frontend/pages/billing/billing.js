@@ -21,7 +21,7 @@ export default function Home() {
     if (selectedProjectId && expenseDetailsRef.current) {
       expenseDetailsRef.current.scrollIntoView({
         behavior: 'smooth',
-        block: 'start'
+        block: 'start',
       });
     }
   }, [selectedProjectId]);
@@ -31,7 +31,7 @@ export default function Home() {
     if (expenseData && pdfButtonRef.current) {
       pdfButtonRef.current.scrollIntoView({
         behavior: 'smooth',
-        block: 'end'
+        block: 'end',
       });
     }
   }, [expenseData]);
@@ -49,8 +49,8 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-black overflow-hidden">
-      <BackButton route='/dashboard' />
-      <ScrollToTopButton/>
+      <BackButton route="/dashboard" />
+      <ScrollToTopButton />
       <div className="relative z-10 flex items-center justify-center min-h-screen p-2 sm:p-4 md:p-6">
         <div className="w-full max-w-4xl mb-16 sm:mb-20 md:mb-28 space-y-6 md:space-y-8 backdrop-blur-lg bg-black/30 rounded-xl sm:rounded-2xl border border-gray-600 shadow-lg sm:shadow-2xl p-4 sm:p-6 md:p-8 transition-all duration-300">
           <div className="space-y-4 md:space-y-6">
@@ -64,7 +64,12 @@ export default function Home() {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 3v4a1 1 0 001 1h4m0 10v1a2 2 0 01-2 2H6a2 2 0 01-2-2v-1m16-5H4m12-4H4m4-8H4m12 4H8M4 3h10a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14 3v4a1 1 0 001 1h4m0 10v1a2 2 0 01-2 2H6a2 2 0 01-2-2v-1m16-5H4m12-4H4m4-8H4m12 4H8M4 3h10a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"
+                  />
                 </svg>
                 Invoice Generation System
               </h2>
@@ -203,7 +208,7 @@ export default function Home() {
         .button::before {
           position: absolute;
           top: -15px;
-          content: "Delete";
+          content: 'Delete';
           color: white;
           transition-duration: 0.3s;
           font-size: 2px;

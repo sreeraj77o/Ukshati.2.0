@@ -1,6 +1,12 @@
 import { motion, AnimatePresence } from 'framer-motion';
 
-const Modal = ({ isOpen, onClose, title, children, preventFlicker = false }) => {
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  preventFlicker = false,
+}) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -13,7 +19,7 @@ const Modal = ({ isOpen, onClose, title, children, preventFlicker = false }) => 
             className="fixed inset-0 bg-black bg-opacity-50"
             onClick={!preventFlicker ? onClose : undefined}
           />
-          
+
           {/* Modal content */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -31,9 +37,7 @@ const Modal = ({ isOpen, onClose, title, children, preventFlicker = false }) => 
                 ×
               </button>
             </div>
-            <div className="max-h-[70vh] overflow-y-auto">
-              {children}
-            </div>
+            <div className="max-h-[70vh] overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}

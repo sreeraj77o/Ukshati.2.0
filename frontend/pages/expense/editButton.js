@@ -1,53 +1,57 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiEdit, FiX, FiCalendar, FiDollarSign,FiMessageSquare } from "react-icons/fi";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FiEdit,
+  FiX,
+  FiCalendar,
+  FiDollarSign,
+  FiMessageSquare,
+} from 'react-icons/fi';
 
 export default function EditButton({ project, fetchProjects }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editedProject, setEditedProject] = useState(null);
-  const [userRole, setUserRole] = useState(""); //changed
-  const [loggedInUserEmail, setLoggedInUserEmail] = useState("");
+  const [userRole, setUserRole] = useState(''); //changed
+  const [loggedInUserEmail, setLoggedInUserEmail] = useState('');
 
   useEffect(() => {
-    const storedRole = localStorage.getItem("userRole");
-    const storedEmail = localStorage.getItem("userEmail") || "";
+    const storedRole = localStorage.getItem('userRole');
+    const storedEmail = localStorage.getItem('userEmail') || '';
 
-    console.log("Fetching stored email:", storedEmail);
+    console.log('Fetching stored email:', storedEmail);
     setUserRole(storedRole);
     setLoggedInUserEmail(storedEmail);
 
     if (project) {
-      const formatDateForInput = (date) => {
-        if (!date) return "";
-        const parts = date.split("-");
+      const formatDateForInput = date => {
+        if (!date) return '';
+        const parts = date.split('-');
         return parts.length === 3
           ? `${parts[2]}-${parts[1]}-${parts[0]}`
           : date;
       };
 
       setEditedProject({
-        projectName: project?.pname || "",
-        clientName: project?.cname || "",
+        projectName: project?.pname || '',
+        clientName: project?.cname || '',
         startDate: formatDateForInput(project?.start_date),
         endDate: formatDateForInput(project?.end_date),
-        amount: project?.Amount || "",
-        comments: project?.Comments || "",
+        amount: project?.Amount || '',
+        comments: project?.Comments || '',
       });
     }
   }, [project]);
 
-
-
   const handleEditClick = () => {
-    if (localStorage.getItem("userRole").toLowerCase() !== "admin") {
+    if (localStorage.getItem('userRole').toLowerCase() !== 'admin') {
       //changes
-      alert("Editing is only allowed for admin users.");
+      alert('Editing is only allowed for admin users.');
       return;
     }
     setIsModalOpen(true);
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     setEditedProject({
       ...editedProject,
       [e.target.name]: e.target.value,
@@ -57,31 +61,31 @@ export default function EditButton({ project, fetchProjects }) {
   const handleSave = async () => {
     try {
       // Reload values from localStorage
-      const userRole = localStorage.getItem("userRole") || "";
-      const loggedInUserEmail = localStorage.getItem("userEmail") || "";
+      const userRole = localStorage.getItem('userRole') || '';
+      const loggedInUserEmail = localStorage.getItem('userEmail') || '';
 
-      console.log("🔍 User Role:", userRole); // Debugging
-      console.log("📧 Logged-in User Email:", loggedInUserEmail); // Debugging
+      console.log('🔍 User Role:', userRole); // Debugging
+      console.log('📧 Logged-in User Email:', loggedInUserEmail); // Debugging
 
       if (!loggedInUserEmail) {
-        alert("User email not found. Please login again.");
+        alert('User email not found. Please login again.');
         return;
       }
 
       if (!userRole) {
-        alert("User role not found. Please login again.");
+        alert('User role not found. Please login again.');
         return;
       }
 
-      if (userRole.toLowerCase() !== "admin") {
-        alert("Only admins can save changes.");
+      if (userRole.toLowerCase() !== 'admin') {
+        alert('Only admins can save changes.');
         return;
       }
 
       // Proceed with saving the project
-      const response = await fetch("/api/updateProject", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/updateProject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: loggedInUserEmail, // Ensure email is passed correctly
           projectName: editedProject.projectName,
@@ -96,10 +100,10 @@ export default function EditButton({ project, fetchProjects }) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to update project");
+        throw new Error(result.error || 'Failed to update project');
       }
 
-      alert(result.message || "Project updated successfully!");
+      alert(result.message || 'Project updated successfully!');
       setIsModalOpen(false);
 
       if (fetchProjects) {
@@ -108,8 +112,8 @@ export default function EditButton({ project, fetchProjects }) {
         window.location.reload();
       }
     } catch (error) {
-      console.error("❌ Error updating project:", error);
-      alert("Error updating project: " + error.message);
+      console.error('❌ Error updating project:', error);
+      alert('Error updating project: ' + error.message);
     }
   };
 
@@ -140,7 +144,9 @@ export default function EditButton({ project, fetchProjects }) {
               {/* Header */}
               <div className="bg-gradient-to-r from-purple-600 to-indigo-700 p-6">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold text-white">Edit Project Details</h2>
+                  <h2 className="text-2xl font-bold text-white">
+                    Edit Project Details
+                  </h2>
                   <button
                     onClick={() => setIsModalOpen(false)}
                     className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -199,7 +205,7 @@ export default function EditButton({ project, fetchProjects }) {
                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                       <FiCalendar className="text-purple-600" />
@@ -222,7 +228,9 @@ export default function EditButton({ project, fetchProjects }) {
                     Project Budget
                   </label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                      ₹
+                    </span>
                     <input
                       type="number"
                       name="amount"

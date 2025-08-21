@@ -1,17 +1,25 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import { authenticate } from "@/lib/auth";
+'use client';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { authenticate } from '@/lib/auth';
+// import { connectToDB } from "@/lib/db";
 import {
-  FiShoppingBag, FiFileText, FiTruck, FiUsers, FiPlus,
-  FiClipboard, FiBarChart2, FiSearch, FiFilter
-} from "react-icons/fi";
-import { FaFileCirclePlus, FaFileInvoice, FaChevronDown, } from "react-icons/fa6";
-import { FaSignOutAlt } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
-import BackButton from "@/components/BackButton";
-import { CardSkeleton, TableSkeleton } from "@/components/skeleton";
-import ScrollToTopButton from "@/components/scrollup";
+  FiShoppingBag,
+  FiFileText,
+  FiTruck,
+  FiUsers,
+  FiPlus,
+  FiClipboard,
+  FiBarChart2,
+  FiSearch,
+  FiFilter,
+} from 'react-icons/fi';
+import { FaFileCirclePlus, FaFileInvoice, FaChevronDown, } from 'react-icons/fa6';
+import { FaSignOutAlt } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import BackButton from '@/components/BackButton';
+import { CardSkeleton, TableSkeleton } from '@/components/skeleton';
+import ScrollToTopButton from '@/components/scrollup';
 
 export default function PurchaseDashboard() {
   const router = useRouter();
@@ -41,7 +49,7 @@ export default function PurchaseDashboard() {
     const parsedUser = storedUser ? JSON.parse(storedUser) : {};
 
     if (!token) {
-      setErrors({ form: "You are not logged in. Please login and try again." });
+      setErrors({ form: 'You are not logged in. Please login and try again.' });
       setLoading(false);
       router.push('/login');
       return;
@@ -56,12 +64,12 @@ export default function PurchaseDashboard() {
 
     const fetchWithAuth = async (url) => {
       const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.status === 401) {
-        setErrors({ form: "Session expired. Please login again." });
+        setErrors({ form: 'Session expired. Please login again.' });
         router.push('/login');
-        throw new Error("Unauthorized");
+        throw new Error('Unauthorized');
       }
       return response.json();
     };
@@ -86,113 +94,114 @@ export default function PurchaseDashboard() {
           totalPOs,
           totalPRs,
           activeVendors,
+          ordersData,
           pendingDeliveries,
           totalSpend,
         });
         setLoading(false);
       } catch (error) {
-        if (error.message !== "Unauthorized") {
-          setErrors({ form: "Failed to load dashboard data." });
+        if (error.message !== 'Unauthorized') {
+          setErrors({ form: 'Failed to load dashboard data.' });
           setLoading(false);
         }
       }
     };
 
     fetchData();
-  }, [router]);
+  }, [router, stats.totalPOs]);
 
   const purchaseCards = [
     {
       id: 1,
-      title: "Create Requisition",
+      title: 'Create Requisition',
       Icon: FaFileCirclePlus,
-      description: "Request items for your project",
-      gradient: "bg-gradient-to-r from-blue-400/30 to-indigo-500/40",
-      route: "/purchase-order/requisition/new",
+      description: 'Request items for your project',
+      gradient: 'bg-gradient-to-r from-blue-400/30 to-indigo-500/40',
+      route: '/purchase-order/requisition/new',
       stats: {
-        main: "New",
-        secondary: "PR"
+        main: 'New',
+        secondary: 'PR',
       },
-      filedBy: "Project Team"
+      filedBy: 'Project Team',
     },
     {
       id: 2,
-      title: "Create Purchase Order",
+      title: 'Create Purchase Order',
       Icon: FiShoppingBag,
-      description: "Generate orders for vendors",
-      gradient: "bg-gradient-to-r from-green-400/30 to-emerald-400/40",
-      route: "/purchase-order/orders/new",
+      description: 'Generate orders for vendors',
+      gradient: 'bg-gradient-to-r from-green-400/30 to-emerald-400/40',
+      route: '/purchase-order/orders/new',
       stats: {
-        main: "New",
-        secondary: "PO"
+        main: 'New',
+        secondary: 'PO',
       },
-      filedBy: "Procurement Team"
+      filedBy: 'Procurement Team',
     },
     {
       id: 3,
-      title: "Manage Vendors",
+      title: 'Manage Vendors',
       Icon: FiUsers,
-      description: "Add and manage supplier information",
-      gradient: "bg-gradient-to-r from-purple-400/30 to-violet-500/40",
-      route: "/purchase-order/vendors",
+      description: 'Add and manage supplier information',
+      gradient: 'bg-gradient-to-r from-purple-400/30 to-violet-500/40',
+      route: '/purchase-order/vendors',
       stats: {
         main: stats.activeVendors,
-        secondary: "Vendors"
+        secondary: 'Vendors',
       },
-      filedBy: "Procurement Team"
+      filedBy: 'Procurement Team',
     },
     {
       id: 4,
-      title: "Receive Goods",
+      title: 'Receive Goods',
       Icon: FiTruck,
-      description: "Record received items and update inventory",
-      gradient: "bg-gradient-to-r from-yellow-400/30 to-amber-500/40",
-      route: "/purchase-order/receive",
+      description: 'Record received items and update inventory',
+      gradient: 'bg-gradient-to-r from-yellow-400/30 to-amber-500/40',
+      route: '/purchase-order/receive',
       stats: {
         main: stats.pendingDeliveries,
-        secondary: "Pending"
+        secondary: 'Pending',
       },
-      filedBy: "Warehouse Team"
+      filedBy: 'Warehouse Team',
     },
     {
       id: 5,
-      title: "Purchase Reports",
+      title: 'Purchase Reports',
       Icon: FiBarChart2,
-      description: "View procurement analytics and reports",
-      gradient: "bg-gradient-to-r from-red-400/30 to-rose-500/40",
-      route: "/purchase-order/reports",
+      description: 'View procurement analytics and reports',
+      gradient: 'bg-gradient-to-r from-red-400/30 to-rose-500/40',
+      route: '/purchase-order/reports',
       stats: {
-        main: "₹" + (stats.totalSpend / 100000).toFixed(1) + "L",
-        secondary: "Spend"
+        main: '₹' + (stats.totalSpend / 100000).toFixed(1) + 'L',
+        secondary: 'Spend',
       },
-      filedBy: "Finance Team"
+      filedBy: 'Finance Team',
     },
     {
       id: 6,
-      title: "View All Requisitions",
+      title: 'View All Requisitions',
       Icon: FiFileText,
-      description: "Browse and manage all purchase orders",
-      gradient: "bg-gradient-to-r from-orange-400/30 to-orange-500/40",
-      route: "/purchase-order/requisition/AllRequisitions",
+      description: 'Browse and manage all purchase orders',
+      gradient: 'bg-gradient-to-r from-orange-400/30 to-orange-500/40',
+      route: '/purchase-order/requisition/AllRequisitions',
       stats: {
         main: stats.totalPRs,
-        secondary: "Requisitions"
+        secondary: 'Requisitions',
       },
-      filedBy: "Project Teams"
+      filedBy: 'Project Teams',
     },
     {
       id: 7,
-      title: "View All Orders",
+      title: 'View All Orders',
       Icon: FaFileInvoice,
-      description: "Browse and manage all purchase orders",
-      gradient: "bg-gradient-to-r from-cyan-400/30 to-teal-500/40",
-      route: "/purchase-order/orders/AllOrders",
+      description: 'Browse and manage all purchase orders',
+      gradient: 'bg-gradient-to-r from-cyan-400/30 to-teal-500/40',
+      route: '/purchase-order/orders/AllOrders',
       stats: {
         main: stats.totalPOs,
-        secondary: "Orders"
+        secondary: 'Orders',
       },
-      filedBy: "Procurement Teams"
-    }
+      filedBy: 'Procurement Teams',
+    },
   ];
 
   // Role-based card filtering
@@ -259,7 +268,21 @@ export default function PurchaseDashboard() {
 
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center flex-grow p-6 py-8">
-        <h1 className="text-4xl font-bold mb-16 mt-2 text-center">Purchase Order Management</h1>
+        <h1 className="text-4xl font-bold mb-16 mt-2 text-center">
+          Purchase Order Management
+        </h1>
+
+        {/* Quick Search */}
+        {/* <div className="w-full max-w-md mb-12">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search PO number, vendor, or item..."
+              className="w-full bg-gray-800 rounded-lg px-4 py-3 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <FiSearch className="absolute left-3 top-3.5 text-gray-400" />
+          </div>
+        </div> */}
 
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl">
@@ -280,7 +303,9 @@ export default function PurchaseDashboard() {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold">{card.stats.main}</div>
-                    <div className="text-sm text-white/70">{card.stats.secondary}</div>
+                    <div className="text-sm text-white/70">
+                      {card.stats.secondary}
+                    </div>
                   </div>
                 </div>
                 <h3 className="text-xl font-bold mb-2">{card.title}</h3>

@@ -1,21 +1,21 @@
-import mysql from "mysql2/promise";
+import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // Create a connection pool
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  host: process.env.DB_HOST || 'db',
+  user: process.env.DB_USER || 'company',
+  password: process.env.DB_PASSWORD || 'Ukshati@123',
+  database: process.env.DB_NAME || 'company_db',
   port: process.env.DB_PORT || 3306,
-  waitForConnections: true,  // Ensures that queries wait for an available connection
-  connectionLimit: 10,       // Adjust based on your concurrency needs
-  queueLimit: 0,             // No limit on queued connections
-  acquireTimeout: 60000,     // 60 seconds timeout for getting connection
-  timeout: 60000,            // 60 seconds timeout for queries
-  reconnect: true,           // Automatically reconnect
+  waitForConnections: true, // Ensures that queries wait for an available connection
+  connectionLimit: 10, // Adjust based on your concurrency needs
+  queueLimit: 0, // No limit on queued connections
+  acquireTimeout: 60000, // 60 seconds timeout for getting connection
+  timeout: 60000, // 60 seconds timeout for queries
+  reconnect: true, // Automatically reconnect
 });
 
 // Function to get a connection from the pool

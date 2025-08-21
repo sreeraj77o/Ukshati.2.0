@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 // Verify JWT token
 export async function authenticate(req) {
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     throw new Error('Authorization token required');
   }

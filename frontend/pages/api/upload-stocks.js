@@ -1,8 +1,8 @@
-import { connectToDB } from "../../lib/db";
+import { connectToDB } from '../../lib/db';
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   let connection;
@@ -12,15 +12,17 @@ export default async function handler(req, res) {
 
     // 1. Get categories
     const [categories] = await connection.query(
-      "SELECT category_id, LOWER(category_name) AS lower_name FROM category"
+      'SELECT category_id, LOWER(category_name) AS lower_name FROM category'
     );
 
     if (!categories.length) {
       await connection.rollback();
-      return res.status(400).json({ error: "No categories found in database" });
+      return res.status(400).json({ error: 'No categories found in database' });
     }
 
-    const categoryMap = new Map(categories.map((c) => [c.lower_name, c.category_id]));
+    const categoryMap = new Map(
+      categories.map(c => [c.lower_name, c.category_id])
+    );
 
     // 2. Validate and Group Data
     const errors = [];
@@ -32,20 +34,28 @@ export default async function handler(req, res) {
     for (const [index, entry] of (req.body.stocks || []).entries()) {
       try {
         if (!entry?.categoryName || !entry?.productName) {
-          throw new Error("Missing required fields");
+          throw new Error('Missing required fields');
         }
 
-        const categoryId = categoryMap.get(entry.categoryName.toLowerCase().trim());
-        if (!categoryId) throw new Error(`Category '${entry.categoryName}' not found`);
+        const categoryId = categoryMap.get(
+          entry.categoryName.toLowerCase().trim()
+        );
+        if (!categoryId)
+          throw new Error(`Category '${entry.categoryName}' not found`);
 
         const quantity = Number(entry.quantity) || 0;
         const price = Number(entry.price) || 0;
-        if (quantity <= 0) throw new Error("Invalid quantity");
-        if (price <= 0) throw new Error("Invalid price");
+        if (quantity <= 0) throw new Error('Invalid quantity');
+        if (price <= 0) throw new Error('Invalid price');
 
         const itemKey = `${categoryId}_${entry.productName.trim()}`;
         if (!itemLookup.has(itemKey)) {
-          itemLookup.set(itemKey, { categoryId, productName: entry.productName.trim(), quantity, price });
+          itemLookup.set(itemKey, {
+            categoryId,
+            productName: entry.productName.trim(),
+            quantity,
+            price,
+          });
         } else {
           const existing = itemLookup.get(itemKey);
           existing.quantity += quantity;
@@ -60,9 +70,9 @@ export default async function handler(req, res) {
     // 3. Fetch existing stocks in a single query
     const keys = [...itemLookup.keys()];
     if (keys.length > 0) {
-      const placeholders = keys.map(() => "(?, ?)").join(", ");
-      const values = keys.flatMap((key) => {
-        const [categoryId, productName] = key.split("_");
+      const placeholders = keys.map(() => '(?, ?)').join(', ');
+      const values = keys.flatMap(key => {
+        const [categoryId, productName] = key.split('_');
         return [categoryId, productName];
       });
 
@@ -75,7 +85,7 @@ export default async function handler(req, res) {
 
       // Create a map for fast lookup
       const stockMap = new Map(
-        existingStocks.map((s) => [`${s.category_id}_${s.item_name}`, s])
+        existingStocks.map(s => [`${s.category_id}_${s.item_name}`, s])
       );
 
       // 4. Process batch updates and inserts
@@ -90,7 +100,12 @@ export default async function handler(req, res) {
           });
         } else {
           // Insert new stock
-          newEntries.push([item.productName, item.categoryId, item.quantity, item.price]);
+          newEntries.push([
+            item.productName,
+            item.categoryId,
+            item.quantity,
+            item.price,
+          ]);
         }
       }
 
@@ -131,14 +146,19 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      stocks: updatedStocks.map((s) => ({ ...s, price_pu: Number(s.price_pu) || 0 })),
+      stocks: updatedStocks.map(s => ({
+        ...s,
+        price_pu: Number(s.price_pu) || 0,
+      })),
       processed: processedStocks.length,
       errors,
     });
   } catch (error) {
     if (connection) await connection.rollback();
-    console.error("Server error:", error);
-    return res.status(500).json({ error: "Internal server error", details: error.message });
+    console.error('Server error:', error);
+    return res
+      .status(500)
+      .json({ error: 'Internal server error', details: error.message });
   } finally {
     if (connection) connection.end();
   }

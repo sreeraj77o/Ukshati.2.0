@@ -1,25 +1,25 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 // import StarryBackground from "@/components/StarryBackground";
-import { Navbar, NavbarBrand, NavbarContent } from "@heroui/react";
-import { Link } from "@heroui/react";
-import Image from "next/image";
+import { Navbar, NavbarBrand, NavbarContent } from '@heroui/react';
+import { Link } from '@heroui/react';
+import Image from 'next/image';
 
 export default function Login() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("employee");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('employee');
+  const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     // Clear previous session on component mount
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("userRole");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
 
     // Simulate initial loading delay
     const timer = setTimeout(() => {
@@ -29,15 +29,15 @@ export default function Login() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLogin = async (e) => {
+  const handleLogin = async e => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
 
     try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.toLowerCase().trim(),
           password: password.trim(),
@@ -48,18 +48,18 @@ export default function Login() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Login failed. Please try again.");
+        throw new Error(data.message || 'Login failed. Please try again.');
       }
 
       // Store authentication data
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("userRole", data.user.role); // Store role separately
-      localStorage.setItem("userEmail", data.user.email);
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('userRole', data.user.role); // Store role separately
+      localStorage.setItem('userEmail', data.user.email);
 
       // Redirect based on role
       router.push(
-        data.user.role === "admin" ? "/expense/home" : "/expense/home"
+        data.user.role === 'admin' ? '/expense/home' : '/expense/home'
       );
     } catch (err) {
       setError(err.message);
@@ -133,7 +133,7 @@ export default function Login() {
               </label>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={e => setRole(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded bg-white text-black"
               >
                 <option value="employee">Employee</option>
@@ -149,7 +149,7 @@ export default function Login() {
                 type="email"
                 className="w-full p-2 border border-gray-300 rounded bg-white text-black"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -159,10 +159,10 @@ export default function Login() {
                 Password
               </label>
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 className="w-full p-2 border border-gray-300 rounded bg-white text-black"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 required
               />
               <div className="mt-2">
@@ -184,11 +184,11 @@ export default function Login() {
               disabled={loading}
               className={`w-full bg-gradient-to-r from-teal-400 to-blue-500 text-white p-3 rounded-md font-semibold transition ${
                 loading
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:from-teal-500 hover:to-blue-600"
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:from-teal-500 hover:to-blue-600'
               }`}
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
         )}

@@ -5,7 +5,10 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const [result] = await db.query('SELECT * FROM invoices WHERE invoice_id = ?', [id]);
+      const [result] = await db.query(
+        'SELECT * FROM invoices WHERE invoice_id = ?',
+        [id]
+      );
 
       if (result.length === 0) {
         return res.status(404).json({ error: 'Invoice not found' });

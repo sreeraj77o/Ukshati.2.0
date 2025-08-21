@@ -2,10 +2,10 @@ import { getConnection } from '@/lib/db';
 
 export default async function handler(req, res) {
   let db;
-  
+
   try {
     db = await getConnection();
-    
+
     // Get all purchase orders with related data
     const [orders] = await db.execute(`
       SELECT 
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       GROUP BY po.id
       ORDER BY po.created_at DESC
     `);
-    
+
     // Get all items
     const [items] = await db.execute(`
       SELECT 
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       JOIN purchase_orders po ON poi.po_id = po.id
       ORDER BY poi.po_id, poi.id
     `);
-    
+
     // Get database statistics
     const [stats] = await db.execute(`
       SELECT 
@@ -46,24 +46,24 @@ export default async function handler(req, res) {
         (SELECT COUNT(*) FROM projects) as total_projects,
         (SELECT COUNT(*) FROM employees) as total_employees
     `);
-    
+
     return res.status(200).json({
       success: true,
       data: {
         purchase_orders: orders,
         items: items,
         statistics: stats[0],
-        message: orders.length > 0 ? 
-          `Found ${orders.length} purchase orders in database` : 
-          'No purchase orders found in database'
-      }
+        message:
+          orders.length > 0
+            ? `Found ${orders.length} purchase orders in database`
+            : 'No purchase orders found in database',
+      },
     });
-    
   } catch (error) {
     console.error('Database viewer error:', error);
     return res.status(500).json({
       error: 'Database error',
-      message: error.message
+      message: error.message,
     });
   } finally {
     if (db) {

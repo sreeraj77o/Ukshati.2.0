@@ -1,4 +1,4 @@
-import { connectToDB } from "@/lib/db";
+import { connectToDB } from '@/lib/db';
 
 export default async function handler(req, res) {
   const db = await connectToDB();
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         'approved', 'rejected', 'fulfilled-from-stock', 'converted-to-po', 'partially-fulfilled', 'converted', 'submitted', 'draft', 'pending'
       ];
       if (!id || !status || !allowedStatuses.includes(status)) {
-        return res.status(400).json({ error: "Invalid request data" });
+        return res.status(400).json({ error: 'Invalid request data' });
       }
 
       const [result] = await db.execute(
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       );
 
       if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Requisition not found" });
+        return res.status(404).json({ error: 'Requisition not found' });
       }
 
       return res.status(200).json({ 
@@ -38,26 +38,27 @@ export default async function handler(req, res) {
       // Accept id from query string
       const { id } = req.query;
       if (!id) {
-        return res.status(400).json({ error: "Requisition ID required" });
+        return res.status(400).json({ error: 'Requisition ID required' });
       }
 
       const [result] = await db.execute(
-        "DELETE FROM purchase_requisitions WHERE id = ?",
+        'DELETE FROM purchase_requisitions WHERE id = ?',
         [id]
       );
 
       if (result.affectedRows === 0) {
-        return res.status(404).json({ error: "Requisition not found" });
+        return res.status(404).json({ error: 'Requisition not found' });
       }
 
-      return res.status(200).json({ message: "Requisition deleted successfully" });
+      return res
+        .status(200)
+        .json({ message: 'Requisition deleted successfully' });
     }
 
     res.setHeader('Allow', ['PUT', 'DELETE']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-
   } catch (error) {
-    console.log("Error updating requisition:", error);
+    console.log('Error updating requisition:', error);
     return res.status(500).json({ error: error.message });
   }
 }
