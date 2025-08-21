@@ -8,7 +8,6 @@ import {
   FiDatabase,
   FiCalendar,
   FiHardDrive,
-  FiAlertCircle,
   FiCheckCircle,
   FiXCircle,
   FiAlertTriangle,
@@ -74,10 +73,6 @@ const BackupManagement = () => {
     }));
   };
 
-  useEffect(() => {
-    fetchBackups();
-  }, [fetchBackups]);
-
   const fetchBackups = useCallback(
     async (forceSync = false) => {
       try {
@@ -111,6 +106,10 @@ const BackupManagement = () => {
     },
     [showErrorModal]
   );
+
+  useEffect(() => {
+    fetchBackups();
+  }, [fetchBackups]);
 
   const handleManualSync = async () => {
     try {
