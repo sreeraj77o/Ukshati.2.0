@@ -64,7 +64,7 @@ export default async function handler(req, res) {
           Kodailbail, Mangaluru,<br>
           Karnataka - 575008</p>
           <br>
-          Phone: +91 1234567890</p>
+          Phone: +91 88615 67365</p>
         </div>
       `,
       attachments: [

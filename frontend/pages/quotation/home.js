@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { FaPlus, FaEye, FaMoneyBillWave, FaInfoCircle, FaTimes } from "react-icons/fa";
+import { FaPlus, FaEye, FaMoneyBillWave, FaFileInvoiceDollar, FaInfoCircle, FaTimes } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Tilt from "react-parallax-tilt";
 import BackButton from "@/components/BackButton";
@@ -64,10 +64,23 @@ export default function Home() {
       Icon: FaMoneyBillWave,
       description: "Configure and update product pricing rates",
       gradient: "bg-gradient-to-r from-purple-400/30 to-violet-500/40",
-      route: "/quotation/RatesManagement",
+      route: "/rates",
       stats: {
         main: "24",
         secondary: "Items"
+      },
+      filedBy: "Sales Team"
+    },
+    {
+      id: 4,
+      title: "Enhanced Quote Manager",
+      Icon: FaFileInvoiceDollar,
+      description: "Generate quotes with enhanced CRM integration",
+      gradient: "bg-gradient-to-r from-emerald-400/30 to-teal-500/40",
+      route: "/quotation/EnhancedQuoteManager",
+      stats: {
+        main: "New",
+        secondary: "Feature"
       },
       filedBy: "Sales Team"
     },

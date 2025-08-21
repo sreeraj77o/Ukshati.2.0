@@ -65,7 +65,6 @@ export default function ShareOrderModal({ open, onClose, order, onShare }) {
               >
                 <option value="">Select method</option>
                 <option value="email">Email</option>
-                <option value="whatsapp">WhatsApp</option>
               </select>
             </div>
             {method && (
