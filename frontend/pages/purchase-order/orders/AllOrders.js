@@ -185,8 +185,8 @@ export default function AllPurchaseOrders() {
     } finally {
       setLoading(false);
     }
-  };
-
+    }, []);
+    
   // Only use allowed PO statuses for display and filtering
   const allowedPOStatuses = [
     'draft', 'sent', 'confirmed', 'processing', 'partially_received', 'completed', 'cancelled'
