@@ -20,6 +20,9 @@ import ScrollToTopButton from '@/components/scrollup';
 import { TableSkeleton } from '@/components/skeleton';
 import { motion } from 'framer-motion';
 import generatePurchaseOrderPDF from '@/components/purchase/PurchaseOrderPDF';
+import ShareOrderModal from '@/components/ShareOrderModal';
+import { shareOrderByEmail } from '@/lib/shareOrderEmail';
+import { shareOrderByWhatsapp } from '@/lib/shareOrderWhatsapp';
 
 export default function AllPurchaseOrders() {
   const router = useRouter();
@@ -37,6 +40,8 @@ export default function AllPurchaseOrders() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [error, setError] = useState(null);
   const [loadingItems, setLoadingItems] = useState({});
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [orderToShare, setOrderToShare] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -180,7 +185,12 @@ export default function AllPurchaseOrders() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+    }, []);
+    
+  // Only use allowed PO statuses for display and filtering
+  const allowedPOStatuses = [
+    'draft', 'sent', 'confirmed', 'processing', 'partially_received', 'completed', 'cancelled'
+  ];
 
   const applyFilters = useCallback(() => {
     let result = [...orders];
@@ -197,7 +207,7 @@ export default function AllPurchaseOrders() {
 
     // Apply status filter
     if (filterStatus !== 'all') {
-      result = result.filter(order => order.status === filterStatus);
+      result = result.filter(order => allowedPOStatuses.includes(order.status) && order.status === filterStatus);
     }
 
     // Apply sorting
@@ -379,6 +389,30 @@ export default function AllPurchaseOrders() {
 
     console.log('PO Data for PDF:', poData);
     generatePurchaseOrderPDF(poData);
+  };
+
+  const handleOpenShareModal = (order) => {
+    // Find vendor details to get email
+    const vendor = vendors.find(v => v.id === order.vendor_id);
+    const orderWithVendorEmail = {
+      ...order,
+      vendor_email: vendor?.email || null
+    };
+    setOrderToShare(orderWithVendorEmail);
+    setShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+    setOrderToShare(null);
+  };
+
+  const handleShareOrder = async (method, recipient, order) => {
+    if (method === "email") {
+      await shareOrderByEmail(recipient, order);
+    } else if (method === "whatsapp") {
+      await shareOrderByWhatsapp(recipient, order);
+    }
   };
 
   return (
@@ -600,6 +634,16 @@ export default function AllPurchaseOrders() {
                       >
                         <FiTrash2 />
                       </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenShareModal(order);
+                        }}
+                        className="p-2 text-indigo-400 hover:bg-indigo-500/20 rounded-full"
+                        title="Send Order"
+                      >
+                        <FiCheck />
+                      </button>
                     </div>
                     {expandedOrder === order.id ? (
                       <FiChevronUp className="ml-2 text-gray-400" />
@@ -704,6 +748,14 @@ export default function AllPurchaseOrders() {
             </div>
           )}
         </div>
+
+        {/* Share Modal */}
+        <ShareOrderModal
+          open={shareModalOpen}
+          onClose={handleCloseShareModal}
+          order={orderToShare}
+          onShare={handleShareOrder}
+        />
       </div>
     </div>
   );

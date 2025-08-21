@@ -1,18 +1,9 @@
-'use client';
+"use client";
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import {
-  FiAlertCircle,
-  FiUser,
-  FiClock,
-  FiCalendar,
-  FiMessageSquare,
-  FiTrash2,
-  FiPlus,
-  FiBell,
-} from 'react-icons/fi';
+import { FiAlertCircle, FiUser, FiClock, FiCalendar, FiMessageSquare, FiTrash2, FiPlus, FiBell } from 'react-icons/fi';
 import BackButton from '@/components/BackButton';
-import { FormSkeleton, TableSkeleton } from '@/components/skeleton';
+import { FormSkeleton, TableSkeleton } from "@/components/skeleton";
 
 const ReminderMaintenance = () => {
   const [reminders, setReminders] = useState([]);
@@ -23,7 +14,7 @@ const ReminderMaintenance = () => {
     message: '',
     date: '',
     time: '',
-    customerId: '',
+    customerId: ''
   });
   const [activeTab, setActiveTab] = useState('upcoming');
 
@@ -33,11 +24,8 @@ const ReminderMaintenance = () => {
     return reminders
       .filter(reminder => {
         const reminderDate = new Date(reminder.datetime);
-        return activeTab === 'upcoming'
-          ? reminderDate > now
-          : activeTab === 'past'
-            ? reminderDate <= now
-            : true;
+        return activeTab === 'upcoming' ? reminderDate > now :
+              activeTab === 'past' ? reminderDate <= now : true;
       })
       .sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
   }, [reminders, activeTab]);
@@ -45,41 +33,32 @@ const ReminderMaintenance = () => {
   // Request notification permission
   const requestNotificationPermission = useCallback(async () => {
     try {
-      if (!('Notification' in window)) {
-        showError(
-          'Notifications Not Supported',
-          "Your browser doesn't support notifications"
-        );
+      if (!("Notification" in window)) {
+        showError("Notifications Not Supported", "Your browser doesn't support notifications");
         return;
       }
 
       const permission = await Notification.requestPermission();
 
-      if (permission === 'granted') {
+      if (permission === "granted") {
         setNotificationsEnabled(true);
-        showSuccess(
-          'Notifications Enabled',
-          "You'll receive reminder notifications"
-        );
+        showSuccess("Notifications Enabled", "You'll receive reminder notifications");
         setTimeout(() => {
           window.location.reload();
         }, 2000);
       } else {
-        showError(
-          'Notifications Disabled',
-          "You won't receive reminder notifications"
-        );
+        showError("Notifications Disabled", "You won't receive reminder notifications");
       }
     } catch (error) {
-      console.error('Error requesting notification permission:', error);
+      console.error("Error requesting notification permission:", error);
     }
-  }, [showError, showSuccess]);
+  }, []);
 
   // Handle reminder notifications
   const setupNotificationListener = useCallback(() => {
     if (!navigator.serviceWorker.controller) return;
 
-    const messageHandler = event => {
+    const messageHandler = (event) => {
       if (event.data?.type === 'REMINDER_DUE') {
         const reminder = event.data.reminder;
 
@@ -88,7 +67,7 @@ const ReminderMaintenance = () => {
             body: `${reminder.message} for ${reminder.cname}`,
             icon: '/favicon.ico',
             tag: `reminder-${reminder.rid}`,
-            requireInteraction: true,
+            requireInteraction: true
           });
         }
 
@@ -98,17 +77,13 @@ const ReminderMaintenance = () => {
           text: `${reminder.message} for ${reminder.cname}`,
           background: '#1a1a2e',
           color: '#fff',
-          confirmButtonColor: '#4f46e5',
-          confirmButtonText: 'OK',
-        }).then(() => {
-          console.log('Alert closed');
+          confirmButtonColor: '#4f46e5'
         });
       }
     };
 
     navigator.serviceWorker.addEventListener('message', messageHandler);
-    return () =>
-      navigator.serviceWorker.removeEventListener('message', messageHandler);
+    return () => navigator.serviceWorker.removeEventListener('message', messageHandler);
   }, []);
 
   // Service Worker Registration
@@ -117,12 +92,8 @@ const ReminderMaintenance = () => {
       let registration;
       const registerSW = async () => {
         try {
-          registration =
-            await navigator.serviceWorker.register('/service-worker.js');
-          console.log(
-            'Service Worker registered with scope:',
-            registration.scope
-          );
+          registration = await navigator.serviceWorker.register('/service-worker.js');
+          console.log('Service Worker registered with scope:', registration.scope);
           setupNotificationListener();
 
           const readyRegistration = await navigator.serviceWorker.ready;
@@ -152,7 +123,7 @@ const ReminderMaintenance = () => {
       const remindersData = await response.json();
       setReminders(Array.isArray(remindersData) ? remindersData : []);
     } catch (error) {
-      console.error('Error fetching reminders:', error);
+      console.error("Error fetching reminders:", error);
     }
   }, []);
 
@@ -179,10 +150,8 @@ const ReminderMaintenance = () => {
     };
 
     fetchData();
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchReminders, showError]);
+    return () => { isMounted = false; };
+  }, [fetchReminders]);
 
   const showError = useCallback((title, message) => {
     Swal.fire({
@@ -191,7 +160,7 @@ const ReminderMaintenance = () => {
       text: message,
       background: '#1a1a2e',
       color: '#fff',
-      confirmButtonColor: '#4f46e5',
+      confirmButtonColor: '#4f46e5'
     });
   }, []);
 
@@ -202,98 +171,91 @@ const ReminderMaintenance = () => {
       text: message,
       background: '#1a1a2e',
       color: '#fff',
-      confirmButtonColor: '#4f46e5',
+      confirmButtonColor: '#4f46e5'
     });
   }, []);
 
-  const handleInputChange = useCallback(e => {
+  const handleInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
 
-  const handleSubmit = useCallback(
-    async e => {
-      e.preventDefault();
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
 
+    try {
+      const response = await fetch('/api/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: formData.message,
+          reminder_date: formData.date,
+          reminder_time: formData.time,
+          cid: formData.customerId
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save reminder');
+
+      await showSuccess('Reminder Added!', 'Your reminder has been scheduled successfully');
+      window.location.reload();
+
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Save',
+        text: error.message,
+        background: '#1a1a2e',
+        color: '#fff'
+      });
+    }
+  }, [formData, showSuccess]);
+
+  const deleteReminder = useCallback(async (rid) => {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Delete Reminder?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#4f46e5',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it!',
+      background: '#1a1a2e',
+      color: '#fff'
+    });
+
+    if (isConfirmed) {
       try {
-        const response = await fetch('/api/reminders', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: formData.message,
-            reminder_date: formData.date,
-            reminder_time: formData.time,
-            cid: formData.customerId,
-          }),
+        const response = await fetch(`/api/reminders?rid=${rid}`, {
+          method: 'DELETE'
         });
 
-        const data = await response.json();
-        if (!response.ok)
-          throw new Error(data.error || 'Failed to save reminder');
+        if (!response.ok) throw new Error('Failed to delete reminder');
 
-        await showSuccess(
-          'Reminder Added!',
-          'Your reminder has been scheduled successfully'
-        );
+        await showSuccess('Deleted!', 'Reminder has been deleted');
         window.location.reload();
       } catch (error) {
         Swal.fire({
           icon: 'error',
-          title: 'Failed to Save',
+          title: 'Delete Failed',
           text: error.message,
           background: '#1a1a2e',
-          color: '#fff',
+          color: '#fff'
         });
       }
-    },
-    [formData, showSuccess]
-  );
-
-  const deleteReminder = useCallback(
-    async rid => {
-      const { isConfirmed } = await Swal.fire({
-        title: 'Delete Reminder?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#4f46e5',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'Yes, delete it!',
-        background: '#1a1a2e',
-        color: '#fff',
-      });
-
-      if (isConfirmed) {
-        try {
-          const response = await fetch(`/api/reminders?rid=${rid}`, {
-            method: 'DELETE',
-          });
-
-          if (!response.ok) throw new Error('Failed to delete reminder');
-
-          await showSuccess('Deleted!', 'Reminder has been deleted');
-          window.location.reload();
-        } catch (error) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Delete Failed',
-            text: error.message,
-            background: '#1a1a2e',
-            color: '#fff',
-          });
-        }
-      }
-    },
-    [showSuccess]
-  );
+    }
+  }, [showSuccess]);
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 lg:p-8 relative bg-black">
+
       <div className="absolute top-4 left-4 z-10">
-        <BackButton route="/crm/home" />
+        <BackButton route='/crm/home' />
       </div>
 
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8 relative z-10 pt-20">
+
         <div className="text-center space-y-4 px-2 sm:px-4 mb-8">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-500 mb-6">
             Reminder Management
@@ -308,9 +270,7 @@ const ReminderMaintenance = () => {
             }`}
           >
             <FiBell className="mr-2 text-sm sm:text-base" />
-            {notificationsEnabled
-              ? 'Notifications Enabled'
-              : 'Enable Notifications'}
+            {notificationsEnabled ? 'Notifications Enabled' : 'Enable Notifications'}
           </button>
         </div>
 
@@ -328,10 +288,7 @@ const ReminderMaintenance = () => {
               {loading ? (
                 <FormSkeleton fields={4} />
               ) : (
-                <form
-                  onSubmit={handleSubmit}
-                  className="space-y-3 sm:space-y-4"
-                >
+                <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                   <div className="space-y-1 sm:space-y-2">
                     <label className="block text-xs sm:text-sm font-medium text-gray-300">
                       <FiUser className="inline mr-1 sm:mr-2" />
@@ -446,15 +403,13 @@ const ReminderMaintenance = () => {
               ) : filteredReminders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
                   <FiAlertCircle className="text-gray-500 text-3xl sm:text-4xl mb-3 sm:mb-4" />
-                  <h3 className="text-base sm:text-lg font-medium text-gray-300">
-                    No reminders found
-                  </h3>
+                  <h3 className="text-base sm:text-lg font-medium text-gray-300">No reminders found</h3>
                   <p className="text-gray-500 mt-1 text-xs sm:text-sm">
                     {activeTab === 'upcoming'
                       ? "You don't have any upcoming reminders"
                       : activeTab === 'past'
-                        ? 'No past reminders found'
-                        : 'No reminders created yet'}
+                        ? "No past reminders found"
+                        : "No reminders created yet"}
                   </p>
                 </div>
               ) : (
@@ -473,26 +428,20 @@ const ReminderMaintenance = () => {
                         <div className="flex-1 space-y-1 sm:space-y-2">
                           <div className="flex items-center gap-1 sm:gap-2">
                             <FiUser className="text-indigo-400 text-sm sm:text-base" />
-                            <h3 className="font-medium text-white text-sm sm:text-base">
-                              {reminder.cname}
-                            </h3>
+                            <h3 className="font-medium text-white text-sm sm:text-base">{reminder.cname}</h3>
                           </div>
                           <div className="flex gap-1 sm:gap-2">
                             <FiMessageSquare className="text-indigo-400 mt-0.5 sm:mt-1 text-sm sm:text-base" />
-                            <p className="text-gray-300 text-xs sm:text-sm">
-                              {reminder.message}
-                            </p>
+                            <p className="text-gray-300 text-xs sm:text-sm">{reminder.message}</p>
                           </div>
                           <div className="flex items-center gap-1 sm:gap-2">
                             <FiClock className="text-indigo-400 text-sm sm:text-base" />
-                            <p
-                              className={`text-xs sm:text-sm ${isPast ? 'text-red-400' : 'text-indigo-400'}`}
-                            >
+                            <p className={`text-xs sm:text-sm ${isPast ? 'text-red-400' : 'text-indigo-400'}`}>
                               {reminderDate.toLocaleString('en-US', {
                                 month: 'short',
                                 day: 'numeric',
                                 hour: '2-digit',
-                                minute: '2-digit',
+                                minute: '2-digit'
                               })}
                               {isPast && (
                                 <span className="ml-1 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-red-900/30 text-red-400 text-xxs sm:text-xs rounded-full">

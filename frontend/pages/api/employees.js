@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
       // Insert into database
       const [result] = await connection.execute(
-        `INSERT INTO employee 
+        `INSERT INTO employees 
          (name, email, phone, role, password) 
          VALUES (?, ?, ?, ?, ?)`,
         [name, email, phone, role, hashedPassword]

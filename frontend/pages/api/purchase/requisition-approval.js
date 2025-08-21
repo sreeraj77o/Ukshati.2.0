@@ -5,9 +5,13 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'PUT') {
-      const { id, status, approver_id, approval_notes } = req.body;
+      const { id, status, approved_by, approval_notes } = req.body;
 
-      if (!id || !status || !['approved', 'rejected'].includes(status)) {
+      // Allow all relevant statuses
+      const allowedStatuses = [
+        'approved', 'rejected', 'fulfilled-from-stock', 'converted-to-po', 'partially-fulfilled', 'converted', 'submitted', 'draft', 'pending'
+      ];
+      if (!id || !status || !allowedStatuses.includes(status)) {
         return res.status(400).json({ error: 'Invalid request data' });
       }
 
@@ -18,15 +22,15 @@ export default async function handler(req, res) {
              approval_notes = ?,
              approval_date = CURRENT_TIMESTAMP
          WHERE id = ?`,
-        [status, approver_id || null, approval_notes || null, id]
+        [status, approved_by || null, approval_notes || null, id]
       );
 
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'Requisition not found' });
       }
 
-      return res.status(200).json({
-        message: `Requisition ${status === 'approved' ? 'approved' : 'rejected'} successfully`,
+      return res.status(200).json({ 
+        message: `Requisition status updated to ${status}` 
       });
     }
 

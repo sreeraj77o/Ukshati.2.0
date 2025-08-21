@@ -14,8 +14,9 @@ import {
   FiSearch,
   FiFilter,
 } from 'react-icons/fi';
-import { FaFileCirclePlus, FaFileInvoice } from 'react-icons/fa6';
-import { motion } from 'framer-motion';
+import { FaFileCirclePlus, FaFileInvoice, FaChevronDown, } from 'react-icons/fa6';
+import { FaSignOutAlt } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import BackButton from '@/components/BackButton';
 import { CardSkeleton, TableSkeleton } from '@/components/skeleton';
 import ScrollToTopButton from '@/components/scrollup';
@@ -23,18 +24,30 @@ import ScrollToTopButton from '@/components/scrollup';
 export default function PurchaseDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState({});
   const [stats, setStats] = useState({
     totalPOs: 0,
     totalPRs: 0,
     activeVendors: 0,
     pendingDeliveries: 0,
     totalSpend: 0,
-    activeVendors: 0,
   });
   const [errors, setErrors] = useState({});
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const onDropdownToggle = () => setIsDropdownOpen(!isDropdownOpen);
+  const onLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    router.push("/");
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    const parsedUser = storedUser ? JSON.parse(storedUser) : {};
+
     if (!token) {
       setErrors({ form: 'You are not logged in. Please login and try again.' });
       setLoading(false);
@@ -42,9 +55,14 @@ export default function PurchaseDashboard() {
       return;
     }
 
-    // Helper to fetch with auth and handle 401
-    const fetchWithAuth = async url => {
-      console.log('Fetching from: ' + url);
+    setUserData({
+      name: parsedUser.name,
+      email: parsedUser.email,
+      phone: parsedUser.phone || 'N/A',
+      role: parsedUser.role || 'N/A',
+    });
+
+    const fetchWithAuth = async (url) => {
       const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -58,36 +76,19 @@ export default function PurchaseDashboard() {
 
     const fetchData = async () => {
       try {
-        // Fetch vendors
         const vendorsData = await fetchWithAuth('/api/purchase/vendors');
-        console.log('VEndors', vendorsData.length);
-
-        // Fetch requisitions
-        const requisitionsData = await fetchWithAuth(
-          '/api/purchase/requisitions'
-        );
-        console.log('Requisitions', requisitionsData.length);
-
-        // Fetch orders
+        const requisitionsData = await fetchWithAuth('/api/purchase/requisitions');
         const ordersData = await fetchWithAuth('/api/purchase/orders');
-        console.log('Orders', ordersData[0]);
 
-        // Calculate stats
-        const totalPRs = requisitionsData.length;
-        console.log('Total PRs', totalPRs);
-        const totalPOs = ordersData.length;
-        console.log('Total POs', totalPOs);
-        const pendingDeliveries = ordersData.filter(
-          ordersData => ordersData.status === 'pending'
-        ).length;
-        console.log('Pending Deliveries', pendingDeliveries);
-        const totalSpend = ordersData.reduce(
-          (sum, order) => sum + (order.amount || 3),
-          0
-        );
-        console.log('Total Spend', totalSpend);
-        const activeVendors = vendorsData.length;
-        console.log('Active Vendors', activeVendors);
+        const totalPRs = Array.isArray(requisitionsData) ? requisitionsData.length : 0;
+        const totalPOs = Array.isArray(ordersData) ? ordersData.length : 0;
+        const pendingDeliveries = Array.isArray(ordersData)
+          ? ordersData.filter(order => order.status === 'pending').length
+          : 0;
+        const totalSpend = Array.isArray(ordersData)
+          ? ordersData.reduce((sum, order) => sum + parseFloat(order.amount || 0), 0)
+          : 0;
+        const activeVendors = Array.isArray(vendorsData) ? vendorsData.length : 0;
 
         setStats({
           totalPOs,
@@ -96,9 +97,7 @@ export default function PurchaseDashboard() {
           ordersData,
           pendingDeliveries,
           totalSpend,
-          activeVendors,
         });
-        console.log(stats.totalPOs);
         setLoading(false);
       } catch (error) {
         if (error.message !== 'Unauthorized') {
@@ -205,16 +204,71 @@ export default function PurchaseDashboard() {
     },
   ];
 
+  // Role-based card filtering
+  let filteredCards = purchaseCards;
+  if (userData.role === "employee") {
+    filteredCards = purchaseCards.filter(card =>
+      ["Create Requisition", "View All Requisitions", "Receive Goods"].includes(card.title)
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-black text-white">
+      {/* Header with Profile Section (Dashboard style) */}
+      <header className="bg-black shadow-md border-b border-gray-700">
+        <div className="px-6 py-4 flex items-center justify-end">
+          <div className="relative">
+            <button
+              onClick={onDropdownToggle}
+              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-700 transition-all"
+            >
+              <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center">
+                <span className="font-medium">{userData?.name?.[0] || 'U'}</span>
+              </div>
+              <motion.span
+                animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <FaChevronDown className="text-xs" />
+              </motion.span>
+            </button>
+            <AnimatePresence>
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 mt-2 w-48 bg-black rounded-lg shadow-lg border border-gray-700 z-50"
+                >
+                  <div className="p-4 border-b border-gray-700">
+                    <p className="text-sm font-medium text-cyan-400">{userData?.name}</p>
+                    <p className="text-xs text-cyan-400 truncate">{userData?.email}</p>
+                    <p className="text-xs text-cyan-400 mt-1">Role: {userData?.role}</p>
+                  </div>
+                  <div className="py-1">
+                    <button
+                      onClick={onLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-700 hover:text-white transition-colors flex items-center"
+                    >
+                      <FaSignOutAlt className="mr-2" /> Sign Out
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </header>
+
       <div className="absolute top-4 left-4 z-10">
         <BackButton route="/dashboard" />
       </div>
       <ScrollToTopButton />
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center flex-grow p-6 py-20">
-        <h1 className="text-4xl font-bold mb-16 mt-8 text-center">
+      <div className="flex flex-col items-center justify-center flex-grow p-6 py-8">
+        <h1 className="text-4xl font-bold mb-16 mt-2 text-center">
           Purchase Order Management
         </h1>
 
@@ -235,7 +289,7 @@ export default function PurchaseDashboard() {
           {loading ? (
             <CardSkeleton count={6} />
           ) : (
-            purchaseCards.map(card => (
+            filteredCards.map((card) => (
               <motion.div
                 key={card.id}
                 whileHover={{ scale: 1.03 }}

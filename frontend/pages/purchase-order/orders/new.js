@@ -17,9 +17,12 @@ import BackButton from '@/components/BackButton';
 import ScrollToTopButton from '@/components/scrollup';
 import { FormSkeleton } from '@/components/skeleton';
 import generatePurchaseOrderPDF from '@/components/purchase/PurchaseOrderPDF';
+import { useSearchParams } from "next/navigation";
 
 export default function NewPurchaseOrder() {
   const router = useRouter();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const requisitionId = searchParams ? searchParams.get('requisition_id') : null;
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState([]);
@@ -29,7 +32,7 @@ export default function NewPurchaseOrder() {
     vendor_id: '',
     expected_delivery_date: '',
     shipping_address: '',
-    payment_terms: 'Net 30 days',
+    payment_terms: '',
     notes: '',
     items: [
       {
@@ -90,6 +93,26 @@ export default function NewPurchaseOrder() {
 
         setProjects(normalizedProjects);
         setVendors(vendorsData);
+        // If creating from requisition, fetch requisition details and prefill
+        if (requisitionId) {
+          const token = localStorage.getItem("token");
+          const reqRes = await fetch(`/api/purchase/requisitions?id=${requisitionId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (reqRes.ok) {
+            const reqData = await reqRes.json();
+            setFormData(prev => ({
+              ...prev,
+              project_id: reqData.requisition.project_id,
+              items: reqData.items.map(item => ({
+                item_name: item.item_name,
+                description: item.description,
+                quantity: item.quantity,
+                unit_price: item.estimated_price || ""
+              }))
+            }));
+          }
+        }
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -102,7 +125,6 @@ export default function NewPurchaseOrder() {
 
     fetchData();
   }, [router]);
-
   // Calculate totals whenever items change
   useEffect(() => {
     const subtotal = formData.items.reduce((sum, item) => {
@@ -122,21 +144,33 @@ export default function NewPurchaseOrder() {
     }));
   }, [formData.items]);
 
-  const handleChange = e => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
+    // If vendor_id changes, update payment_terms from vendor data
+    if (name === "vendor_id") {
+      const selectedVendor = vendors.find(v => v.id === parseInt(value));
+      setFormData(prev => ({
+        ...prev,
+        vendor_id: value,
+        payment_terms: selectedVendor?.payment_terms || ""
+      }));
+      if (errors["vendor_id"]) {
+        setErrors(prev => ({ ...prev, ["vendor_id"]: null }));
+      }
+      return;
+    }
     setFormData(prev => ({ ...prev, [name]: value }));
-
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleItemChange = (index, e) => {
+  const handleItemChange = async (index, e) => {
     const { name, value } = e.target;
     const newItems = [...formData.items];
     newItems[index][name] = value;
-    setFormData(prev => ({ ...prev, items: newItems }));
 
+    setFormData(prev => ({ ...prev, items: newItems }));
     if (errors[`items.${index}.${name}`]) {
       setErrors(prev => ({ ...prev, [`items.${index}.${name}`]: null }));
     }
@@ -151,7 +185,6 @@ export default function NewPurchaseOrder() {
           item_name: '',
           description: '',
           quantity: '',
-          unit: 'pcs',
           unit_price: '',
         },
       ],
@@ -200,15 +233,12 @@ export default function NewPurchaseOrder() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-
     if (!validateForm()) {
       console.log('Validation errors:', errors);
       return;
     }
-
     setSubmitting(true);
     setErrors({});
-
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -217,21 +247,18 @@ export default function NewPurchaseOrder() {
         router.push('/');
         return;
       }
-
-      console.log('Submitting purchase order:', formData);
-
+      //create PO for all items
+      const payload = { ...formData };
+      if (requisitionId) payload.requisition_id = requisitionId;
       const response = await fetch('/api/purchase/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload)
       });
-
       const data = await response.json();
-      console.log('API response:', data);
-
       if (!response.ok) {
         if (response.status === 401) {
           setErrors({ form: 'Session expired. Please log in again.' });
@@ -435,7 +462,7 @@ export default function NewPurchaseOrder() {
                 value={formData.payment_terms}
                 onChange={handleChange}
                 className="w-full bg-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., Net 30 days"
+                placeholder="Net 30 days"
                 disabled={submitting}
               />
             </div>
@@ -545,8 +572,8 @@ export default function NewPurchaseOrder() {
                     />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Quantity */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium">
@@ -571,22 +598,7 @@ export default function NewPurchaseOrder() {
                       </p>
                     )}
                   </div>
-
-                  {/* Unit */}
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium">Unit</label>
-                    <input
-                      type="text"
-                      name="unit"
-                      value={item.unit}
-                      onChange={e => handleItemChange(index, e)}
-                      className="w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="e.g., Nos."
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  {/* Unit Price */}
+                  {/* Unit Price (read-only if from stock) */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium">
                       Unit Price <span className="text-red-500">*</span>
@@ -596,11 +608,9 @@ export default function NewPurchaseOrder() {
                       name="unit_price"
                       value={item.unit_price}
                       onChange={e => handleItemChange(index, e)}
-                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${
-                        errors[`items.${index}.unit_price`]
+                      className={`w-full bg-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 ${errors[`items.${index}.unit_price`]
                           ? 'border border-red-500 focus:ring-red-500'
-                          : 'focus:ring-blue-500'
-                      }`}
+                          : 'focus:ring-blue-500'}`}
                       min="0"
                       step="0.01"
                       disabled={submitting}
@@ -612,6 +622,7 @@ export default function NewPurchaseOrder() {
                     )}
                   </div>
                 </div>
+
               </div>
             ))}
           </div>
